@@ -15,6 +15,7 @@ export default async function DemandasPage({
     unResponsavel?: string;
     status?: string;
     agencia?: string;
+    removed?: string;
   }>;
 }) {
   const { q, solicitante, unResponsavel, status, agencia, removed } = await searchParams;
