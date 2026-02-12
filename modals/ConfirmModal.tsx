@@ -34,9 +34,9 @@ export function ConfirmModal({
   const isDanger = variant === "danger";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex min-h-[100dvh] min-w-full items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 min-h-[100dvh] min-w-full bg-black/40"
         onClick={onCancel}
         aria-hidden
       />

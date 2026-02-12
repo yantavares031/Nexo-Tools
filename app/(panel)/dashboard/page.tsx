@@ -27,6 +27,8 @@ export default async function DashboardPage() {
     getDashboardUnidadesUseCase(agencyParams, { demandaRepository }),
   ]);
 
+  const isAgencyOnly = session?.role === "agency";
+
   return (
     <div className="p-6">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -35,11 +37,18 @@ export default async function DashboardPage() {
         </h2>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <DashboardChartFaturadoDonut data={dashboardData} />
+          {!isAgencyOnly && (
+            <DashboardChartFaturadoDonut data={dashboardData} />
+          )}
           <DashboardChartFaturadoVsCapacidade data={dashboardData} />
+          {isAgencyOnly && (
+            <DashboardChartUsoPercentual data={dashboardData} />
+          )}
         </div>
 
-        <DashboardChartUsoPercentual data={dashboardData} />
+        {!isAgencyOnly && (
+          <DashboardChartUsoPercentual data={dashboardData} />
+        )}
 
         <DashboardAgencias data={dashboardData} />
 

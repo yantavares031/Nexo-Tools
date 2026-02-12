@@ -17,7 +17,7 @@ export default async function PanelLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-40 flex w-full items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-semibold tracking-tight text-slate-800">
             <span className="text-blue-500">NEXO</span> Tools
@@ -41,7 +41,7 @@ export default async function PanelLayout({
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 pt-16">
         <Sidebar role={session.role} />
         <main className="flex-1">
           <ConfirmProvider>{children}</ConfirmProvider>

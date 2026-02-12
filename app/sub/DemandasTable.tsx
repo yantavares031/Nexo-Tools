@@ -25,9 +25,10 @@ function formatCurrency(value: number): string {
 interface DemandasTableProps {
   demandas: Demanda[];
   options: DemandaFilterOptions;
+  readOnly?: boolean;
 }
 
-export function DemandasTable({ demandas, options }: DemandasTableProps) {
+export function DemandasTable({ demandas, options, readOnly }: DemandasTableProps) {
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -109,6 +110,7 @@ export function DemandasTable({ demandas, options }: DemandasTableProps) {
           setModalOpen(false);
           setSelectedDemanda(null);
         }}
+        readOnly={readOnly}
       />
     </>
   );

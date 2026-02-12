@@ -4,13 +4,14 @@ import { getSolicitanteRepository } from "@/lib/repositories";
 import { SolicitantesSection } from "./sub/SolicitantesSection";
 import { SolicitantesHeader } from "./sub/SolicitantesHeader";
 import { SearchParamsToaster } from "./sub/SearchParamsToaster";
-import unidadesData from "@/data/unidades.mock.json";
-
-const unidades = (unidadesData as string[]).sort();
+import { getUnidades } from "@/lib/unidades";
 
 export default async function SolicitantesPage() {
   const solicitanteRepository = getSolicitanteRepository();
-  const solicitantes = await listSolicitantesUseCase({ solicitanteRepository });
+  const [solicitantes, unidades] = await Promise.all([
+    listSolicitantesUseCase({ solicitanteRepository }),
+    Promise.resolve(getUnidades()),
+  ]);
 
   return (
     <div className="p-6">

@@ -46,9 +46,9 @@ export function AdicionarUsuarioModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex min-h-[100dvh] min-w-full items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 min-h-[100dvh] min-w-full bg-black/40"
         onClick={onClose}
         aria-hidden
       />

@@ -77,6 +77,7 @@ export default async function DemandasPage({
           key={removed ? "removed" : "default"}
           demandas={result.items}
           options={filterOptions}
+          readOnly={session?.role === "agency"}
         />
 
         <DemandasPagination

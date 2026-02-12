@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { COOKIE_NAME } from "./lib/auth";
-import { canAccessRoute } from "./lib/roles";
 import type { UserRole } from "./types/globals";
 
 const PUBLIC_PATHS = ["/login"];
@@ -42,11 +41,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Verifica permissão por role (operator/agency não acessam agencias, usuarios)
-  if (!canAccessRoute(session.role, pathname)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
+  // Permissão por role é verificada em cada página (antes de carregar dados)
   return NextResponse.next();
 }
 

@@ -120,9 +120,9 @@ export function VerDetalhesUsuarioModal({
         : "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex min-h-[100dvh] min-w-full items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 min-h-[100dvh] min-w-full bg-black/40"
         onClick={isPendingRemove ? () => {} : onClose}
         aria-hidden
       />

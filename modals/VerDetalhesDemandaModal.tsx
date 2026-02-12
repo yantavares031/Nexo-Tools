@@ -29,6 +29,7 @@ interface VerDetalhesDemandaModalProps {
   options: DemandaFilterOptions;
   open: boolean;
   onClose: () => void;
+  readOnly?: boolean;
 }
 
 function SubmitButton() {
@@ -61,6 +62,7 @@ export function VerDetalhesDemandaModal({
   options,
   open,
   onClose,
+  readOnly = false,
 }: VerDetalhesDemandaModalProps) {
   const [isPendingRemove, startTransition] = useTransition();
   const { confirm } = useConfirm();
@@ -148,9 +150,12 @@ export function VerDetalhesDemandaModal({
 
   if (!open || !demanda) return null;
 
-  const textClass = "cursor-pointer rounded px-2 py-1 text-sm text-slate-800 hover:bg-slate-50";
-  const valorTextClass =
-    "cursor-pointer rounded px-2 py-1 text-sm font-bold text-emerald-600 hover:bg-slate-50";
+  const textClass = readOnly
+    ? "rounded px-2 py-1 text-sm text-slate-800"
+    : "cursor-pointer rounded px-2 py-1 text-sm text-slate-800 hover:bg-slate-50";
+  const valorTextClass = readOnly
+    ? "rounded px-2 py-1 text-sm font-bold text-emerald-600"
+    : "cursor-pointer rounded px-2 py-1 text-sm font-bold text-emerald-600 hover:bg-slate-50";
   const inputClass =
     "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400";
 
@@ -160,9 +165,9 @@ export function VerDetalhesDemandaModal({
       : "inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex min-h-[100dvh] min-w-full items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 min-h-[100dvh] min-w-full bg-black/40"
         onClick={isPendingRemove ? () => {} : onClose}
         aria-hidden
       />
@@ -199,7 +204,7 @@ export function VerDetalhesDemandaModal({
                 <span className="mb-1 block text-xs font-medium text-slate-500">
                   Demanda *
                 </span>
-                {editingField === "demanda" ? (
+                {!readOnly && editingField === "demanda" ? (
                   <input
                     name="demanda"
                     required
@@ -211,9 +216,9 @@ export function VerDetalhesDemandaModal({
                   />
                 ) : (
                   <>
-                    <input type="hidden" name="demanda" value={values.demanda} />
+                    {!readOnly && <input type="hidden" name="demanda" value={values.demanda} />}
                     <div
-                      onClick={() => setEditingField("demanda")}
+                      onClick={readOnly ? undefined : () => setEditingField("demanda")}
                       className={textClass}
                     >
                       {values.demanda || "—"}
@@ -227,7 +232,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     Solicitante *
                   </span>
-                  {editingField === "solicitante" ? (
+                  {!readOnly && editingField === "solicitante" ? (
                     <>
                       <input
                         name="solicitante"
@@ -251,8 +256,8 @@ export function VerDetalhesDemandaModal({
                     </>
                   ) : (
                     <>
-                      <input type="hidden" name="solicitante" value={values.solicitante} />
-                      <div onClick={() => setEditingField("solicitante")} className={textClass}>
+                      {!readOnly && <input type="hidden" name="solicitante" value={values.solicitante} />}
+                      <div onClick={readOnly ? undefined : () => setEditingField("solicitante")} className={textClass}>
                         {values.solicitante || "—"}
                       </div>
                     </>
@@ -262,7 +267,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     Un. Responsável *
                   </span>
-                  {editingField === "unResponsavel" ? (
+                  {!readOnly && editingField === "unResponsavel" ? (
                     <>
                       <input
                         ref={unResponsavelRef}
@@ -284,8 +289,8 @@ export function VerDetalhesDemandaModal({
                     </>
                   ) : (
                     <>
-                      <input type="hidden" name="unResponsavel" value={values.unResponsavel} />
-                      <div onClick={() => setEditingField("unResponsavel")} className={textClass}>
+                      {!readOnly && <input type="hidden" name="unResponsavel" value={values.unResponsavel} />}
+                      <div onClick={readOnly ? undefined : () => setEditingField("unResponsavel")} className={textClass}>
                         {values.unResponsavel || "—"}
                       </div>
                     </>
@@ -295,7 +300,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     Status
                   </span>
-                  {editingField === "status" ? (
+                  {!readOnly && editingField === "status" ? (
                     <select
                       name="status"
                       value={values.status}
@@ -311,10 +316,14 @@ export function VerDetalhesDemandaModal({
                     </select>
                   ) : (
                     <>
-                      <input type="hidden" name="status" value={values.status} />
+                      {!readOnly && <input type="hidden" name="status" value={values.status} />}
                       <div
-                        onClick={() => setEditingField("status")}
-                        className={`cursor-pointer rounded px-2 py-1 hover:bg-slate-50 ${statusBadgeClass}`}
+                        onClick={readOnly ? undefined : () => setEditingField("status")}
+                        className={
+                          readOnly
+                            ? `rounded px-2 py-1 ${statusBadgeClass}`
+                            : `cursor-pointer rounded px-2 py-1 hover:bg-slate-50 ${statusBadgeClass}`
+                        }
                       >
                         {STATUS_LABELS[values.status] ?? values.status}
                       </div>
@@ -325,7 +334,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     Agência
                   </span>
-                  {editingField === "agencia" ? (
+                  {!readOnly && editingField === "agencia" ? (
                     <select
                       name="agencia"
                       value={values.agencia}
@@ -343,12 +352,14 @@ export function VerDetalhesDemandaModal({
                     </select>
                   ) : (
                     <>
-                      <input type="hidden" name="agencia" value={values.agencia} />
+                      {!readOnly && <input type="hidden" name="agencia" value={values.agencia} />}
                       <div
-                        onClick={() => setEditingField("agencia")}
+                        onClick={readOnly ? undefined : () => setEditingField("agencia")}
                         className={
                           values.agencia
-                            ? "cursor-pointer inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                            ? readOnly
+                              ? "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
+                              : "cursor-pointer inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
                             : textClass
                         }
                       >
@@ -363,7 +374,7 @@ export function VerDetalhesDemandaModal({
                 <span className="mb-1 block text-xs font-medium text-slate-500">
                   Observações
                 </span>
-                {editingField === "obs" ? (
+                {!readOnly && editingField === "obs" ? (
                   <input
                     name="obs"
                     value={values.obs}
@@ -374,8 +385,8 @@ export function VerDetalhesDemandaModal({
                   />
                 ) : (
                   <>
-                    <input type="hidden" name="obs" value={values.obs} />
-                    <div onClick={() => setEditingField("obs")} className={textClass}>
+                    {!readOnly && <input type="hidden" name="obs" value={values.obs} />}
+                    <div onClick={readOnly ? undefined : () => setEditingField("obs")} className={textClass}>
                       {values.obs || "—"}
                     </div>
                   </>
@@ -386,7 +397,7 @@ export function VerDetalhesDemandaModal({
                 <span className="mb-1 block text-xs font-medium text-slate-500">
                   Centro de custo
                 </span>
-                {editingField === "centroDeCusto" ? (
+                {!readOnly && editingField === "centroDeCusto" ? (
                   <input
                     name="centroDeCusto"
                     value={values.centroDeCusto}
@@ -397,9 +408,9 @@ export function VerDetalhesDemandaModal({
                   />
                 ) : (
                   <>
-                    <input type="hidden" name="centroDeCusto" value={values.centroDeCusto} />
+                    {!readOnly && <input type="hidden" name="centroDeCusto" value={values.centroDeCusto} />}
                     <div
-                      onClick={() => setEditingField("centroDeCusto")}
+                      onClick={readOnly ? undefined : () => setEditingField("centroDeCusto")}
                       className={`${textClass} min-w-0 overflow-hidden text-ellipsis whitespace-nowrap`}
                       title={values.centroDeCusto || undefined}
                     >
@@ -414,7 +425,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     Valor (R$)
                   </span>
-                  {editingField === "valor" ? (
+                  {!readOnly && editingField === "valor" ? (
                     <div
                       onBlur={(e) => {
                         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -434,12 +445,14 @@ export function VerDetalhesDemandaModal({
                     </div>
                   ) : (
                     <>
-                      <input
-                        type="hidden"
-                        name="valor"
-                        value={formatBrazilianCurrency(values.valor)}
-                      />
-                      <div onClick={() => setEditingField("valor")} className={valorTextClass}>
+                      {!readOnly && (
+                        <input
+                          type="hidden"
+                          name="valor"
+                          value={formatBrazilianCurrency(values.valor)}
+                        />
+                      )}
+                      <div onClick={readOnly ? undefined : () => setEditingField("valor")} className={valorTextClass}>
                         {formatCurrency(values.valor)}
                       </div>
                     </>
@@ -449,7 +462,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     OC/PI
                   </span>
-                  {editingField === "ocPi" ? (
+                  {!readOnly && editingField === "ocPi" ? (
                     <input
                       name="ocPi"
                       value={values.ocPi}
@@ -460,12 +473,14 @@ export function VerDetalhesDemandaModal({
                     />
                   ) : (
                     <>
-                      <input type="hidden" name="ocPi" value={values.ocPi} />
+                      {!readOnly && <input type="hidden" name="ocPi" value={values.ocPi} />}
                       <div
-                        onClick={() => setEditingField("ocPi")}
+                        onClick={readOnly ? undefined : () => setEditingField("ocPi")}
                         className={
                           values.ocPi
-                            ? "cursor-pointer font-mono inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                            ? readOnly
+                              ? "font-mono inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+                              : "cursor-pointer font-mono inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
                             : `${textClass} font-mono`
                         }
                       >
@@ -478,7 +493,7 @@ export function VerDetalhesDemandaModal({
                   <span className="mb-1 block text-xs font-medium text-slate-500">
                     Mês
                   </span>
-                  {editingField === "mes" ? (
+                  {!readOnly && editingField === "mes" ? (
                     <input
                       name="mes"
                       value={values.mes}
@@ -489,8 +504,8 @@ export function VerDetalhesDemandaModal({
                     />
                   ) : (
                     <>
-                      <input type="hidden" name="mes" value={values.mes} />
-                      <div onClick={() => setEditingField("mes")} className={textClass}>
+                      {!readOnly && <input type="hidden" name="mes" value={values.mes} />}
+                      <div onClick={readOnly ? undefined : () => setEditingField("mes")} className={textClass}>
                         {values.mes || "—"}
                       </div>
                     </>
@@ -500,27 +515,29 @@ export function VerDetalhesDemandaModal({
             </div>
           </div>
 
-          <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 px-6 py-3">
-            <SubmitButton />
-            <button
-              type="button"
-              onClick={handleRemover}
-              disabled={isPendingRemove}
-              className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isPendingRemove ? (
-                <>
-                  <span className="size-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                  Removendo...
-                </>
-              ) : (
-                <>
-                  <CircleMinus className="size-3.5 stroke-[2.5]" />
-                  Remover
-                </>
-              )}
-            </button>
-          </div>
+          {!readOnly && (
+            <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 px-6 py-3">
+              <SubmitButton />
+              <button
+                type="button"
+                onClick={handleRemover}
+                disabled={isPendingRemove}
+                className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isPendingRemove ? (
+                  <>
+                    <span className="size-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                    Removendo...
+                  </>
+                ) : (
+                  <>
+                    <CircleMinus className="size-3.5 stroke-[2.5]" />
+                    Remover
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

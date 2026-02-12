@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Workflow, Users, UserPlus, Megaphone } from "lucide-react";
+import { LayoutDashboard, Workflow, Users, UserPlus, Megaphone, Lock } from "lucide-react";
 import type { UserRole } from "@/types/globals";
-import { MENU_ITEMS_BY_ROLE } from "@/lib/roles";
+import { canAccessRoute } from "@/lib/roles";
 
 const ALL_MENU_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -20,31 +20,38 @@ interface SidebarProps {
 
 export function Sidebar({ role = "operator" }: SidebarProps) {
   const pathname = usePathname();
-  const allowedHrefs = new Set(MENU_ITEMS_BY_ROLE[role ?? "operator"]);
-  const items = ALL_MENU_ITEMS.filter((item) => allowedHrefs.has(item.href));
 
   return (
     <aside className="flex w-56 flex-col border-r border-slate-200 bg-white">
       <nav className="flex flex-col gap-0.5 p-3">
-        {items.map(({ href, label, icon: Icon }) => {
+        {ALL_MENU_ITEMS.map(({ href, label, icon: Icon }) => {
+          const hasAccess = canAccessRoute(role ?? "operator", href);
           const isActive =
-          href === "/"
-            ? pathname === "/"
-            : href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname.startsWith(href);
+            href === "/"
+              ? pathname === "/"
+              : href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              className={`flex items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 isActive
                   ? "bg-blue-50 text-blue-600"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                  : hasAccess
+                    ? "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                    : "text-slate-400 hover:bg-slate-50"
               }`}
+              title={!hasAccess ? "Sem permissão para acessar" : undefined}
             >
-              <Icon className="size-4 shrink-0" />
-              {label}
+              <span className="flex items-center gap-2.5">
+                <Icon className="size-4 shrink-0" />
+                {label}
+              </span>
+              {!hasAccess && (
+                <Lock className="size-3.5 shrink-0 text-slate-400" aria-label="Sem permissão" />
+              )}
             </Link>
           );
         })}

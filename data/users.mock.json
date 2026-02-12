@@ -1,6 +1,0 @@
-[
-  {"id":"1","email":"admin@nexo.com","password":"admin123","name":"Administrador","role":"admin"},
-  {"id":"2","email":"user@nexo.com","password":"user123","name":"Carlos Silva","role":"operator"},
-  {"id":"3","email":"operator@nexo.com","password":"operator123","name":"Operador","role":"operator"},
-  {"id":"4","email":"agency@nexo.com","password":"agency123","name":"Agência Teste","role":"agency","agenciaId":"1"}
-]
