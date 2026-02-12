@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "NEXO Tools",
   description: "Fluxos administrativos e financeiros de forma simples e integrada",
   icons: {
-    icon: "/icon.svg",
+    icon: "/favicon.ico",
   },
 };
 
