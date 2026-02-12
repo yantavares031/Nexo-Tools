@@ -1,0 +1,16 @@
+---
+description: Modais devem ficar na pasta /modals
+alwaysApply: true
+---
+
+# Modais
+
+- Todo e qualquer modal do projeto deve ser criado na pasta **`/modals`**.
+- Ex.: `modals/AdicionarDemandaModal.tsx`, `modals/ConfirmModal.tsx`.
+- **Confirmação**: Para ações que exigem confirmação (ex.: remover), usar o `ConfirmModal` via `useConfirm()` — nunca `confirm()` nativo.
+- **Modal de detalhes com edição**: Campos exibidos como texto; ao **clicar** no campo, vira input; ao sair (blur), volta a texto. Usar apenas botão "Salvar" (sem botão "Editar").
+- **Tecla Escape**: Ao pressionar **ESC** em qualquer modal, o modal deve fechar. Usar o hook `useEscapeKey(onClose, open)` de `lib/use-escape-key.ts`.
+- **Botões**: Os botões de ação (Cancelar, Editar, Remover, Adicionar, Salvar, etc.) devem estar **sempre alinhados à direita** (`justify-end`).
+- **Ícone no título**: O título de todo modal deve ter o **mesmo ícone** que representa aquela entidade no menu lateral (Sidebar). Ex.: Demandas → `Workflow`; Agências → `Megaphone`; Solicitantes → `UserPlus`; Usuários → `Users`. Usar `flex items-center gap-2` no `h2` e `size-5 shrink-0` no ícone.
+
+Regra: modal → `/modals`; ESC → fecha; botões → `justify-end`; título com ícone do menu.

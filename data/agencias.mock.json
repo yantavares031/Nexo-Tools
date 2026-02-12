@@ -1,0 +1,20 @@
+[
+  {
+    "nomeFantasia": "La Marka",
+    "cnpj": "00.000.000/0001-01",
+    "orcamentoAnual": 5000000,
+    "id": "1"
+  },
+  {
+    "id": "3",
+    "nomeFantasia": "Mallmann",
+    "cnpj": "00.000.000/0001-03",
+    "orcamentoAnual": 420000
+  },
+  {
+    "id": "1770876320806",
+    "nomeFantasia": "Clara",
+    "cnpj": "0000000000000000",
+    "orcamentoAnual": 10000
+  }
+]

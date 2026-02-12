@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1",
+    "email": "admin@nexo.com",
+    "password": "admin123",
+    "name": "Administrador"
+  },
+  {
+    "id": "2",
+    "email": "user@nexo.com",
+    "password": "user123",
+    "name": "Carlos Silva"
+  }
+]

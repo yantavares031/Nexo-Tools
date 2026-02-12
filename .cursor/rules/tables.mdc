@@ -1,0 +1,11 @@
+---
+description: Padrões de tabelas (headers, alinhamento)
+alwaysApply: true
+---
+
+# Tabelas
+
+- **Headers**: Os textos dos cabeçalhos (`<th>`) das colunas devem ser **sempre alinhados à esquerda** (`text-left`) e **em negrito** (`font-semibold`).
+- **Rows e células**: Todo e qualquer dado em linhas (`<tr>`) ou células (`<td>`) deve estar **sempre alinhado à esquerda** (`text-left`).
+- Não usar `text-center` nem `text-right` em headers, rows ou células.
+- Manter consistência em todas as tabelas do projeto.

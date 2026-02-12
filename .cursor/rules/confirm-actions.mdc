@@ -1,0 +1,12 @@
+---
+description: Confirmação de ações (não usar confirm nativo)
+alwaysApply: true
+---
+
+# Confirmação de ações
+
+- **Nunca usar** o `confirm()` nativo do JavaScript.
+- **Sempre usar** o modal de confirmação via hook `useConfirm()` de `lib/confirm-context.tsx`.
+- O `ConfirmProvider` deve envolver a área da aplicação (já configurado no layout do painel).
+- Uso: `const { confirm } = useConfirm(); const ok = await confirm({ title, message, confirmLabel, variant: "danger" });`
+- Opções: `title`, `message`, `confirmLabel`, `cancelLabel`, `variant` ("danger" | "default").

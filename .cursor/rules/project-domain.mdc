@@ -1,0 +1,22 @@
+---
+description: Domínio do projeto — ferramenta de cadastro de demandas e campos da Demanda
+alwaysApply: true
+---
+
+# Projeto: ferramenta de cadastro de demandas
+
+O sistema é uma ferramenta onde o usuário cadastra **demandas**. Cada demanda possui os seguintes campos:
+
+| Campo | Descrição |
+|-------|-----------|
+| **DEMANDA** | Identificação/descrição da demanda |
+| **SOLICITANTE** | Quem solicitou |
+| **UN RESPONSÁVEL** | Unidade responsável |
+| **OBS** | Observações |
+| **STATUS** | Faturado ou Comprometido |
+| **VALOR** | Valor (monetário) |
+| **CENTRO DE CUSTO** | Centro de custo |
+| **OC/PI** | Ordem de compra / PI (código) |
+| **MES** | Mês de referência (ex.: 18/01/2024, janeiro) |
+
+Ao criar formulários, listagens, use cases e tipos, usar sempre esses campos. Tipos globais da entidade Demanda ficam em `types/globals.ts`.

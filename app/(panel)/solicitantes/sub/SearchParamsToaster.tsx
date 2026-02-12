@@ -1,0 +1,24 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+
+export function SearchParamsToaster() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (searchParams.has("removed") && !shownRef.current) {
+      toast.success("Solicitante removido com sucesso!");
+      shownRef.current = true;
+      router.replace("/solicitantes");
+    }
+    if (!searchParams.has("removed")) {
+      shownRef.current = false;
+    }
+  }, [searchParams, router]);
+
+  return null;
+}

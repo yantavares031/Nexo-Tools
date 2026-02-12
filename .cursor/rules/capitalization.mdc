@@ -1,0 +1,11 @@
+---
+description: Padronização de capitalização (só primeira letra maiúscula)
+alwaysApply: true
+---
+
+# Capitalização
+
+- **Demanda** (descrição): armazenar e exibir com **apenas a primeira letra maiúscula**. Ex.: "Rota das emoções - tags de mala".
+- **Solicitante** (nome): idem. Ex.: "Flavia", "Daniele abreu".
+- **Agência** (nome fantasia): a regra **não se aplica** — manter como o usuário informar.
+- Usar a utilidade `capitalizeFirst` de `lib/capitalize-first.ts` ao salvar demanda e solicitante (create/update).

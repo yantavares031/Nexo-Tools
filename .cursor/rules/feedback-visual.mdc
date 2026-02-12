@@ -1,0 +1,42 @@
+---
+description: Feedback visual padronizado estilo Sonner para o painel interno
+alwaysApply: true
+---
+
+# Feedback visual — toasts (Sonner)
+
+Todo o painel interno (exceto a tela de login) deve usar **toasts Sonner** para feedback visual ao usuário.
+
+## Regras
+
+1. **Biblioteca**: Usar `sonner` para notificações toast.
+
+2. **Erros de ações**: Quando uma Server Action retorna `{ error: "mensagem" }`, exibir via toast em vez de mensagem inline:
+   - Usar o hook `useToastOnActionError(state)` de `@/lib/use-toast-on-action-error`
+   - Chamar após `useActionState` nos formulários
+   - **Não** exibir `state?.error` em elementos inline (parágrafos, divs com fundo vermelho)
+
+3. **Sucesso**: Usar `toast.success(mensagem)` para ações bem-sucedidas (ex.: após redirect com `?updated=1`).
+
+4. **Erro**: `toast.error(mensagem)` para erros de validação ou regras de negócio.
+
+5. **Implementação**: O `ToasterProvider` já está no layout do painel `(panel)`. Novos formulários e fluxos devem integrar toasts via `useToastOnActionError` ou chamadas diretas a `toast.*`.
+
+## Exemplo
+
+```tsx
+import { useActionState } from "react";
+import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
+
+function MeuForm() {
+  const [state, formAction] = useActionState(minhaAction, null);
+  useToastOnActionError(state);
+
+  return <form action={formAction}>...</form>;
+}
+```
+
+## Escopo
+
+- **Aplica**: todas as páginas dentro de `app/(panel)/`
+- **Não aplica**: `app/login/` (mantém feedback próprio)

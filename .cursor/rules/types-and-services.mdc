@@ -1,0 +1,33 @@
+---
+description: Tipos globais em types/globals.ts e serviços externos em services/ com contrato
+alwaysApply: true
+---
+
+# Tipos globais e serviços externos
+
+## Tipos globais
+
+- Tipos usados em todo o projeto ficam na pasta **`types`**, no arquivo **`globals.ts`**.
+- Ex.: `types/globals.ts` com interfaces/types compartilhados entre app, use cases e repositórios.
+
+## Serviços externos (ERP, integrações)
+
+- Comunicação com sistemas externos (ERP, APIs de terceiros, etc.) fica na pasta **`services`**.
+- Cada serviço externo é uma **implementação** que **sempre implementa um contrato** (interface). O contrato define o que o serviço expõe; a implementação concreta (HTTP, SDK, etc.) fica em `services`.
+- O use case ou a camada de aplicação depende do **contrato**, não da implementação. A injeção da implementação concreta ocorre na borda (ex.: ao instanciar o use case).
+
+Estrutura sugerida:
+
+```
+types/
+  globals.ts              # Tipos globais do projeto
+
+lib/
+  contracts/              # Contratos (interfaces) dos serviços externos
+    erp-service.ts        # interface ErpService
+  services/               # Implementações que implementam os contratos
+    erp-api.service.ts    # class ErpApiService implements ErpService
+    outro-sistema.service.ts
+```
+
+Regra: **services = só implementações; sempre atrás de um contrato (interface).**

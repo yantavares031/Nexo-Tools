@@ -1,0 +1,24 @@
+---
+description: Arquitetura Limpa, Use Cases e inversão de dependências
+alwaysApply: true
+---
+
+# Arquitetura Limpa
+
+- Adotar **Clean Architecture**: camadas bem definidas, dependências apontando para dentro (regras de negócio no centro).
+- **Use Cases**: orquestram a aplicação. Cada caso de uso representa uma ação de negócio (ex.: criar pedido, buscar usuário). A página/Server Action chama o use case, não a tecnologia (DB, API externa) diretamente.
+- **Inversão de dependências**: regras de negócio **não conhecem tecnologia**. Use cases dependem de **interfaces/contratos** (repositórios, gateways); a implementação concreta (Prisma, fetch, etc.) fica na borda e é injetada.
+- Exemplo de fluxo: **Page/Server Action** → **Use Case** → **Repository (interface)**. O repositório concreto (ex.: PrismaRepository) fica em infra e é passado para o use case.
+
+## Exemplo de estrutura
+
+```
+app/                    # Entrada (pages, Server Actions)
+  actions/              # Server Actions = “controllers”
+lib/
+  use-cases/            # Casos de uso (regras de negócio)
+  domain/               # Entidades, interfaces (contratos)
+  repositories/         # Implementações (adapters) que implementam as interfaces
+```
+
+Regra de ouro: **domain e use cases não importam Next, Prisma, fetch, etc.** Só tipos e interfaces.

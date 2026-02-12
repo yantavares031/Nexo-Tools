@@ -1,0 +1,36 @@
+---
+description: Inputs de valores monetários devem usar formato brasileiro Real (R$)
+alwaysApply: true
+---
+
+# Inputs de dinheiro — formato Real (R$)
+
+Todos os inputs que envolvem valores monetários devem seguir o padrão brasileiro Real (R$).
+
+## Regras
+
+1. **Componente**: Usar sempre o `CurrencyInput` de `@/components/CurrencyInput` para campos de valor (não usar `input type="number"`).
+
+2. **Formato**: Valor exibido e aceito no formato brasileiro:
+   - Ponto para milhares: `1.234`
+   - Vírgula para decimais: `,56`
+   - Exemplo: `R$ 45.000,00`
+
+3. **Server Actions**: Ao receber o valor do formulário, usar `parseBrazilianCurrency()` de `@/lib/currency` para converter a string formatada em número:
+
+```typescript
+import { parseBrazilianCurrency } from "@/lib/currency";
+
+const valor = parseBrazilianCurrency((formData.get("valor") as string) ?? "");
+```
+
+4. **Exibição** (tabelas, cards): Usar `formatBrazilianCurrency()` ou `Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })` para exibir valores.
+
+## Exemplo de uso
+
+```tsx
+import { CurrencyInput } from "@/components/CurrencyInput";
+
+<CurrencyInput name="valor" id="valor" defaultValue={0} />
+<CurrencyInput name="orcamentoAnual" defaultValue={agencia.orcamentoAnual} />
+```

@@ -1,0 +1,31 @@
+---
+description: Onde criar componentes — reutilizáveis em /components, específicos em subpasta da rota
+alwaysApply: true
+---
+
+# Organização de componentes
+
+- **Componente reutilizável** (usado em várias páginas): criar em **`/components`**. Ex.: `components/Button.tsx`, `components/Modal.tsx`, `components/Header.tsx`.
+- **Componente específico de uma página**: criar uma pasta **`sub`** dentro da pasta da rota e colocar o componente lá.
+
+## Exemplo
+
+```
+app/
+  page.tsx                 # Home
+  dashboard/
+    page.tsx
+    sub/                   # Componentes só da dashboard
+      DashboardChart.tsx
+      DashboardFilters.tsx
+  relatorios/
+    page.tsx
+    sub/
+      RelatorioTabela.tsx
+components/                # Componentes compartilhados
+  Button.tsx
+  Card.tsx
+  Modal.tsx
+```
+
+Regra: se repete em várias rotas → `components/`. Se é só daquela página → `[rota]/sub/`.
