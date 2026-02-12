@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
 import { APP_VERSION } from "@/lib/version";
@@ -12,6 +13,7 @@ export default async function PanelLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
+  if (!session) redirect("/login");
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
@@ -25,7 +27,7 @@ export default async function PanelLayout({
         <div className="flex items-center gap-4">
           <span className="text-sm text-slate-600">
             Bem-vindo,{" "}
-            <span className="font-medium text-slate-800">{session?.name}</span>
+            <span className="font-medium text-slate-800">{session.name}</span>
           </span>
             <form action={logoutAction}>
               <button
@@ -40,7 +42,7 @@ export default async function PanelLayout({
       </header>
 
       <div className="flex flex-1">
-        <Sidebar />
+        <Sidebar role={session.role} />
         <main className="flex-1">
           <ConfirmProvider>{children}</ConfirmProvider>
         </main>

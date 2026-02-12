@@ -1,0 +1,37 @@
+---
+description: Padronização de títulos nas páginas do painel
+alwaysApply: true
+---
+
+# Títulos das páginas — padronização
+
+Todo o painel interno deve usar tamanhos de título consistentes em todas as páginas.
+
+## Regras
+
+1. **Título principal da página** (primeiro título visível na área de conteúdo):
+   - Classes: `text-xl font-semibold text-slate-800`
+   - Ex.: "Demandas", "Agências", "Dashboard", "Cadastro de solicitantes", "Cadastro de usuários"
+
+2. **Subtítulo de seção** (títulos de blocos dentro de uma página):
+   - Classes: `text-lg font-semibold text-slate-800`
+   - Ex.: "Por Un. Responsável", "Faturado vs Capacidade anual"
+
+3. **Não misturar**: Nunca usar `text-lg` para título principal nem `text-2xl` ou `text-base` — manter o padrão acima.
+
+## Exemplo
+
+```tsx
+// ✅ Título principal da página
+<h1 className="text-xl font-semibold text-slate-800">Demandas</h1>
+<h2 className="text-xl font-semibold text-slate-800">Dashboard — Faturado vs Capacidade Anual</h2>
+
+// ✅ Subtítulo de seção
+<h2 className="mb-4 text-lg font-semibold text-slate-800">Por Un. Responsável</h2>
+```
+
+## Escopo
+
+- **Aplica**: páginas dentro de `app/(panel)/`
+- **Não aplica**: `app/login/` (mantém estilo próprio)
+- **Exceção**: `app/(panel)/dashboard/` usa fontes menores (text-lg título, text-base seção, text-xs tabelas/gráficos)

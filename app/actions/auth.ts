@@ -20,7 +20,12 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=invalid");
   }
 
-  await createSession(user.email, user.name ?? user.email);
+  await createSession(
+    user.email,
+    user.name ?? user.email,
+    user.role,
+    user.agenciaId
+  );
   redirect("/");
 }
 

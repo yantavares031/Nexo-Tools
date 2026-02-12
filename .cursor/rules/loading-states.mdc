@@ -1,0 +1,38 @@
+---
+description: Loading durante navegação entre páginas — feedback visual ao usuário
+alwaysApply: true
+---
+
+# Loading — troca de página
+
+Toda navegação server-side (menu lateral, links, etc.) deve exibir feedback visual ao usuário. Nunca deixar a interface travada sem indicação de carregamento.
+
+## Regras
+
+1. **Arquivo `loading.tsx`**: Em cada segmento de rota que tenha página server com dados assíncronos, criar `loading.tsx` no mesmo nível ou acima.
+2. **Padrão visual**: Usar spinner + texto "Carregando..." centralizado, com `min-h-[60vh]` para ocupar a área de conteúdo.
+3. **Escopo**: Aplica-se a rotas dentro de `app/(panel)/` e qualquer rota que demore a carregar.
+
+## Exemplo
+
+```tsx
+// app/(panel)/loading.tsx
+export default function PanelLoading() {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center p-6">
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500"
+          aria-hidden
+        />
+        <p className="text-sm text-slate-500">Carregando...</p>
+      </div>
+    </div>
+  );
+}
+```
+
+## Onde criar
+
+- `app/(panel)/loading.tsx` — todas as páginas do painel (Demandas, Agências, Solicitantes, Usuários)
+- `app/(panel)/[rota]/loading.tsx` — rotas específicas com carregamento pesado (ex.: `/agencias/[id]`)

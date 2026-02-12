@@ -6,6 +6,21 @@ export interface DemandaFilters {
   unResponsavel?: string;
   status?: string;
   agencia?: string;
+  /** Filtra por ID da agência (ex.: para usuário agency ver só as demandas dele). */
+  agenciaId?: string;
+}
+
+export interface DemandaPagination {
+  page: number;
+  limit: number;
+}
+
+export interface DemandaPaginatedResult {
+  items: Demanda[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface SolicitanteComUnidade {
@@ -24,8 +39,12 @@ export interface DemandaFilterOptions {
 /** Contrato do repositório de demandas — permite trocar implementação (mock, Prisma, etc.). */
 export interface IDemandaRepository {
   findAll(filters?: DemandaFilters): Promise<Demanda[]>;
+  findPaginated(
+    filters: DemandaFilters | undefined,
+    pagination: DemandaPagination
+  ): Promise<DemandaPaginatedResult>;
   findById(id: string): Promise<Demanda | null>;
-  getFilterOptions(): Promise<DemandaFilterOptions>;
+  getFilterOptions(filters?: DemandaFilters): Promise<DemandaFilterOptions>;
   create(input: DemandaInput): Promise<Demanda>;
   update(id: string, input: DemandaInput): Promise<Demanda>;
   remove(id: string): Promise<void>;

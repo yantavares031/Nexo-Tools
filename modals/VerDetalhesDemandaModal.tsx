@@ -3,21 +3,7 @@
 import { useState, useActionState, useRef, useCallback, useEffect, useTransition } from "react";
 import { useEscapeKey } from "@/lib/use-escape-key";
 import { useFormStatus } from "react-dom";
-import {
-  X,
-  Trash2,
-  FileText,
-  User,
-  Building2,
-  CircleDot,
-  Megaphone,
-  MessageSquare,
-  Wallet,
-  DollarSign,
-  Hash,
-  Calendar,
-  Workflow,
-} from "lucide-react";
+import { X, Check, CircleMinus, Workflow } from "lucide-react";
 import { updateDemandaAction, removeDemandaAction } from "@/app/actions/demanda";
 import type { Demanda } from "@/types/globals";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
@@ -59,7 +45,10 @@ function SubmitButton() {
           Salvando...
         </>
       ) : (
-        "Salvar"
+        <>
+          <Check className="size-3.5 stroke-[2.5]" />
+          Salvar
+        </>
       )}
     </button>
   );
@@ -207,10 +196,9 @@ export function VerDetalhesDemandaModal({
           <div className="overflow-y-auto p-6">
             <div className="space-y-3">
               <div className="group">
-                <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                <FileText className="size-3.5 shrink-0" />
-                Demanda *
-              </span>
+                <span className="mb-1 block text-xs font-medium text-slate-500">
+                  Demanda *
+                </span>
                 {editingField === "demanda" ? (
                   <input
                     name="demanda"
@@ -236,8 +224,7 @@ export function VerDetalhesDemandaModal({
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <User className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     Solicitante *
                   </span>
                   {editingField === "solicitante" ? (
@@ -272,8 +259,7 @@ export function VerDetalhesDemandaModal({
                   )}
                 </div>
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <Building2 className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     Un. Responsável *
                   </span>
                   {editingField === "unResponsavel" ? (
@@ -306,8 +292,7 @@ export function VerDetalhesDemandaModal({
                   )}
                 </div>
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <CircleDot className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     Status
                   </span>
                   {editingField === "status" ? (
@@ -337,8 +322,7 @@ export function VerDetalhesDemandaModal({
                   )}
                 </div>
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <Megaphone className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     Agência
                   </span>
                   {editingField === "agencia" ? (
@@ -376,8 +360,7 @@ export function VerDetalhesDemandaModal({
               </div>
 
               <div className="group">
-                <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                  <MessageSquare className="size-3.5 shrink-0" />
+                <span className="mb-1 block text-xs font-medium text-slate-500">
                   Observações
                 </span>
                 {editingField === "obs" ? (
@@ -400,8 +383,7 @@ export function VerDetalhesDemandaModal({
               </div>
 
               <div className="group">
-                <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                  <Wallet className="size-3.5 shrink-0" />
+                <span className="mb-1 block text-xs font-medium text-slate-500">
                   Centro de custo
                 </span>
                 {editingField === "centroDeCusto" ? (
@@ -429,8 +411,7 @@ export function VerDetalhesDemandaModal({
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <DollarSign className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     Valor (R$)
                   </span>
                   {editingField === "valor" ? (
@@ -465,8 +446,7 @@ export function VerDetalhesDemandaModal({
                   )}
                 </div>
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <Hash className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     OC/PI
                   </span>
                   {editingField === "ocPi" ? (
@@ -495,8 +475,7 @@ export function VerDetalhesDemandaModal({
                   )}
                 </div>
                 <div className="group">
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <Calendar className="size-3.5 shrink-0" />
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
                     Mês
                   </span>
                   {editingField === "mes" ? (
@@ -536,7 +515,7 @@ export function VerDetalhesDemandaModal({
                 </>
               ) : (
                 <>
-                  <Trash2 className="size-4" />
+                  <CircleMinus className="size-3.5 stroke-[2.5]" />
                   Remover
                 </>
               )}

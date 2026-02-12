@@ -1,21 +1,50 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { COOKIE_NAME } from "./lib/auth";
+import { canAccessRoute } from "./lib/roles";
+import type { UserRole } from "./types/globals";
 
 const PUBLIC_PATHS = ["/login"];
 
+function parseSession(
+  cookieValue: string | undefined
+): { role: UserRole; agenciaId?: string } | null {
+  if (!cookieValue) return null;
+  try {
+    const decoded = decodeURIComponent(cookieValue);
+    const { email, role, agenciaId } = JSON.parse(decoded) as {
+      email?: string;
+      role?: UserRole;
+      agenciaId?: string;
+    };
+    if (!email) return null;
+    return { role: role ?? "operator", agenciaId };
+  } catch {
+    return null;
+  }
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const cookie = request.cookies.get(COOKIE_NAME)?.value;
+  const session = parseSession(cookie);
 
+  // Rotas públicas: se já logado, redireciona para /
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    if (request.cookies.get(COOKIE_NAME)?.value) {
+    if (session) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
 
-  if (!request.cookies.get(COOKIE_NAME)?.value) {
+  // Não logado: redireciona para login
+  if (!session) {
     return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Verifica permissão por role (operator/agency não acessam agencias, usuarios)
+  if (!canAccessRoute(session.role, pathname)) {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return NextResponse.next();

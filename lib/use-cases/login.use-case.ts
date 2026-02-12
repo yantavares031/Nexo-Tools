@@ -1,3 +1,4 @@
+import type { UserRole } from "@/types/globals";
 import type { IUserRepository } from "@/lib/domain/user.repository";
 
 type Dependencies = {
@@ -9,8 +10,20 @@ export async function loginUseCase(
   email: string,
   password: string,
   deps: Dependencies
-): Promise<{ id: string; email: string; name?: string } | null> {
+): Promise<{
+  id: string;
+  email: string;
+  name?: string;
+  role: UserRole;
+  agenciaId?: string;
+} | null> {
   const user = await deps.userRepository.findByEmail(email);
   if (!user || user.password !== password) return null;
-  return { id: user.id, email: user.email, name: user.name };
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    agenciaId: user.agenciaId,
+  };
 }

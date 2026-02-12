@@ -14,9 +14,11 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface DemandasFiltersProps {
   options: DemandaFilterOptions;
+  /** Oculta o filtro de agência (ex.: usuário agency já vê só as demandas dele). */
+  hideAgencyFilter?: boolean;
 }
 
-export function DemandasFilters({ options }: DemandasFiltersProps) {
+export function DemandasFilters({ options, hideAgencyFilter }: DemandasFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -46,8 +48,10 @@ export function DemandasFilters({ options }: DemandasFiltersProps) {
     const st = formData.get("status") as string;
     if (st) params.set("status", st);
 
-    const ag = formData.get("agencia") as string;
-    if (ag) params.set("agencia", ag);
+    if (!hideAgencyFilter) {
+      const ag = formData.get("agencia") as string;
+      if (ag) params.set("agencia", ag);
+    }
 
     startTransition(() => {
       router.push(`/?${params.toString()}`);
@@ -60,7 +64,8 @@ export function DemandasFilters({ options }: DemandasFiltersProps) {
     });
   }
 
-  const hasFilters = q || solicitante || unResponsavel || status || agencia;
+  const hasFilters =
+    q || solicitante || unResponsavel || status || (!hideAgencyFilter && !!agencia);
 
   return (
     <>
@@ -135,19 +140,21 @@ export function DemandasFilters({ options }: DemandasFiltersProps) {
               ))}
             </select>
 
-            <select
-              name="agencia"
-              defaultValue={agencia}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-              aria-label="Filtrar por agência"
-            >
-              <option value="">Agência</option>
-              {options.agencias.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
+            {!hideAgencyFilter && (
+              <select
+                name="agencia"
+                defaultValue={agencia}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                aria-label="Filtrar por agência"
+              >
+                <option value="">Agência</option>
+                {options.agencias.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">

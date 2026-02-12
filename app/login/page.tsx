@@ -99,7 +99,7 @@ export default async function LoginPage({
           </form>
 
           <p className="mt-6 text-center text-xs text-slate-400/80 md:text-left">
-            Use admin@nexo.com / admin123 para teste
+            Admin: admin@nexo.com / admin123 — Operator: user@nexo.com / user123 — Agency: agency@nexo.com / agency123
           </p>
         </div>
       </main>

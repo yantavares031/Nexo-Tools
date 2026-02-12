@@ -1,0 +1,25 @@
+---
+description: Next.js 16 — usar proxy.ts em vez de middleware.ts
+alwaysApply: true
+---
+
+# Proxy (não Middleware)
+
+A partir do **Next.js 16**, o recurso anteriormente chamado **Middleware** foi renomeado para **Proxy**.
+
+## Regras
+
+1. **Arquivo**: Usar sempre **`proxy.ts`** (ou `proxy.js`) na raiz do projeto — **não** criar `middleware.ts`.
+2. **Exportação**: Exportar a função como `proxy` (nomeada) ou `default`:
+   ```ts
+   export function proxy(request: NextRequest) {
+     return NextResponse.next();
+   }
+   ```
+3. **Propósito**: O Proxy executa antes que a requisição seja concluída. Use para: redirects, reescrita de rotas, modificação de headers, checagens de permissão (ex.: autenticação, roles).
+4. **Não usar** para: fetch lento, gerenciamento completo de sessão. Evite lógica pesada no Proxy.
+
+## Documentação
+
+- [Proxy — Next.js](https://nextjs.org/docs/app/api-reference/file-conventions/proxy)
+- O termo "middleware" está deprecated; a convenção agora é "proxy".
