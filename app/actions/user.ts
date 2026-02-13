@@ -22,6 +22,7 @@ export async function createUserAction(
     ? (roleRaw as UserRole)
     : "operator";
   const agenciaId = (formData.get("agenciaId") as string)?.trim() || undefined;
+  const acesso = formData.get("acesso") !== "false";
 
   if (!email || !password) {
     return {
@@ -35,18 +36,13 @@ export async function createUserAction(
     } as const;
   }
 
-  if (role === "agency" && !agenciaId) {
-    return {
-      error: "Usuários do tipo Agência precisam ter uma agência vinculada.",
-    } as const;
-  }
-
   const input: UserInput = {
     email,
     password,
     name: name || undefined,
     role,
     agenciaId: role === "agency" ? agenciaId : undefined,
+    acesso,
   };
 
   const userRepository = getUserRepository();
@@ -76,15 +72,11 @@ export async function updateUserAction(
     ? (roleRaw as UserRole)
     : "operator";
   const agenciaId = (formData.get("agenciaId") as string)?.trim() || undefined;
+  const acessoRaw = formData.get("acesso");
+  const acesso = acessoRaw === "true";
 
   if (!email) {
     return { error: "E-mail é obrigatório." } as const;
-  }
-
-  if (role === "agency" && !agenciaId) {
-    return {
-      error: "Usuários do tipo Agência precisam ter uma agência vinculada.",
-    } as const;
   }
 
   const userRepository = getUserRepository();
@@ -98,6 +90,7 @@ export async function updateUserAction(
         name: name || undefined,
         role,
         agenciaId: role === "agency" ? agenciaId : undefined,
+        acesso,
       },
       { userRepository }
     );

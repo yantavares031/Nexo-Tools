@@ -18,7 +18,39 @@ app/                    # Entrada (pages, Server Actions)
 lib/
   use-cases/            # Casos de uso (regras de negócio)
   domain/               # Entidades, interfaces (contratos)
-  repositories/         # Implementações (adapters) que implementam as interfaces
+  repositories/         # Reexporta de infra; uso: import de @/lib/repositories
+  infra/                # Implementações concretas (adapters)
+    repositories/       # Repositórios SQLite (ou Prisma, etc.)
 ```
+
+- **domain**: só interfaces (contratos). Nenhuma implementação.
+- **use-cases**: regras de negócio; dependem das interfaces de domain; recebem repositórios injetados.
+- **infra**: implementações concretas (ex.: *-sqlite.repository.ts). Quem usa getDb(), fs, Prisma, fetch fica aqui.
+- **repositories** (em lib/): apenas reexporta as factories de lib/infra/repositories. Novos adapters concretos devem ser criados em **lib/infra/**.
+
+## Server Actions = Controllers (nunca "controller Deus")
+
+**Server Actions são apenas controllers.** Elas NÃO podem conter regras de negócio.
+
+### NUNCA na Action (app/actions/*.ts)
+
+- **NUNCA** implementar validações de negócio na action (ex.: "soma dos centros de custo = valor da demanda", "agency precisa de agenciaId", "nome de centro de custo único").
+- **NUNCA** orquestrar repositórios com regra de negócio na action — criar/atualizar/remover com validação de domínio fica no **use case**.
+- **NUNCA** colocar lógica "se X então erro Y" de domínio na action; o use case lança erro ou retorna resultado.
+
+### SEMPRE na Action
+
+- **SEMPRE** fazer parsing de FormData/parâmetros e montar o input para o use case.
+- **SEMPRE** checar autorização (getSession(), role) na action.
+- **SEMPRE** chamar **um use case** para a operação de negócio; o use case usa o(s) repositório(s).
+- **SEMPRE** tratar retorno/erro do use case (try/catch) e devolver `{ error }` ou redirect.
+
+### Onde fica cada coisa
+
+| O quê | Onde |
+|-------|------|
+| Regras de negócio (validações de domínio, duplicatas, somas) | **Use case** (lib/use-cases/) |
+| Parsing de form, autorização, redirect, revalidatePath | **Action** (app/actions/) |
+| Acesso a dados (create, update, find, remove) | **Repository**, chamado pelo **use case** |
 
 Regra de ouro: **domain e use cases não importam Next, Prisma, fetch, etc.** Só tipos e interfaces.

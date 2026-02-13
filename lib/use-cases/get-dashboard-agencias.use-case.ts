@@ -25,11 +25,27 @@ export async function getDashboardAgenciasUseCase(
     ? agencias.filter((a) => a.id === agenciaId)
     : agencias;
 
+  // Criar mapa de nome da agência para ID para fazer lookup
+  const agenciaNameToId = new Map<string, string>();
+  for (const agencia of agencias) {
+    agenciaNameToId.set(agencia.nomeFantasia, agencia.id);
+  }
+
   const faturadoByAgenciaId = new Map<string, number>();
   for (const d of demandasFaturadas) {
-    const id = d.agenciaId ?? d.agencia ?? "_sem_agencia";
-    const current = faturadoByAgenciaId.get(id) ?? 0;
-    faturadoByAgenciaId.set(id, current + (d.valor ?? 0));
+    // Normalizar: usar agenciaId se disponível, senão converter nome para ID
+    let agenciaKey: string;
+    if (d.agenciaId) {
+      agenciaKey = d.agenciaId;
+    } else if (d.agencia) {
+      // Tentar converter nome da agência para ID
+      agenciaKey = agenciaNameToId.get(d.agencia) ?? d.agencia;
+    } else {
+      agenciaKey = "_sem_agencia";
+    }
+    
+    const current = faturadoByAgenciaId.get(agenciaKey) ?? 0;
+    faturadoByAgenciaId.set(agenciaKey, current + (d.valor ?? 0));
   }
 
   const result: DashboardAgencia[] = agenciasToShow.map((agencia) => {

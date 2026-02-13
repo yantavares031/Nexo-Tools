@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BaseParams {
@@ -9,6 +10,8 @@ interface BaseParams {
   unResponsavel?: string;
   status?: string;
   agencia?: string;
+  mes?: string;
+  comprovacao?: string;
 }
 
 interface DemandasPaginationProps {
@@ -19,15 +22,32 @@ interface DemandasPaginationProps {
   baseParams: BaseParams;
 }
 
-function buildSearchParams(params: BaseParams, page: number): string {
+function buildSearchParams(params: BaseParams, targetPage: number, pathname: string): string {
   const sp = new URLSearchParams();
+  
+  // Adicionar filtros
   if (params.q) sp.set("q", params.q);
   if (params.solicitante) sp.set("solicitante", params.solicitante);
   if (params.unResponsavel) sp.set("unResponsavel", params.unResponsavel);
   if (params.status) sp.set("status", params.status);
   if (params.agencia) sp.set("agencia", params.agencia);
-  if (page > 1) sp.set("page", String(page));
+  if (params.mes) sp.set("mes", params.mes);
+  if (params.comprovacao) sp.set("comprovacao", params.comprovacao);
+  
+  // Adicionar page apenas se for maior que 1
+  // Se for 1, NUNCA adicionar o parâmetro page (garantir URL limpa)
+  if (targetPage > 1) {
+    sp.set("page", String(targetPage));
+  }
+  
   const query = sp.toString();
+  
+  // Se targetPage === 1 e não há filtros, retornar caminho absoluto para limpar todos os query params
+  // Caso contrário, retornar a query string normal
+  if (targetPage === 1 && !query) {
+    return pathname;
+  }
+  
   return query ? `?${query}` : "";
 }
 
@@ -38,13 +58,15 @@ export function DemandasPagination({
   limit,
   baseParams,
 }: DemandasPaginationProps) {
+  const pathname = usePathname();
+  
   if (total <= 0 || (totalPages <= 1 && total <= limit)) return null;
 
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 
-  const prevHref = page > 1 ? buildSearchParams(baseParams, page - 1) : null;
-  const nextHref = page < totalPages ? buildSearchParams(baseParams, page + 1) : null;
+  const prevHref = page > 1 ? buildSearchParams(baseParams, page - 1, pathname) : null;
+  const nextHref = page < totalPages ? buildSearchParams(baseParams, page + 1, pathname) : null;
 
   const pagesToShow: number[] = [];
   const maxVisible = 5;
@@ -88,7 +110,7 @@ export function DemandasPagination({
 
         <div className="flex items-center gap-1">
           {pagesToShow.map((p) => {
-            const href = buildSearchParams(baseParams, p);
+            const href = buildSearchParams(baseParams, p, pathname);
             const isCurrent = p === page;
             return isCurrent ? (
               <span
@@ -103,6 +125,7 @@ export function DemandasPagination({
                 key={p}
                 href={href}
                 className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                aria-label={`Ir para página ${p}`}
               >
                 {p}
               </Link>

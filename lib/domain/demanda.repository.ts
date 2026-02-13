@@ -6,6 +6,10 @@ export interface DemandaFilters {
   unResponsavel?: string;
   status?: string;
   agencia?: string;
+  /** Mês/ano no formato YYYY-MM (ex.: 2026-02). */
+  mes?: string;
+  /** "comprovado" = com ao menos uma comprovação; "nao_comprovado" = sem comprovações. */
+  comprovacao?: "comprovado" | "nao_comprovado";
   /** Filtra por ID da agência (ex.: para usuário agency ver só as demandas dele). */
   agenciaId?: string;
 }

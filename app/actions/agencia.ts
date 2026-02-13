@@ -31,6 +31,7 @@ export async function createAgenciaAction(
   await createAgenciaUseCase(input, { agenciaRepository });
 
   revalidatePath("/agencias");
+  revalidatePath("/dashboard");
   redirect("/agencias?created=1");
 }
 
@@ -58,6 +59,7 @@ export async function updateAgenciaAction(
 
   revalidatePath(`/agencias/${id}`);
   revalidatePath("/agencias");
+  revalidatePath("/dashboard");
   redirect("/agencias?updated=1");
 }
 
@@ -67,5 +69,6 @@ export async function removeAgenciaAction(id: string) {
 
   revalidatePath("/agencias");
   revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect("/agencias?removed=1");
 }

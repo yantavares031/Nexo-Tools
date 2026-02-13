@@ -1,0 +1,37 @@
+---
+description: Server Actions não podem conter regras de negócio — reforço obrigatório
+alwaysApply: true
+---
+
+# Server Actions: sem regras de negócio
+
+**Ao criar ou editar qualquer arquivo em `app/actions/`, verificar:**
+
+## ❌ Proibido na Action
+
+1. **Validações de domínio**  
+   Ex.: "soma dos centros de custo = valor da demanda", "nome único de centro de custo", "agency obrigatoriamente tem agenciaId".  
+   → Mover para **use case** em `lib/use-cases/`.
+
+2. **Orquestração de repositórios com regra de negócio**  
+   Ex.: buscar entidade, validar algo, depois create/update.  
+   → Essa orquestração + validação fica no **use case**; a action só chama o use case.
+
+3. **Mensagens de erro de negócio**  
+   Ex.: "Já existe um centro de custo com este nome", "Agências não podem cadastrar demandas".  
+   → O use case deve **lançar erro** (throw new Error) ou retornar resultado; a action apenas repassa o erro ao frontend.
+
+## ✅ Permitido na Action
+
+1. **Parsing**: ler FormData, parseBrazilianCurrency, montar objeto de input.
+2. **Autorização**: getSession(), checar role para permitir ou negar a chamada.
+3. **Chamar use case**: passar input e repositórios (ou factory).
+4. **Resposta**: try/catch, retornar `{ error: err.message }` ou redirect/revalidatePath.
+
+## Checklist antes de commitar
+
+- [ ] Nenhuma regra de negócio (validação de domínio, duplicata, soma, obrigatoriedade de campo por tipo) está em `app/actions/*.ts`.
+- [ ] Toda essa lógica está em um use case em `lib/use-cases/`.
+- [ ] A action só faz: parse → (opcional) checagem de permissão → chamada ao use case → tratamento de erro/redirect.
+
+Se encontrar regra de negócio na action: **mover para o use case** antes de finalizar.

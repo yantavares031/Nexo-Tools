@@ -1,13 +1,15 @@
 {
   "name": "nexo_tools",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "tsx DB/seed.ts"
+    "db:seed": "tsx DB/seed.ts",
+    "db:seed-centros-custo": "tsx DB/seed-centros-custo.ts",
+    "db:update-demandas-mes": "tsx DB/update-demandas-mes.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",

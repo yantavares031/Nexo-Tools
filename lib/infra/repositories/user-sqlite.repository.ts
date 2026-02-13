@@ -3,6 +3,8 @@ import type { IUserRepository } from "@/lib/domain/user.repository";
 import { getDb } from "@/DB/db";
 
 function rowToUser(row: Record<string, unknown>): User {
+  const acessoRaw = row.acesso;
+  const acesso = acessoRaw === undefined || acessoRaw === null ? true : Number(acessoRaw) === 1;
   return {
     id: String(row.id),
     email: String(row.email),
@@ -10,6 +12,7 @@ function rowToUser(row: Record<string, unknown>): User {
     name: row.name ? String(row.name) : undefined,
     role: row.role as User["role"],
     agenciaId: row.agenciaId ? String(row.agenciaId) : undefined,
+    acesso,
   };
 }
 
@@ -36,18 +39,9 @@ export class UserSqliteRepository implements IUserRepository {
   async create(input: UserInput): Promise<User> {
     const id = String(Date.now());
     const db = getDb();
-    db.prepare(
-      "INSERT INTO users (id, email, password, name, role, agenciaId) VALUES (?, ?, ?, ?, ?, ?)"
-    ).run(
-      id,
-      input.email,
-      input.password,
-      input.name ?? null,
-      input.role,
-      input.agenciaId ?? null
-    );
-    const user: User = { ...input, id };
-    return user;
+    const acesso = input.acesso !== false ? 1 : 0;
+    db.prepare("INSERT INTO users (id, email, password, name, role, agenciaId, acesso) VALUES (?, ?, ?, ?, ?, ?, ?)").run(id, input.email, input.password, input.name ?? null, input.role, input.agenciaId ?? null, acesso);
+    return { ...input, id, acesso: input.acesso !== false };
   }
 
   async update(id: string, input: UserUpdateInput): Promise<User> {
@@ -55,15 +49,10 @@ export class UserSqliteRepository implements IUserRepository {
     const current = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as Record<string, unknown> | undefined;
     if (!current) throw new Error("Usuário não encontrado.");
     const password = input.password ?? String(current.password);
-    db.prepare(
-      "UPDATE users SET email = ?, name = ?, role = ?, agenciaId = ?, password = ? WHERE id = ?"
-    ).run(input.email, input.name ?? null, input.role, input.agenciaId ?? null, password, id);
-    return {
-      ...current,
-      ...input,
-      id,
-      password,
-    } as User;
+    const acessoBool = input.acesso === undefined ? current.acesso : input.acesso;
+    const acesso = acessoBool ? 1 : 0;
+    db.prepare("UPDATE users SET email = ?, name = ?, role = ?, agenciaId = ?, password = ?, acesso = ? WHERE id = ?").run(input.email, input.name ?? null, input.role, input.agenciaId ?? null, password, acesso, id);
+    return { ...current, ...input, id, password, acesso: acessoBool } as User;
   }
 
   async remove(id: string): Promise<void> {

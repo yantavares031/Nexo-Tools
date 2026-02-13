@@ -19,6 +19,7 @@ export async function loginUseCase(
 } | null> {
   const user = await deps.userRepository.findByEmail(email);
   if (!user || user.password !== password) return null;
+  if (user.acesso === false) return null;
   return {
     id: user.id,
     email: user.email,

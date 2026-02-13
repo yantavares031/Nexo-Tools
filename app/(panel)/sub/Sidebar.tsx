@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Workflow, Users, UserPlus, Megaphone, Lock } from "lucide-react";
+import { LayoutDashboard, Workflow, Users, UserPlus, Megaphone, Lock, Tag, Plug } from "lucide-react";
 import type { UserRole } from "@/types/globals";
 import { canAccessRoute } from "@/lib/roles";
 
 const ALL_MENU_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/", label: "Demandas", icon: Workflow },
-  { href: "/usuarios", label: "Usuários", icon: Users },
-  { href: "/solicitantes", label: "Solicitantes", icon: UserPlus },
   { href: "/agencias", label: "Agências", icon: Megaphone },
+  { href: "/solicitantes", label: "Solicitantes", icon: UserPlus },
+  { href: "/centros-custo", label: "Centros de Custo", icon: Tag },
+  { href: "/usuarios", label: "Usuários", icon: Users },
+  { href: "/integracoes", label: "Integrações", icon: Plug },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ] as const;
 
 interface SidebarProps {
@@ -31,7 +33,9 @@ export function Sidebar({ role = "operator" }: SidebarProps) {
               ? pathname === "/"
               : href === "/dashboard"
                 ? pathname === "/dashboard"
-                : pathname.startsWith(href);
+                : href === "/integracoes"
+                  ? pathname === "/integracoes"
+                  : pathname.startsWith(href);
           return (
             <Link
               key={href}

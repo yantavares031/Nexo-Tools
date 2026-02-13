@@ -49,7 +49,7 @@ export function ConfirmModal({
       >
         <div className="flex gap-4">
           <div
-            className={`flex shrink-0 items-center justify-center rounded-full p-2 ${
+            className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
               isDanger ? "bg-red-100" : "bg-slate-100"
             }`}
           >

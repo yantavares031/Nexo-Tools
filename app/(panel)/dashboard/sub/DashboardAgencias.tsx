@@ -10,6 +10,16 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function getUsoColor(percentual: number): string {
+  if (percentual < 50) {
+    return "bg-blue-500";
+  } else if (percentual <= 80) {
+    return "bg-yellow-500";
+  } else {
+    return "bg-red-500";
+  }
+}
+
 export function DashboardAgencias({ data }: { data: DashboardAgencia[] }) {
   if (data.length === 0) {
     return (
@@ -68,7 +78,7 @@ export function DashboardAgencias({ data }: { data: DashboardAgencia[] }) {
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
                       <div
-                        className="h-full rounded-full bg-blue-500 transition-all"
+                        className={`h-full rounded-full transition-all ${getUsoColor(item.percentual)}`}
                         style={{
                           width: `${Math.min(100, item.percentual)}%`,
                         }}

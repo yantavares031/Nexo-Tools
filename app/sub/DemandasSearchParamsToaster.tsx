@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 const MESSAGES: Record<string, string> = {
+  created: "Demanda cadastrada com sucesso!",
   updated: "Demanda atualizada com sucesso!",
   removed: "Demanda removida com sucesso!",
 };
@@ -15,7 +16,7 @@ export function DemandasSearchParamsToaster() {
   const shownRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const key = ["updated", "removed"].find((k) => searchParams.has(k));
+    const key = ["created", "updated", "removed"].find((k) => searchParams.has(k));
     if (!key) {
       shownRef.current = null;
       return;

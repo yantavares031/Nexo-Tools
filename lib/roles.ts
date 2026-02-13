@@ -1,10 +1,10 @@
 import type { UserRole } from "@/types/globals";
 
 /** Rotas que operator não pode acessar (exclusivas de admin). */
-const FORBIDDEN_FOR_OPERATOR = ["/agencias", "/usuarios"];
+const FORBIDDEN_FOR_OPERATOR = ["/agencias", "/usuarios", "/integracoes"];
 
 /** Rotas que agency não pode acessar (só vê dashboard e demandas). */
-const FORBIDDEN_FOR_AGENCY = ["/agencias", "/usuarios", "/solicitantes"];
+const FORBIDDEN_FOR_AGENCY = ["/agencias", "/usuarios", "/solicitantes", "/centros-custo", "/integracoes"];
 
 /** Verifica se o role pode acessar a rota. */
 export function canAccessRoute(role: UserRole | null, pathname: string): boolean {
@@ -21,7 +21,7 @@ export function canAccessRoute(role: UserRole | null, pathname: string): boolean
 
 /** Itens de menu permitidos por role. */
 export const MENU_ITEMS_BY_ROLE: Record<UserRole, string[]> = {
-  admin: ["/dashboard", "/", "/usuarios", "/solicitantes", "/agencias"],
-  operator: ["/dashboard", "/", "/solicitantes"],
+  admin: ["/dashboard", "/", "/usuarios", "/solicitantes", "/agencias", "/centros-custo", "/integracoes"],
+  operator: ["/dashboard", "/", "/solicitantes", "/centros-custo"],
   agency: ["/dashboard", "/"],
 };

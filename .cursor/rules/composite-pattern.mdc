@@ -1,0 +1,61 @@
+---
+description: Componentes que devem seguir o Composite Pattern (composição via subcomponentes)
+alwaysApply: false
+---
+
+# Composite Pattern — componentes
+
+O **Composite Pattern** é um padrão estrutural em que um componente expõe subcomponentes (ex.: `Modal.Header`, `Modal.Body`) para composição livre, evitando duplicação e favorecendo reutilização.
+
+## Componentes que seguem este padrão
+
+| Componente | Subcomponentes | Uso |
+|------------|----------------|-----|
+| **Modal** (`@/components/Modal`) | `Modal.Header`, `Modal.Body`, `Modal.Footer` | Todos os modais de conteúdo (formulários, detalhes). Ver regra em `modals.mdc`. |
+| **Tab** (`@/components/Tab`) | `Tab.List`, `Tab.Item`, `Tab.Panels`, `Tab.Panel` | Abas com composição livre (ex.: página Integrações). |
+
+## Como usar
+
+- Importar o componente base e usar os subcomponentes aninhados.
+- Novos componentes que se beneficiem de composição (ex.: Card com Card.Header, Card.Body) devem ser adicionados a esta lista e implementados no mesmo estilo (componente raiz + propriedades anexadas).
+
+## Exemplo (Modal)
+
+```tsx
+import { Modal } from "@/components/Modal";
+
+<Modal open={open} onClose={onClose} maxWidth="3xl" ariaLabelledby="modal-title">
+  <Modal.Header onClose={onClose}>
+    <h2 id="modal-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+      <Workflow className="size-5 shrink-0" />
+      Título do modal
+    </h2>
+  </Modal.Header>
+  <Modal.Body as="form" action={...}>
+    {/* conteúdo ou campos do form */}
+  </Modal.Body>
+  <Modal.Footer>
+    <button type="button" onClick={onClose}>Cancelar</button>
+    <button type="submit">Salvar</button>
+  </Modal.Footer>
+</Modal>
+```
+
+## Exemplo (Tab)
+
+```tsx
+import { Tab } from "@/components/Tab";
+
+<Tab defaultTab="primeiro">
+  <Tab.List>
+    <Tab.Item id="primeiro">Primeiro</Tab.Item>
+    <Tab.Item id="segundo">Segundo</Tab.Item>
+  </Tab.List>
+  <Tab.Panels>
+    <Tab.Panel id="primeiro">Conteúdo da primeira aba.</Tab.Panel>
+    <Tab.Panel id="segundo">Conteúdo da segunda aba.</Tab.Panel>
+  </Tab.Panels>
+</Tab>
+```
+
+Quando criar novos componentes compostos, adicione-os aqui e siga o mesmo padrão (raiz + subcomponentes anexados).

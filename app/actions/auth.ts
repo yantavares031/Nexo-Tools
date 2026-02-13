@@ -26,7 +26,7 @@ export async function loginAction(formData: FormData) {
     user.role,
     user.agenciaId
   );
-  redirect("/");
+  redirect("/splash");
 }
 
 export async function logoutAction() {

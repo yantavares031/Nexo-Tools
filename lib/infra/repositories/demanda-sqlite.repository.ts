@@ -52,6 +52,16 @@ function buildWhereAndParams(filters?: DemandaFilters): { where: string; params:
     conditions.push("agencia = ?");
     params.push(filters.agencia);
   }
+  if (filters?.mes?.trim()) {
+    conditions.push("mes = ?");
+    params.push(filters.mes.trim());
+  }
+  if (filters?.comprovacao === "comprovado") {
+    conditions.push("EXISTS (SELECT 1 FROM demanda_comprovacoes dc WHERE dc.demandaId = demandas.id)");
+  }
+  if (filters?.comprovacao === "nao_comprovado") {
+    conditions.push("NOT EXISTS (SELECT 1 FROM demanda_comprovacoes dc WHERE dc.demandaId = demandas.id)");
+  }
   if (filters?.agenciaId) {
     conditions.push("agenciaId = ?");
     params.push(filters.agenciaId);
@@ -64,7 +74,7 @@ export class DemandaSqliteRepository implements IDemandaRepository {
   async findAll(filters?: DemandaFilters): Promise<Demanda[]> {
     const db = getDb();
     const { where, params } = buildWhereAndParams(filters);
-    const rows = db.prepare(`SELECT * FROM demandas ${where}`).all(...params) as Record<string, unknown>[];
+    const rows = db.prepare(`SELECT * FROM demandas ${where} ORDER BY updatedAt DESC, createdAt DESC`).all(...params) as Record<string, unknown>[];
     return rows.map(rowToDemanda);
   }
 
@@ -81,7 +91,7 @@ export class DemandaSqliteRepository implements IDemandaRepository {
     const pageSafe = Math.max(1, Math.min(page, totalPages));
     const offset = (pageSafe - 1) * limit;
     const rows = db.prepare(
-      `SELECT * FROM demandas ${where} ORDER BY id LIMIT ? OFFSET ?`
+      `SELECT * FROM demandas ${where} ORDER BY updatedAt DESC, createdAt DESC LIMIT ? OFFSET ?`
     ).all(...params, limit, offset) as Record<string, unknown>[];
 
     return {

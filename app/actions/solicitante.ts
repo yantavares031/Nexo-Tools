@@ -40,5 +40,6 @@ export async function removeSolicitanteAction(id: string) {
   await removeSolicitanteUseCase(id, { solicitanteRepository });
   revalidatePath("/solicitantes");
   revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect("/solicitantes?removed=1");
 }

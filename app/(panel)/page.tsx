@@ -19,17 +19,29 @@ export default async function DemandasPage({
     unResponsavel?: string;
     status?: string;
     agencia?: string;
+    mes?: string;
+    comprovacao?: string;
     page?: string;
     removed?: string;
   }>;
 }) {
-  const { q, solicitante, unResponsavel, status, agencia, page: pageParam, removed } = await searchParams;
+  const { q, solicitante, unResponsavel, status, agencia, mes, comprovacao, page: pageParam, removed } = await searchParams;
 
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
   const session = await getSession();
 
-  const baseFilters = { search: q, solicitante, unResponsavel, status, agencia };
+  const comprovacaoFilter: "comprovado" | "nao_comprovado" | undefined =
+    comprovacao === "comprovado" || comprovacao === "nao_comprovado" ? comprovacao : undefined;
+  const baseFilters = {
+    search: q,
+    solicitante,
+    unResponsavel,
+    status,
+    agencia,
+    mes,
+    comprovacao: comprovacaoFilter,
+  };
   const filters =
     session?.role === "agency" && session?.agenciaId
       ? { ...baseFilters, agenciaId: session.agenciaId }
@@ -52,7 +64,7 @@ export default async function DemandasPage({
     ),
   ]);
 
-  const filterKey = [q, solicitante, unResponsavel, status, agencia, session?.agenciaId].join("|");
+  const filterKey = [q, solicitante, unResponsavel, status, agencia, mes, comprovacao, session?.agenciaId].join("|");
 
   return (
     <div className="p-6">
@@ -70,6 +82,7 @@ export default async function DemandasPage({
             key={filterKey}
             options={filterOptions}
             hideAgencyFilter={session?.role === "agency"}
+            userRole={session?.role ?? "operator"}
           />
         </Suspense>
 
@@ -78,6 +91,7 @@ export default async function DemandasPage({
           demandas={result.items}
           options={filterOptions}
           readOnly={session?.role === "agency"}
+          userRole={session?.role ?? "operator"}
         />
 
         <DemandasPagination
@@ -85,7 +99,7 @@ export default async function DemandasPage({
           totalPages={result.totalPages}
           total={result.total}
           limit={result.limit}
-          baseParams={{ q, solicitante, unResponsavel, status, agencia }}
+          baseParams={{ q, solicitante, unResponsavel, status, agencia, mes, comprovacao }}
         />
       </div>
     </div>

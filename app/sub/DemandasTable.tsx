@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatMonthYearDisplay } from "@/lib/month-year";
 import type { Demanda } from "@/types/globals";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { VerDetalhesDemandaModal } from "@/modals/VerDetalhesDemandaModal";
@@ -22,13 +23,35 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function formatDateTime(dateString: string | undefined): string {
+  if (!dateString) return "—";
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  } catch {
+    return "—";
+  }
+}
+
 interface DemandasTableProps {
   demandas: Demanda[];
   options: DemandaFilterOptions;
   readOnly?: boolean;
+  userRole?: "admin" | "operator" | "agency";
 }
 
-export function DemandasTable({ demandas, options, readOnly }: DemandasTableProps) {
+export function DemandasTable({
+  demandas,
+  options,
+  readOnly = false,
+  userRole = "operator",
+}: DemandasTableProps) {
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -48,17 +71,17 @@ export function DemandasTable({ demandas, options, readOnly }: DemandasTableProp
   return (
     <>
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[900px] table-fixed text-left text-sm">
+        <table className="w-full min-w-[1200px] table-fixed text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50">
-<th className="w-[280px] px-4 py-3 font-semibold text-slate-600">Demanda</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">OC/PI</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">Solicitante</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">Un. Responsável</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">Status</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">Agência</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">Valor</th>
-            <th className="px-4 py-3 font-semibold text-slate-600">Mês</th>
+              <th className="w-[280px] px-4 py-3 font-semibold text-slate-600">Demanda</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">OC/PI</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">Solicitante</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">Un. Responsável</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">Status</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">Agência</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">Valor</th>
+              <th className="px-4 py-3 font-semibold text-slate-600">Mês</th>
             </tr>
           </thead>
           <tbody>
@@ -95,7 +118,7 @@ export function DemandasTable({ demandas, options, readOnly }: DemandasTableProp
                 <td className="px-4 py-3 font-medium tabular-nums text-slate-800">
                   {formatCurrency(d.valor)}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{d.mes}</td>
+                <td className="px-4 py-3 text-slate-600">{formatMonthYearDisplay(d.mes)}</td>
               </tr>
             ))}
           </tbody>
@@ -111,6 +134,7 @@ export function DemandasTable({ demandas, options, readOnly }: DemandasTableProp
           setSelectedDemanda(null);
         }}
         readOnly={readOnly}
+        userRole={userRole}
       />
     </>
   );

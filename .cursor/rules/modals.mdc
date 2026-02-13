@@ -1,5 +1,5 @@
 ---
-description: Modais devem ficar na pasta /modals
+description: Modais devem ficar na pasta /modals e usar o Composite Pattern
 alwaysApply: true
 ---
 
@@ -7,10 +7,11 @@ alwaysApply: true
 
 - Todo e qualquer modal do projeto deve ser criado na pasta **`/modals`**.
 - Ex.: `modals/AdicionarDemandaModal.tsx`, `modals/ConfirmModal.tsx`.
+- **Composite Pattern**: Modais de conteúdo (formulários, detalhes) devem usar o componente **`Modal`** de `@/components/Modal` com os subcomponentes **`Modal.Header`**, **`Modal.Body`** e **`Modal.Footer`**. Ver `.cursor/rules/composite-pattern.mdc` para uso e lista de componentes no padrão. O `ConfirmModal` é exceção (fluxo específico de confirmação).
 - **Confirmação**: Para ações que exigem confirmação (ex.: remover), usar o `ConfirmModal` via `useConfirm()` — nunca `confirm()` nativo.
 - **Modal de detalhes com edição**: Campos exibidos como texto; ao **clicar** no campo, vira input; ao sair (blur), volta a texto. Usar apenas botão "Salvar" (sem botão "Editar").
-- **Tecla Escape**: Ao pressionar **ESC** em qualquer modal, o modal deve fechar. Usar o hook `useEscapeKey(onClose, open)` de `lib/use-escape-key.ts`.
-- **Botões**: Os botões de ação (Cancelar, Editar, Remover, Adicionar, Salvar, etc.) devem estar **sempre alinhados à direita** (`justify-end`).
+- **Tecla Escape**: Ao pressionar **ESC** em qualquer modal, o modal deve fechar. O `Modal` de `@/components/Modal` já usa `useEscapeKey` internamente; outros modais usar o hook `useEscapeKey(onClose, open)` de `lib/use-escape-key.ts`.
+- **Botões**: Os botões de ação (Cancelar, Editar, Remover, Adicionar, Salvar, etc.) devem estar **sempre alinhados à direita** (`justify-end`). O `Modal.Footer` já aplica `justify-end`.
 - **Ícone no título**: O título de todo modal deve ter o **mesmo ícone** que representa aquela entidade no menu lateral (Sidebar). Ex.: Demandas → `Workflow`; Agências → `Megaphone`; Solicitantes → `UserPlus`; Usuários → `Users`. Usar `flex items-center gap-2` no `h2` e `size-5 shrink-0` no ícone.
 
-Regra: modal → `/modals`; ESC → fecha; botões → `justify-end`; título com ícone do menu.
+Regra: modal → `/modals`; usar `Modal` + `Modal.Header/Body/Footer`; ESC → fecha; botões → `justify-end`; título com ícone do menu.
