@@ -10,7 +10,7 @@ export default async function SolicitantesPage() {
   const solicitanteRepository = getSolicitanteRepository();
   const [solicitantes, unidades] = await Promise.all([
     listSolicitantesUseCase({ solicitanteRepository }),
-    Promise.resolve(getUnidades()),
+    getUnidades(),
   ]);
 
   return (

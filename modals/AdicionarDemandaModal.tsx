@@ -174,6 +174,7 @@ export function AdicionarDemandaModal({
               >
                 <option value="comprometido">Comprometido</option>
                 <option value="faturado">Faturado</option>
+                <option value="entregue">Entregue</option>
               </select>
             </div>
             <div>

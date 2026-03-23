@@ -21,7 +21,7 @@ export function canAccessRoute(role: UserRole | null, pathname: string): boolean
 
 /** Itens de menu permitidos por role. */
 export const MENU_ITEMS_BY_ROLE: Record<UserRole, string[]> = {
-  admin: ["/dashboard", "/", "/usuarios", "/solicitantes", "/agencias", "/centros-custo", "/integracoes"],
-  operator: ["/dashboard", "/", "/solicitantes", "/centros-custo"],
-  agency: ["/dashboard", "/"],
+  admin: ["/dashboard", "/", "/comprovacoes", "/usuarios", "/solicitantes", "/agencias", "/centros-custo", "/integracoes"],
+  operator: ["/dashboard", "/", "/comprovacoes", "/solicitantes", "/centros-custo"],
+  agency: ["/dashboard", "/", "/comprovacoes", "/comprovacoes/adicionar"],
 };

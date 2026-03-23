@@ -4,7 +4,11 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { AdicionarAgenciaModal } from "@/modals/AdicionarAgenciaModal";
 
-export function AgenciasHeader() {
+interface AgenciasHeaderProps {
+  boards?: { id: string; nome: string }[];
+}
+
+export function AgenciasHeader({ boards = [] }: AgenciasHeaderProps) {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -25,6 +29,7 @@ export function AgenciasHeader() {
       <AdicionarAgenciaModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        boards={boards}
       />
     </>
   );

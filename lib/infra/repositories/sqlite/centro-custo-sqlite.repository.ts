@@ -8,7 +8,7 @@ import type { CentroCusto, CentroCustoInput } from "@/types/globals";
 import { getDb } from "@/DB/db";
 
 export class CentroCustoSqliteRepository implements ICentroCustoRepository {
-  findAll(): CentroCusto[] {
+  async findAll(): Promise<CentroCusto[]> {
     const db = getDb();
     const rows = db
       .prepare("SELECT id, nome, createdAt, updatedAt FROM centros_custo ORDER BY nome")
@@ -27,7 +27,7 @@ export class CentroCustoSqliteRepository implements ICentroCustoRepository {
     }));
   }
 
-  findById(id: string): CentroCusto | null {
+  async findById(id: string): Promise<CentroCusto | null> {
     const db = getDb();
     const row = db
       .prepare("SELECT id, nome, createdAt, updatedAt FROM centros_custo WHERE id = ?")
@@ -50,7 +50,7 @@ export class CentroCustoSqliteRepository implements ICentroCustoRepository {
     };
   }
 
-  findByName(nome: string): CentroCusto | null {
+  async findByName(nome: string): Promise<CentroCusto | null> {
     const db = getDb();
     const row = db
       .prepare("SELECT id, nome, createdAt, updatedAt FROM centros_custo WHERE nome = ?")
@@ -73,7 +73,7 @@ export class CentroCustoSqliteRepository implements ICentroCustoRepository {
     };
   }
 
-  create(input: CentroCustoInput): CentroCusto {
+  async create(input: CentroCustoInput): Promise<CentroCusto> {
     const db = getDb();
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -92,8 +92,8 @@ export class CentroCustoSqliteRepository implements ICentroCustoRepository {
     };
   }
 
-  update(id: string, input: Partial<CentroCustoInput>): CentroCusto | null {
-    const existing = this.findById(id);
+  async update(id: string, input: Partial<CentroCustoInput>): Promise<CentroCusto | null> {
+    const existing = await this.findById(id);
     if (!existing) return null;
 
     const updates: string[] = [];
@@ -113,10 +113,10 @@ export class CentroCustoSqliteRepository implements ICentroCustoRepository {
     const db = getDb();
     db.prepare(`UPDATE centros_custo SET ${updates.join(", ")} WHERE id = ?`).run(...values);
 
-    return this.findById(id);
+    return await this.findById(id);
   }
 
-  remove(id: string): boolean {
+  async remove(id: string): Promise<boolean> {
     const db = getDb();
     const result = db.prepare("DELETE FROM centros_custo WHERE id = ?").run(id);
     return result.changes > 0;

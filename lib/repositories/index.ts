@@ -13,5 +13,6 @@ export {
   getCentroCustoRepository,
   getDemandaMensagemRepository,
   getWebhookConfigRepository,
+  getDeskfyImportBoardRepository,
 } from "@/lib/infra/repositories";
 export { getWebhookSender } from "@/lib/infra/webhook-sender";

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Workflow, Users, UserPlus, Megaphone, Lock, Tag, Plug } from "lucide-react";
+import { LayoutDashboard, Workflow, Users, UserPlus, Megaphone, Lock, Tag, Plug, FileCheck } from "lucide-react";
 import type { UserRole } from "@/types/globals";
 import { canAccessRoute } from "@/lib/roles";
 
 const ALL_MENU_ITEMS = [
   { href: "/", label: "Demandas", icon: Workflow },
+  { href: "/comprovacoes", label: "Comprovações", icon: FileCheck },
   { href: "/agencias", label: "Agências", icon: Megaphone },
   { href: "/solicitantes", label: "Solicitantes", icon: UserPlus },
   { href: "/centros-custo", label: "Centros de Custo", icon: Tag },

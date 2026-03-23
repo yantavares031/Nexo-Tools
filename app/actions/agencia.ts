@@ -18,6 +18,7 @@ export async function createAgenciaAction(
   const orcamentoAnual = parseBrazilianCurrency(
     (formData.get("orcamentoAnual") as string) ?? ""
   );
+  const boardId = (formData.get("boardId") as string)?.trim() || undefined;
 
   if (!nomeFantasia || !cnpj) {
     return {
@@ -25,7 +26,7 @@ export async function createAgenciaAction(
     } as const;
   }
 
-  const input: AgenciaInput = { nomeFantasia, cnpj, orcamentoAnual };
+  const input: AgenciaInput = { nomeFantasia, cnpj, orcamentoAnual, boardId };
 
   const agenciaRepository = getAgenciaRepository();
   await createAgenciaUseCase(input, { agenciaRepository });
@@ -45,6 +46,7 @@ export async function updateAgenciaAction(
   const orcamentoAnual = parseBrazilianCurrency(
     (formData.get("orcamentoAnual") as string) ?? ""
   );
+  const boardId = (formData.get("boardId") as string)?.trim() || undefined;
 
   if (!nomeFantasia || !cnpj) {
     return {
@@ -52,7 +54,7 @@ export async function updateAgenciaAction(
     } as const;
   }
 
-  const input: AgenciaInput = { nomeFantasia, cnpj, orcamentoAnual };
+  const input: AgenciaInput = { nomeFantasia, cnpj, orcamentoAnual, boardId };
 
   const agenciaRepository = getAgenciaRepository();
   await updateAgenciaUseCase(id, input, { agenciaRepository });

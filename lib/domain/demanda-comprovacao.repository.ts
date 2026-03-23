@@ -1,11 +1,36 @@
-import type { DemandaComprovacao, DemandaComprovacaoInput } from "@/types/globals";
+import type { Comprovacao, ComprovacaoInput } from "@/types/globals";
 
-/** Contrato do repositório de comprovações de demanda — permite trocar implementação (mock, Prisma, etc.). */
+/** Item da lista de comprovações com quantidade de demandas vinculadas. */
+export interface ComprovacaoListItem extends Comprovacao {
+  demandaCount: number;
+}
+
+export interface ComprovacaoPagination {
+  page: number;
+  limit: number;
+}
+
+export interface ComprovacaoPaginatedResult {
+  items: ComprovacaoListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/** Contrato do repositório de comprovações — permite trocar implementação (mock, Prisma, etc.). */
 export interface IDemandaComprovacaoRepository {
-  findByDemandaId(demandaId: string): Promise<DemandaComprovacao[]>;
-  findById(id: string): Promise<DemandaComprovacao | null>;
-  create(input: DemandaComprovacaoInput): Promise<DemandaComprovacao>;
+  findAll(filters?: { agenciaId?: string }): Promise<ComprovacaoListItem[]>;
+  findPaginated(
+    filters: { agenciaId?: string } | undefined,
+    pagination: ComprovacaoPagination
+  ): Promise<ComprovacaoPaginatedResult>;
+  findByDemandaId(demandaId: string): Promise<Comprovacao[]>;
+  findById(id: string): Promise<Comprovacao | null>;
+  findDemandaIdsByComprovacaoId(comprovacaoId: string): Promise<string[]>;
+  /** Cria comprovação e vincula às demandas informadas (modelo N:M). */
+  create(input: ComprovacaoInput, demandaIds: string[]): Promise<Comprovacao>;
   remove(id: string): Promise<void>;
-  /** Retorna IDs de demandas que têm pelo menos uma comprovação */
+  /** Retorna IDs de demandas que têm pelo menos uma comprovação. */
   findDemandaIdsWithComprovacoes(agenciaId: string): Promise<string[]>;
 }

@@ -10,6 +10,7 @@ import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 const STATUS_LABELS: Record<string, string> = {
   faturado: "Faturado",
   comprometido: "Comprometido",
+  entregue: "Entregue",
 };
 
 function formatCurrency(value: number): string {
@@ -45,7 +46,7 @@ interface DemandaDetalhesGeralProps {
     solicitante: string;
     unResponsavel: string;
     obs: string;
-    status: "faturado" | "comprometido";
+    status: "faturado" | "comprometido" | "entregue";
     valor: number;
     centroDeCusto: string;
     ocPi: string;
@@ -58,7 +59,7 @@ interface DemandaDetalhesGeralProps {
       solicitante: string;
       unResponsavel: string;
       obs: string;
-      status: "faturado" | "comprometido";
+      status: "faturado" | "comprometido" | "entregue";
       valor: number;
       centroDeCusto: string;
       ocPi: string;
@@ -109,7 +110,9 @@ export function DemandaDetalhesGeral({
   const statusBadgeClass =
     values.status === "faturado"
       ? "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800"
-      : "inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800";
+      : values.status === "entregue"
+        ? "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800"
+        : "inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800";
 
   return (
     <div className="space-y-3">
@@ -207,7 +210,7 @@ export function DemandaDetalhesGeral({
               name="status"
               value={values.status}
               onChange={(e) =>
-                setValues((v) => ({ ...v, status: e.target.value as "faturado" | "comprometido" }))
+                setValues((v) => ({ ...v, status: e.target.value as "faturado" | "comprometido" | "entregue" }))
               }
               onBlur={() => setEditingField(null)}
               autoFocus
@@ -215,6 +218,7 @@ export function DemandaDetalhesGeral({
             >
               <option value="comprometido">Comprometido</option>
               <option value="faturado">Faturado</option>
+              <option value="entregue">Entregue</option>
             </select>
           ) : (
             <>

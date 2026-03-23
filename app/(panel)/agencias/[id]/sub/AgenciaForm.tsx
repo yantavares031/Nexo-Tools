@@ -7,8 +7,14 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type { Agencia } from "@/types/globals";
 
+interface BoardOption {
+  id: string;
+  nome: string;
+}
+
 interface AgenciaFormProps {
   agencia: Agencia;
+  boards?: BoardOption[];
 }
 
 function SubmitButton() {
@@ -32,7 +38,7 @@ function SubmitButton() {
   );
 }
 
-export function AgenciaForm({ agencia }: AgenciaFormProps) {
+export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
   const [state, formAction] = useActionState(
     updateAgenciaAction.bind(null, agencia.id),
     null
@@ -90,6 +96,30 @@ export function AgenciaForm({ agencia }: AgenciaFormProps) {
           defaultValue={agencia.orcamentoAnual}
         />
       </div>
+
+      {boards.length > 0 ? (
+        <div>
+          <label
+            htmlFor="boardId"
+            className="mb-1 block text-sm font-medium text-slate-600"
+          >
+            Board Deskfy
+          </label>
+          <select
+            id="boardId"
+            name="boardId"
+            defaultValue={agencia.boardId ?? ""}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+          >
+            <option value="">Nenhum</option>
+            {boards.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
       <div className="pt-2">
         <SubmitButton />

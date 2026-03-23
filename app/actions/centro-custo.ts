@@ -16,7 +16,7 @@ export async function listCentrosCustoAction() {
 
   try {
     const repository = getCentroCustoRepository();
-    const centrosCusto = repository.findAll();
+    const centrosCusto = await repository.findAll();
     return { centrosCusto };
   } catch (error) {
     console.error("Erro ao listar centros de custo:", error);
@@ -37,7 +37,7 @@ export async function createCentroCustoAction(input: CentroCustoInput) {
 
   try {
     const repository = getCentroCustoRepository();
-    const centroCusto = createCentroCustoUseCase(input, {
+    const centroCusto = await createCentroCustoUseCase(input, {
       centroCustoRepository: repository,
     });
     revalidatePath("/centros-custo");
@@ -63,7 +63,7 @@ export async function updateCentroCustoAction(id: string, input: Partial<CentroC
 
   try {
     const repository = getCentroCustoRepository();
-    const centroCusto = updateCentroCustoUseCase(id, input, {
+    const centroCusto = await updateCentroCustoUseCase(id, input, {
       centroCustoRepository: repository,
     });
     revalidatePath("/centros-custo");
@@ -89,7 +89,7 @@ export async function removeCentroCustoAction(id: string) {
 
   try {
     const repository = getCentroCustoRepository();
-    const success = repository.remove(id);
+    const success = await repository.remove(id);
     if (!success) {
       redirect("/centros-custo?error=" + encodeURIComponent("Centro de custo não encontrado"));
     }

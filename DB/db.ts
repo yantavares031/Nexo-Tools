@@ -10,6 +10,11 @@ const __dirname = path.dirname(__filename);
 const DB_DIR = __dirname;
 const DB_PATH = path.join(DB_DIR, "nexo.db");
 
+/** Caminho absoluto do arquivo nexo.db (útil para scripts de backup). */
+export function getSqliteDbFilePath(): string {
+  return DB_PATH;
+}
+
 let db: Database.Database | null = null;
 
 /** Retorna a conexão SQLite (singleton). Cria tabelas se não existirem. */

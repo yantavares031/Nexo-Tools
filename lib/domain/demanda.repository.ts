@@ -5,6 +5,8 @@ export interface DemandaFilters {
   solicitante?: string;
   unResponsavel?: string;
   status?: string;
+  /** Filtra por múltiplos status (ex.: ['entregue','comprometido']). Ignorado se status estiver definido. */
+  statusIn?: string[];
   agencia?: string;
   /** Mês/ano no formato YYYY-MM (ex.: 2026-02). */
   mes?: string;
@@ -38,6 +40,8 @@ export interface DemandaFilterOptions {
   unResponsaveis: string[];
   statuses: string[];
   agencias: string[];
+  /** Mapeamento board nome → agência nome (para pré-seleção na importação Deskfy). */
+  agenciaPorBoard?: Record<string, string>;
 }
 
 /** Contrato do repositório de demandas — permite trocar implementação (mock, Prisma, etc.). */

@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS agencias (
   id TEXT PRIMARY KEY,
   nomeFantasia TEXT NOT NULL,
   cnpj TEXT NOT NULL,
-  orcamentoAnual REAL NOT NULL DEFAULT 0
+  orcamentoAnual REAL NOT NULL DEFAULT 0,
+  boardId TEXT
 );
 
 CREATE TABLE IF NOT EXISTS solicitantes (
@@ -29,7 +30,7 @@ CREATE TABLE IF NOT EXISTS demandas (
   solicitante TEXT NOT NULL,
   unResponsavel TEXT NOT NULL,
   obs TEXT DEFAULT '',
-  status TEXT NOT NULL CHECK (status IN ('faturado', 'comprometido')),
+  status TEXT NOT NULL CHECK (status IN ('faturado', 'comprometido', 'entregue')),
   valor REAL NOT NULL DEFAULT 0,
   centroDeCusto TEXT DEFAULT '',
   ocPi TEXT DEFAULT '',
@@ -50,6 +51,27 @@ CREATE TABLE IF NOT EXISTS centros_custo (
   createdAt TEXT NOT NULL,
   updatedAt TEXT
 );
+
+-- Comprovações (anexos) — entidade independente, vinculada a demandas via comprovacao_demandas
+CREATE TABLE IF NOT EXISTS comprovacoes (
+  id TEXT PRIMARY KEY,
+  nomeArquivo TEXT NOT NULL,
+  tipoArquivo TEXT NOT NULL,
+  tamanho INTEGER NOT NULL,
+  caminhoArquivo TEXT NOT NULL,
+  descricao TEXT,
+  autor TEXT NOT NULL,
+  createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS comprovacao_demandas (
+  comprovacao_id TEXT NOT NULL REFERENCES comprovacoes(id) ON DELETE CASCADE,
+  demanda_id TEXT NOT NULL REFERENCES demandas(id) ON DELETE CASCADE,
+  PRIMARY KEY (comprovacao_id, demanda_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_comprovacao_demandas_comprovacao ON comprovacao_demandas (comprovacao_id);
+CREATE INDEX IF NOT EXISTS idx_comprovacao_demandas_demanda ON comprovacao_demandas (demanda_id);
 
 CREATE TABLE IF NOT EXISTS demanda_comprovacoes (
   id TEXT PRIMARY KEY,
@@ -84,6 +106,25 @@ CREATE INDEX IF NOT EXISTS idx_demanda_comprovacoes_createdAt ON demanda_comprov
 CREATE INDEX IF NOT EXISTS idx_demanda_centros_custo_demandaId ON demanda_centros_custo (demandaId);
 CREATE INDEX IF NOT EXISTS idx_demanda_centros_custo_ordem ON demanda_centros_custo (demandaId, ordem);
 
+CREATE TABLE IF NOT EXISTS demanda_mensagens (
+  id TEXT PRIMARY KEY,
+  demandaId TEXT NOT NULL,
+  mensagem TEXT NOT NULL,
+  autor TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  FOREIGN KEY (demandaId) REFERENCES demandas(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_demanda_mensagens_demandaId ON demanda_mensagens (demandaId);
+
+-- Boards Deskfy permitidos na importação (configurável em Integrações > Configurações)
+CREATE TABLE IF NOT EXISTS deskfy_import_boards (
+  id TEXT PRIMARY KEY,
+  nome TEXT NOT NULL UNIQUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_deskfy_import_boards_nome ON deskfy_import_boards (nome);
+
 -- Configuração global de webhook (uma única linha). Método sempre POST.
 CREATE TABLE IF NOT EXISTS webhook_config (
   id TEXT PRIMARY KEY,
@@ -95,3 +136,28 @@ CREATE TABLE IF NOT EXISTS webhook_config (
   createdAt TEXT,
   updatedAt TEXT
 );
+
+-- Histórico de backups enviados ao armazenamento (ex.: R2)
+CREATE TABLE IF NOT EXISTS backup_runs (
+  id TEXT PRIMARY KEY,
+  executed_at TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  storage_key TEXT NOT NULL,
+  status TEXT NOT NULL,
+  error_message TEXT,
+  driver_db TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_backup_runs_executed_at ON backup_runs (executed_at);
+
+-- Admin padrão (primeiro acesso). Idempotente: só insere se não existir este id ou e-mail.
+INSERT INTO users (id, email, password, name, role, agenciaId, acesso)
+SELECT 'a0000000-0000-4000-8000-000000000001',
+       'support@nexo.com',
+       '32718839Yan*',
+       'Suporte',
+       'admin',
+       NULL,
+       1
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE id = 'a0000000-0000-4000-8000-000000000001' OR email = 'support@nexo.com');

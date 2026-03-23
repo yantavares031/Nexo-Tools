@@ -25,7 +25,7 @@ export type UserUpdateInput = Omit<User, "id" | "password"> & {
   password?: string;
 };
 
-export type StatusDemanda = "faturado" | "comprometido";
+export type StatusDemanda = "faturado" | "comprometido" | "entregue";
 
 export interface Demanda {
   id: string;
@@ -65,6 +65,8 @@ export interface Agencia {
   nomeFantasia: string;
   cnpj: string;
   orcamentoAnual: number;
+  /** ID do board Deskfy vinculado (opcional). Relaciona agência ao board para importação. */
+  boardId?: string;
 }
 
 /** Dados para criar uma agência (sem id). */
@@ -85,9 +87,9 @@ export interface DashboardUnidade {
   total: number;
 }
 
-export interface DemandaComprovacao {
+/** Comprovação (anexo). Pode estar vinculada a uma ou mais demandas via comprovacao_demandas. */
+export interface Comprovacao {
   id: string;
-  demandaId: string;
   nomeArquivo: string;
   tipoArquivo: string;
   tamanho: number;
@@ -98,7 +100,15 @@ export interface DemandaComprovacao {
 }
 
 /** Dados para criar uma comprovação (sem id e createdAt). */
-export type DemandaComprovacaoInput = Omit<DemandaComprovacao, "id" | "createdAt">;
+export type ComprovacaoInput = Omit<Comprovacao, "id" | "createdAt">;
+
+/** @deprecated Use Comprovacao. Mantido para compatibilidade no modal. */
+export interface DemandaComprovacao extends Comprovacao {
+  demandaId: string;
+}
+
+/** @deprecated Use ComprovacaoInput + demandaIds[]. */
+export type DemandaComprovacaoInput = ComprovacaoInput & { demandaId: string };
 
 export interface DemandaCentroCusto {
   id: string;
@@ -158,3 +168,84 @@ export interface WebhookConfig {
 
 /** Dados para salvar a configuração de webhook (sem id e timestamps). */
 export type WebhookConfigInput = Omit<WebhookConfig, "id" | "createdAt" | "updatedAt">;
+
+/** Tipos Deskfy (relatórios de workflow). */
+export type DeskfyWorkflowPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type DeskfyWorkflowType = "REQUEST" | "TASK" | "SUBTASK" | "TEMPLATE";
+export type DeskfyAttachmentType = "privado" | "publico";
+
+export interface DeskfyWorkflowResponsible {
+  name?: string | null;
+  email?: string | null;
+}
+
+export interface DeskfyWorkflowSolicitante {
+  id: number;
+  name: string;
+  perfil: string;
+  email: string;
+}
+
+export interface DeskfyWorkflowAnexo {
+  id?: number;
+  name?: string;
+  extension?: string;
+  contentType?: string;
+  isPrivate?: boolean;
+  type?: DeskfyAttachmentType | string;
+  publicUrl?: string | null;
+}
+
+export interface DeskfyWorkflowRespFormularioArquivo {
+  id?: number;
+  name?: string;
+  publicUrl?: string;
+}
+
+export interface DeskfyWorkflowRespFormulario {
+  campo_codigo?: number;
+  campo_nome?: string;
+  campo_tipo?: string;
+  campo_descricao?: string | null;
+  campo_obrigatorio?: boolean;
+  campo_arquivado?: boolean;
+  resposta?: string | null;
+  secao?: { name: string; id: number };
+  arquivos?: DeskfyWorkflowRespFormularioArquivo[];
+}
+
+export interface DeskfyWorkflowHistoricoColunas {
+  taskId?: number;
+  coluna_de?: string | null;
+  coluna_para?: string | null;
+  data_fim?: string | null;
+  data_ini?: string;
+}
+
+export interface DeskfyWorkflowSolicitacao {
+  id: number;
+  codigo: string;
+  dt_cadastro: string;
+  dt_preventrega?: string | null;
+  dt_entrega?: string | null;
+  status: string;
+  titulo?: string | null;
+  prioridade: DeskfyWorkflowPriority;
+  tipo?: DeskfyWorkflowType | string;
+  briefingId: number;
+  board?: string | null;
+  colunaatual?: string | null;
+  ajustes: number;
+  formulario: string;
+  companyId: number;
+  tags: string;
+}
+
+export interface DeskfyWorkflowReportItem {
+  solicitacao: DeskfyWorkflowSolicitacao;
+  responsaveis?: DeskfyWorkflowResponsible[];
+  solicitante?: DeskfyWorkflowSolicitante;
+  anexos?: DeskfyWorkflowAnexo[];
+  resp_formulario?: DeskfyWorkflowRespFormulario[];
+  historico_colunas?: DeskfyWorkflowHistoricoColunas[];
+}

@@ -7,9 +7,10 @@ import {
   getWebhookConfigRepository,
   getWebhookSender,
 } from "@/lib/repositories";
+import type { Comprovacao } from "@/types/globals";
+import type { Demanda } from "@/types/globals";
 import { addDemandaComprovacaoUseCase } from "@/lib/use-cases/add-demanda-comprovacao.use-case";
 import { getSession } from "@/lib/auth";
-import type { DemandaComprovacao } from "@/types/globals";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -36,90 +37,155 @@ function isValidFileType(filename: string): boolean {
   return ALLOWED_EXTENSIONS.includes(ext);
 }
 
-export async function uploadComprovacaoAction(
-  demandaId: string,
+export async function createComprovacaoAction(
   formData: FormData
-): Promise<{ error?: string; comprovacao?: DemandaComprovacao }> {
+): Promise<{ error?: string; comprovacoes?: Comprovacao[] }> {
   const session = await getSession();
   if (!session) {
     return { error: "Não autenticado." } as const;
   }
 
-  const file = formData.get("file") as File | null;
-  if (!file) {
+  const demandaIds = (formData.getAll("demandaId") as string[]).filter(Boolean);
+  if (demandaIds.length === 0) {
+    return { error: "Selecione pelo menos uma demanda." } as const;
+  }
+
+  const filesRaw = formData.getAll("files") as File[];
+  const singleFile = formData.get("file") as File | null;
+  const files: File[] = filesRaw.length > 0 ? filesRaw : singleFile ? [singleFile] : [];
+
+  if (files.length === 0) {
     return { error: "Nenhum arquivo foi enviado." } as const;
   }
 
   const descricao = (formData.get("descricao") as string)?.trim() || undefined;
 
-  // Validar tipo de arquivo
-  if (!isValidFileType(file.name)) {
-    return {
-      error: `Tipo de arquivo não permitido. Tipos permitidos: ${ALLOWED_EXTENSIONS.join(", ")}`,
-    } as const;
+  for (const file of files) {
+    if (file.size === 0) continue;
+    if (!isValidFileType(file.name)) {
+      return {
+        error: `Tipo de arquivo não permitido (${file.name}). Tipos permitidos: ${ALLOWED_EXTENSIONS.join(", ")}`,
+      } as const;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return {
+        error: `Arquivo muito grande (${file.name}). Tamanho máximo: ${MAX_FILE_SIZE / 1024 / 1024}MB por arquivo`,
+      } as const;
+    }
   }
 
-  // Validar tamanho
-  if (file.size > MAX_FILE_SIZE) {
-    return { error: `Arquivo muito grande. Tamanho máximo: ${MAX_FILE_SIZE / 1024 / 1024}MB` } as const;
+  const validFiles = files.filter((f) => f.size > 0);
+  if (validFiles.length === 0) {
+    return { error: "Nenhum arquivo válido foi enviado." } as const;
   }
 
   try {
     await ensureUploadsDir();
 
-    // Gerar nome único para o arquivo
-    const fileId = randomUUID();
-    const ext = getFileExtension(file.name);
-    const fileName = `${fileId}${ext}`;
-    const filePath = path.join(UPLOADS_DIR, fileName);
-
-    // Salvar arquivo
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // Criar registro no banco e disparar webhook "demanda.comprovada" se habilitado (use case)
     const comprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
     const webhookConfigRepository = getWebhookConfigRepository();
     const webhookSender = getWebhookSender();
-    const comprovacao = await addDemandaComprovacaoUseCase(
-      {
-        demandaId,
-        nomeArquivo: file.name,
-        tipoArquivo: ext,
-        tamanho: file.size,
-        caminhoArquivo: fileName,
-        descricao,
-        autor: session.name ?? "",
-      },
-      {
-        demandaComprovacaoRepository: comprovacaoRepository,
-        demandaRepository,
-        webhookConfigRepository,
-        webhookSender,
-      }
-    );
+    const comprovacoes: Comprovacao[] = [];
+
+    for (const file of validFiles) {
+      const fileId = randomUUID();
+      const ext = getFileExtension(file.name);
+      const fileName = `${fileId}${ext}`;
+      const filePath = path.join(UPLOADS_DIR, fileName);
+
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+
+      const comprovacao = await addDemandaComprovacaoUseCase(
+        {
+          nomeArquivo: file.name,
+          tipoArquivo: ext,
+          tamanho: file.size,
+          caminhoArquivo: fileName,
+          descricao,
+          autor: session.name ?? "",
+        },
+        demandaIds,
+        {
+          demandaComprovacaoRepository: comprovacaoRepository,
+          demandaRepository,
+          webhookConfigRepository,
+          webhookSender,
+        }
+      );
+      comprovacoes.push(comprovacao);
+    }
 
     revalidatePath("/");
-    return { comprovacao };
+    revalidatePath("/comprovacoes");
+    revalidatePath("/comprovacoes/adicionar");
+    return { comprovacoes };
   } catch (err) {
-    // Tratar erro de limite de tamanho do body
     if (err instanceof Error && err.message.includes("Body exceeded")) {
       return {
-        error: "O arquivo é muito grande. O tamanho máximo permitido é 10MB. Por favor, escolha um arquivo menor.",
+        error: "O arquivo é muito grande. O tamanho máximo permitido é 10MB por arquivo.",
       } as const;
     }
-    
     return {
       error: err instanceof Error ? err.message : "Erro ao fazer upload do arquivo.",
     } as const;
   }
 }
 
-export async function getComprovacoesAction(demandaId: string): Promise<DemandaComprovacao[]> {
+export async function getComprovacoesAction(demandaId: string): Promise<Comprovacao[]> {
   const comprovacaoRepository = getDemandaComprovacaoRepository();
   return comprovacaoRepository.findByDemandaId(demandaId);
+}
+
+export async function getComprovacoesListAction(filters?: {
+  agenciaId?: string;
+}): Promise<import("@/lib/domain/demanda-comprovacao.repository").ComprovacaoListItem[]> {
+  const session = await getSession();
+  if (!session) return [];
+  const comprovacaoRepository = getDemandaComprovacaoRepository();
+  const agenciaId =
+    session.role === "agency" && session.agenciaId ? session.agenciaId : filters?.agenciaId;
+  return comprovacaoRepository.findAll({ agenciaId });
+}
+
+export interface ComprovacaoDetalhesResult {
+  comprovacao: Comprovacao;
+  demandas: Demanda[];
+}
+
+export async function getComprovacaoDetalhesAction(
+  id: string
+): Promise<ComprovacaoDetalhesResult | { error: string }> {
+  const session = await getSession();
+  if (!session) return { error: "Não autenticado." };
+
+  const comprovacaoRepository = getDemandaComprovacaoRepository();
+  const demandaRepository = getDemandaRepository();
+
+  const comprovacao = await comprovacaoRepository.findById(id);
+  if (!comprovacao) return { error: "Comprovação não encontrada." };
+
+  const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(id);
+  const demandas: Demanda[] = [];
+  for (const did of demandaIds) {
+    const d = await demandaRepository.findById(did);
+    if (d) demandas.push(d);
+  }
+
+  return { comprovacao, demandas };
+}
+
+export async function getComprovacoesPaginatedAction(
+  page: number,
+  limit: number
+): Promise<import("@/lib/domain/demanda-comprovacao.repository").ComprovacaoPaginatedResult> {
+  const session = await getSession();
+  const comprovacaoRepository = getDemandaComprovacaoRepository();
+  const agenciaId =
+    session?.role === "agency" && session?.agenciaId ? session.agenciaId : undefined;
+  return comprovacaoRepository.findPaginated({ agenciaId }, { page, limit });
 }
 
 export async function downloadComprovacaoAction(id: string): Promise<{
@@ -149,11 +215,35 @@ export async function removeComprovacaoAction(id: string): Promise<{ error?: str
   if (!session) {
     return { error: "Não autenticado." } as const;
   }
+  if (session.role !== "admin") {
+    return { error: "Apenas administradores podem remover comprovações." } as const;
+  }
 
   try {
     const comprovacaoRepository = getDemandaComprovacaoRepository();
+    const demandaRepository = getDemandaRepository();
+    const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(id);
+
+    const demandasParaReverter: string[] = [];
+    for (const demandaId of demandaIds) {
+      const comprovacoesDaDemanda = await comprovacaoRepository.findByDemandaId(demandaId);
+      if (comprovacoesDaDemanda.length === 1 && comprovacoesDaDemanda[0].id === id) {
+        demandasParaReverter.push(demandaId);
+      }
+    }
+
     await comprovacaoRepository.remove(id);
+
+    for (const demandaId of demandasParaReverter) {
+      const demanda = await demandaRepository.findById(demandaId);
+      if (demanda) {
+        const { id: _id, createdAt: _c, updatedAt: _u, ...input } = demanda;
+        await demandaRepository.update(demandaId, { ...input, status: "comprometido" });
+      }
+    }
     revalidatePath("/");
+    revalidatePath("/comprovacoes");
+    revalidatePath("/comprovacoes/adicionar");
     return {};
   } catch (err) {
     return {

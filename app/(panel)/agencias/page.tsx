@@ -1,13 +1,19 @@
 import { Suspense } from "react";
 import { listAgenciasUseCase } from "@/lib/use-cases/list-agencias.use-case";
-import { getAgenciaRepository } from "@/lib/repositories";
+import { getAgenciaRepository, getDeskfyImportBoardRepository } from "@/lib/repositories";
 import { AgenciasCards } from "./sub/AgenciasCards";
 import { AgenciasHeader } from "./sub/AgenciasHeader";
 import { SearchParamsToaster } from "./sub/SearchParamsToaster";
 
 export default async function AgenciasPage() {
-  const agenciaRepository = getAgenciaRepository();
-  const agencias = await listAgenciasUseCase({ agenciaRepository });
+  const [agenciaRepository, boardRepository] = [
+    getAgenciaRepository(),
+    getDeskfyImportBoardRepository(),
+  ];
+  const [agencias, boards] = await Promise.all([
+    listAgenciasUseCase({ agenciaRepository }),
+    boardRepository.findAll(),
+  ]);
 
   return (
     <div className="p-6">
@@ -17,7 +23,7 @@ export default async function AgenciasPage() {
             <div className="h-16 animate-pulse rounded-lg bg-slate-200" />
           }
         >
-          <AgenciasHeader />
+          <AgenciasHeader boards={boards} />
         </Suspense>
 
         <Suspense fallback={null}>

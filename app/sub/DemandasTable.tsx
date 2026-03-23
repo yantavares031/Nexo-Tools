@@ -9,11 +9,13 @@ import { VerDetalhesDemandaModal } from "@/modals/VerDetalhesDemandaModal";
 const STATUS_LABELS: Record<string, string> = {
   faturado: "Faturado",
   comprometido: "Comprometido",
+  entregue: "Entregue",
 };
 
 const STATUS_COLORS: Record<string, string> = {
   faturado: "bg-emerald-100 text-emerald-800",
   comprometido: "bg-blue-100 text-blue-800",
+  entregue: "bg-slate-100 text-slate-800",
 };
 
 function formatCurrency(value: number): string {

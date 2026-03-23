@@ -42,7 +42,7 @@ export async function createDemandaAction(
     solicitante,
     unResponsavel,
     obs,
-    status: status as "faturado" | "comprometido",
+    status: status as "faturado" | "comprometido" | "entregue",
     valor,
     centroDeCusto,
     ocPi,
@@ -106,6 +106,10 @@ export async function createDemandaAction(
 
   revalidatePath("/");
   revalidatePath("/dashboard");
+  const redirectTo = (formData.get("redirectTo") as string)?.trim();
+  if (redirectTo === "importar") {
+    redirect("/demandas/importar?imported=1");
+  }
   redirect("/?created=1");
 }
 
@@ -134,7 +138,7 @@ export async function updateDemandaAction(
     solicitante,
     unResponsavel,
     obs,
-    status: status as "faturado" | "comprometido",
+    status: status as "faturado" | "comprometido" | "entregue",
     valor,
     centroDeCusto,
     ocPi,

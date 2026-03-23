@@ -8,6 +8,7 @@ function rowToAgencia(row: Record<string, unknown>): Agencia {
     nomeFantasia: String(row.nomeFantasia),
     cnpj: String(row.cnpj),
     orcamentoAnual: Number(row.orcamentoAnual),
+    boardId: row.boardId ? String(row.boardId) : undefined,
   };
 }
 
@@ -28,8 +29,8 @@ export class AgenciaSqliteRepository implements IAgenciaRepository {
     const id = String(Date.now());
     const db = getDb();
     db.prepare(
-      "INSERT INTO agencias (id, nomeFantasia, cnpj, orcamentoAnual) VALUES (?, ?, ?, ?)"
-    ).run(id, input.nomeFantasia, input.cnpj, input.orcamentoAnual);
+      "INSERT INTO agencias (id, nomeFantasia, cnpj, orcamentoAnual, boardId) VALUES (?, ?, ?, ?, ?)"
+    ).run(id, input.nomeFantasia, input.cnpj, input.orcamentoAnual, input.boardId ?? null);
     return { ...input, id };
   }
 
@@ -38,8 +39,8 @@ export class AgenciaSqliteRepository implements IAgenciaRepository {
     const row = db.prepare("SELECT id FROM agencias WHERE id = ?").get(id);
     if (!row) throw new Error("Agência não encontrada");
     db.prepare(
-      "UPDATE agencias SET nomeFantasia = ?, cnpj = ?, orcamentoAnual = ? WHERE id = ?"
-    ).run(input.nomeFantasia, input.cnpj, input.orcamentoAnual, id);
+      "UPDATE agencias SET nomeFantasia = ?, cnpj = ?, orcamentoAnual = ?, boardId = ? WHERE id = ?"
+    ).run(input.nomeFantasia, input.cnpj, input.orcamentoAnual, input.boardId ?? null, id);
     return { ...input, id };
   }
 

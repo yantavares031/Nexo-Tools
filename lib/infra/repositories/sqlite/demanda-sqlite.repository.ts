@@ -47,6 +47,10 @@ function buildWhereAndParams(filters?: DemandaFilters): { where: string; params:
   if (filters?.status) {
     conditions.push("status = ?");
     params.push(filters.status);
+  } else if (filters?.statusIn && filters.statusIn.length > 0) {
+    const placeholders = filters.statusIn.map(() => "?").join(",");
+    conditions.push(`status IN (${placeholders})`);
+    params.push(...filters.statusIn);
   }
   if (filters?.agencia) {
     conditions.push("agencia = ?");
@@ -57,10 +61,10 @@ function buildWhereAndParams(filters?: DemandaFilters): { where: string; params:
     params.push(filters.mes.trim());
   }
   if (filters?.comprovacao === "comprovado") {
-    conditions.push("EXISTS (SELECT 1 FROM demanda_comprovacoes dc WHERE dc.demandaId = demandas.id)");
+    conditions.push("EXISTS (SELECT 1 FROM comprovacao_demandas cd WHERE cd.demanda_id = demandas.id)");
   }
   if (filters?.comprovacao === "nao_comprovado") {
-    conditions.push("NOT EXISTS (SELECT 1 FROM demanda_comprovacoes dc WHERE dc.demandaId = demandas.id)");
+    conditions.push("NOT EXISTS (SELECT 1 FROM comprovacao_demandas cd WHERE cd.demanda_id = demandas.id)");
   }
   if (filters?.agenciaId) {
     conditions.push("agenciaId = ?");

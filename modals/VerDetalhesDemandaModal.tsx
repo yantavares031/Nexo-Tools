@@ -69,7 +69,7 @@ export function VerDetalhesDemandaModal({
     solicitante: string;
     unResponsavel: string;
     obs: string;
-    status: "faturado" | "comprometido";
+    status: "faturado" | "comprometido" | "entregue";
     valor: number;
     centroDeCusto: string;
     ocPi: string;

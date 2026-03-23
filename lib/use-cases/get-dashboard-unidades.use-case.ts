@@ -25,7 +25,7 @@ export async function getDashboardUnidadesUseCase(
     const current = byUnidade.get(un) ?? { faturado: 0, comprometido: 0 };
     const valor = d.valor ?? 0;
 
-    if (d.status === "faturado") {
+    if (d.status === "faturado" || d.status === "entregue") {
       current.faturado += valor;
     } else if (d.status === "comprometido") {
       current.comprometido += valor;

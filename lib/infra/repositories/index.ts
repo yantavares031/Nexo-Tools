@@ -1,8 +1,10 @@
 /**
- * Infra: implementações concretas dos repositórios (SQLite).
+ * Infra: implementações concretas dos repositórios.
+ * Escolhe SQLite ou PostgreSQL conforme ACTIVE_DRIVER_DB.
  * As actions e use cases importam de @/lib/repositories, que reexporta daqui.
  */
 
+import { isPostgres } from "@/lib/infra/db-driver";
 import type { IUserRepository } from "@/lib/domain/user.repository";
 import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { ISolicitanteRepository } from "@/lib/domain/solicitante.repository";
@@ -10,59 +12,82 @@ import type { IAgenciaRepository } from "@/lib/domain/agencia.repository";
 import type { IDemandaComprovacaoRepository } from "@/lib/domain/demanda-comprovacao.repository";
 import type { IDemandaCentroCustoRepository } from "@/lib/domain/demanda-centro-custo.repository";
 import type { ICentroCustoRepository } from "@/lib/domain/centro-custo.repository";
-import { UserSqliteRepository } from "./user-sqlite.repository";
-import { DemandaSqliteRepository } from "./demanda-sqlite.repository";
-import { SolicitanteSqliteRepository } from "./solicitante-sqlite.repository";
-import { AgenciaSqliteRepository } from "./agencia-sqlite.repository";
-import { DemandaComprovacaoSqliteRepository } from "./demanda-comprovacao-sqlite.repository";
-import { DemandaCentroCustoSqliteRepository } from "./demanda-centro-custo-sqlite.repository";
-import { CentroCustoSqliteRepository } from "./centro-custo-sqlite.repository";
-import { DemandaMensagemSqliteRepository } from "./demanda-mensagem-sqlite.repository";
 import type { IDemandaMensagemRepository } from "@/lib/domain/demanda-mensagem.repository";
 import type { IWebhookConfigRepository } from "@/lib/domain/webhook-config.repository";
-import { WebhookConfigSqliteRepository } from "./webhook-config-sqlite.repository";
+import type { IDeskfyImportBoardRepository } from "@/lib/domain/deskfy-import-board.repository";
 
-/** Factory: retorna o repositório de usuários (SQLite). */
+import { UserSqliteRepository } from "./sqlite/user-sqlite.repository";
+import { DemandaSqliteRepository } from "./sqlite/demanda-sqlite.repository";
+import { SolicitanteSqliteRepository } from "./sqlite/solicitante-sqlite.repository";
+import { AgenciaSqliteRepository } from "./sqlite/agencia-sqlite.repository";
+import { DemandaComprovacaoSqliteRepository } from "./sqlite/demanda-comprovacao-sqlite.repository";
+import { DemandaCentroCustoSqliteRepository } from "./sqlite/demanda-centro-custo-sqlite.repository";
+import { CentroCustoSqliteRepository } from "./sqlite/centro-custo-sqlite.repository";
+import { DemandaMensagemSqliteRepository } from "./sqlite/demanda-mensagem-sqlite.repository";
+import { WebhookConfigSqliteRepository } from "./sqlite/webhook-config-sqlite.repository";
+import { DeskfyImportBoardSqliteRepository } from "./sqlite/deskfy-import-board-sqlite.repository";
+
+import { UserPostgresRepository } from "./postgres/user-postgres.repository";
+import { DemandaPostgresRepository } from "./postgres/demanda-postgres.repository";
+import { SolicitantePostgresRepository } from "./postgres/solicitante-postgres.repository";
+import { AgenciaPostgresRepository } from "./postgres/agencia-postgres.repository";
+import { DemandaComprovacaoPostgresRepository } from "./postgres/demanda-comprovacao-postgres.repository";
+import { DemandaCentroCustoPostgresRepository } from "./postgres/demanda-centro-custo-postgres.repository";
+import { CentroCustoPostgresRepository } from "./postgres/centro-custo-postgres.repository";
+import { DemandaMensagemPostgresRepository } from "./postgres/demanda-mensagem-postgres.repository";
+import { WebhookConfigPostgresRepository } from "./postgres/webhook-config-postgres.repository";
+import { DeskfyImportBoardPostgresRepository } from "./postgres/deskfy-import-board-postgres.repository";
+
+export { PrepareRepository } from "./prepare.repository";
+
+const pg = isPostgres();
+
 export function getUserRepository(): IUserRepository {
-  return new UserSqliteRepository();
+  return pg ? new UserPostgresRepository() : new UserSqliteRepository();
 }
 
-/** Factory: retorna o repositório de demandas (SQLite). */
 export function getDemandaRepository(): IDemandaRepository {
-  return new DemandaSqliteRepository();
+  return pg ? new DemandaPostgresRepository() : new DemandaSqliteRepository();
 }
 
-/** Factory: retorna o repositório de solicitantes (SQLite). */
 export function getSolicitanteRepository(): ISolicitanteRepository {
-  return new SolicitanteSqliteRepository();
+  return pg ? new SolicitantePostgresRepository() : new SolicitanteSqliteRepository();
 }
 
-/** Factory: retorna o repositório de agências (SQLite). */
 export function getAgenciaRepository(): IAgenciaRepository {
-  return new AgenciaSqliteRepository();
+  return pg ? new AgenciaPostgresRepository() : new AgenciaSqliteRepository();
 }
 
-/** Factory: retorna o repositório de comprovações de demanda (SQLite). */
 export function getDemandaComprovacaoRepository(): IDemandaComprovacaoRepository {
-  return new DemandaComprovacaoSqliteRepository();
+  return pg
+    ? new DemandaComprovacaoPostgresRepository()
+    : new DemandaComprovacaoSqliteRepository();
 }
 
-/** Factory: retorna o repositório de centros de custo de demanda (SQLite). */
 export function getDemandaCentroCustoRepository(): IDemandaCentroCustoRepository {
-  return new DemandaCentroCustoSqliteRepository();
+  return pg
+    ? new DemandaCentroCustoPostgresRepository()
+    : new DemandaCentroCustoSqliteRepository();
 }
 
-/** Factory: retorna o repositório de centros de custo (SQLite). */
 export function getCentroCustoRepository(): ICentroCustoRepository {
-  return new CentroCustoSqliteRepository();
+  return pg ? new CentroCustoPostgresRepository() : new CentroCustoSqliteRepository();
 }
 
-/** Factory: retorna o repositório de mensagens de demanda (SQLite). */
 export function getDemandaMensagemRepository(): IDemandaMensagemRepository {
-  return new DemandaMensagemSqliteRepository();
+  return pg
+    ? new DemandaMensagemPostgresRepository()
+    : new DemandaMensagemSqliteRepository();
 }
 
-/** Factory: retorna o repositório de configuração de webhook (SQLite). */
 export function getWebhookConfigRepository(): IWebhookConfigRepository {
-  return new WebhookConfigSqliteRepository();
+  return pg
+    ? new WebhookConfigPostgresRepository()
+    : new WebhookConfigSqliteRepository();
+}
+
+export function getDeskfyImportBoardRepository(): IDeskfyImportBoardRepository {
+  return pg
+    ? new DeskfyImportBoardPostgresRepository()
+    : new DeskfyImportBoardSqliteRepository();
 }

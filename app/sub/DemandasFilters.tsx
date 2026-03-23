@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { Search, Plus, Filter, X } from "lucide-react";
+import { Search, Plus, Filter, X, FileUp } from "lucide-react";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { AdicionarDemandaModal } from "@/modals/AdicionarDemandaModal";
@@ -11,6 +12,7 @@ import { AdicionarDemandaModal } from "@/modals/AdicionarDemandaModal";
 const STATUS_LABELS: Record<string, string> = {
   faturado: "Faturado",
   comprometido: "Comprometido",
+  entregue: "Entregue",
 };
 
 interface DemandasFiltersProps {
@@ -86,6 +88,25 @@ export function DemandasFilters({ options, hideAgencyFilter, userRole = "operato
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-slate-800">Demandas</h1>
             <div className="flex items-center gap-2">
+              {canCreateDemanda && (
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
+                  aria-label="Adicionar demanda"
+                >
+                  <Plus className="size-4" />
+                  Adicionar
+                </button>
+              )}
+              <Link
+                href="/demandas/importar"
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                aria-label="Importar demandas"
+              >
+                <FileUp className="size-4" />
+                Importar
+              </Link>
               <button
                 type="submit"
                 disabled={isPending}
@@ -104,17 +125,6 @@ export function DemandasFilters({ options, hideAgencyFilter, userRole = "operato
                 >
                   <X className="size-4" />
                   Limpar
-                </button>
-              )}
-              {canCreateDemanda && (
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-                  aria-label="Adicionar demanda"
-                >
-                  <Plus className="size-4" />
-                  Adicionar
                 </button>
               )}
             </div>

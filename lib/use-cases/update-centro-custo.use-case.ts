@@ -10,25 +10,25 @@ type Dependencies = {
  * Regras de negócio:
  * - Nome deve ser único (exceto o próprio centro de custo)
  */
-export function updateCentroCustoUseCase(
+export async function updateCentroCustoUseCase(
   id: string,
   input: Partial<CentroCustoInput>,
   deps: Dependencies
-): CentroCusto | null {
-  const existente = deps.centroCustoRepository.findById(id);
+): Promise<CentroCusto | null> {
+  const existente = await deps.centroCustoRepository.findById(id);
   if (!existente) {
     throw new Error("Centro de custo não encontrado");
   }
 
   // Se está atualizando o nome, verificar se não existe outro com o mesmo nome
   if (input.nome !== undefined) {
-    const outroComNome = deps.centroCustoRepository.findByName(input.nome);
+    const outroComNome = await deps.centroCustoRepository.findByName(input.nome);
     if (outroComNome && outroComNome.id !== id) {
       throw new Error("Já existe um centro de custo com este nome");
     }
   }
 
-  const atualizado = deps.centroCustoRepository.update(id, input);
+  const atualizado = await deps.centroCustoRepository.update(id, input);
   if (!atualizado) {
     throw new Error("Centro de custo não encontrado");
   }

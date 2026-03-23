@@ -10,12 +10,12 @@ type Dependencies = {
  * Regras de negócio:
  * - Nome deve ser único
  */
-export function createCentroCustoUseCase(
+export async function createCentroCustoUseCase(
   input: CentroCustoInput,
   deps: Dependencies
-): CentroCusto {
+): Promise<CentroCusto> {
   // Verificar se já existe um centro de custo com o mesmo nome
-  const existente = deps.centroCustoRepository.findByName(input.nome);
+  const existente = await deps.centroCustoRepository.findByName(input.nome);
   if (existente) {
     throw new Error("Já existe um centro de custo com este nome");
   }

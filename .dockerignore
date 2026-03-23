@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+*.md
+.cursor
+coverage
+uploads
+DB/nexo.db
+DB/nexo.db-shm
+DB/nexo.db-wal
+npm-debug.log*

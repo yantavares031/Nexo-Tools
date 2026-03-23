@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Megaphone } from "lucide-react";
 import { getAgenciaByIdUseCase } from "@/lib/use-cases/get-agencia-by-id.use-case";
-import { getAgenciaRepository } from "@/lib/repositories";
+import { getAgenciaRepository, getDeskfyImportBoardRepository } from "@/lib/repositories";
 import { AgenciaForm } from "./sub/AgenciaForm";
 
 export default async function AgenciaPage({
@@ -11,8 +11,14 @@ export default async function AgenciaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const agenciaRepository = getAgenciaRepository();
-  const agencia = await getAgenciaByIdUseCase(id, { agenciaRepository });
+  const [agenciaRepository, boardRepository] = [
+    getAgenciaRepository(),
+    getDeskfyImportBoardRepository(),
+  ];
+  const [agencia, boards] = await Promise.all([
+    getAgenciaByIdUseCase(id, { agenciaRepository }),
+    boardRepository.findAll(),
+  ]);
 
   if (!agencia) {
     notFound();
@@ -39,7 +45,7 @@ export default async function AgenciaPage({
             </h1>
           </div>
 
-          <AgenciaForm agencia={agencia} />
+          <AgenciaForm agencia={agencia} boards={boards} />
         </div>
       </div>
     </div>
