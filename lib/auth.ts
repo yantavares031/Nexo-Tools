@@ -4,15 +4,21 @@ import type { UserRole } from "@/types/globals";
 export const COOKIE_NAME = "nexo_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 dias
 
-export async function createSession(
-  email: string,
-  name: string,
-  role: UserRole,
-  agenciaId?: string
-): Promise<void> {
+export type SessionUser = {
+  userId: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  agenciaId?: string;
+  mustChangePassword: boolean;
+};
+
+type SessionPayload = SessionUser & { at: number };
+
+export async function createSession(user: SessionUser): Promise<void> {
   const cookieStore = await cookies();
-  const payload = JSON.stringify({ email, name, role, agenciaId, at: Date.now() });
-  cookieStore.set(COOKIE_NAME, payload, {
+  const payload: SessionPayload = { ...user, at: Date.now() };
+  cookieStore.set(COOKIE_NAME, JSON.stringify(payload), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -26,29 +32,22 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function getSession(): Promise<{
-  email: string;
-  name: string;
-  role: UserRole;
-  agenciaId?: string;
-} | null> {
+export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const session = cookieStore.get(COOKIE_NAME);
   if (!session?.value) return null;
   try {
-    const { email, name, role, agenciaId } = JSON.parse(session.value) as {
-      email: string;
-      name?: string;
-      role?: UserRole;
-      agenciaId?: string;
-      at: number;
-    };
+    const { userId, email, name, role, agenciaId, mustChangePassword } = JSON.parse(
+      session.value
+    ) as SessionPayload & { userId?: string; mustChangePassword?: boolean };
     if (!email) return null;
     return {
+      userId: userId ?? "",
       email,
       name: name ?? email,
       role: role ?? "operator",
       agenciaId,
+      mustChangePassword: Boolean(mustChangePassword),
     };
   } catch {
     return null;
@@ -57,25 +56,23 @@ export async function getSession(): Promise<{
 
 export function getSessionFromCookie(
   cookieHeader: string | undefined
-): { email: string; name: string; role: UserRole; agenciaId?: string } | null {
+): SessionUser | null {
   if (!cookieHeader) return null;
   const match = cookieHeader.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
   if (!match) return null;
   try {
     const decoded = decodeURIComponent(match[1]);
-    const { email, name, role, agenciaId } = JSON.parse(decoded) as {
-      email: string;
-      name?: string;
-      role?: UserRole;
-      agenciaId?: string;
-      at: number;
-    };
+    const { userId, email, name, role, agenciaId, mustChangePassword } = JSON.parse(
+      decoded
+    ) as SessionPayload & { userId?: string; mustChangePassword?: boolean };
     if (!email) return null;
     return {
+      userId: userId ?? "",
       email,
       name: name ?? email,
       role: role ?? "operator",
       agenciaId,
+      mustChangePassword: Boolean(mustChangePassword),
     };
   } catch {
     return null;

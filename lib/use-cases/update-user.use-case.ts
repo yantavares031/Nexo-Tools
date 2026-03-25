@@ -1,5 +1,6 @@
 import type { User, UserUpdateInput } from "@/types/globals";
 import type { IUserRepository } from "@/lib/domain/user.repository";
+import { hashPassword } from "@/lib/password";
 
 type Dependencies = {
   userRepository: IUserRepository;
@@ -25,5 +26,14 @@ export async function updateUserUseCase(
     throw new Error("Usuários do tipo Agência precisam ter uma agência vinculada.");
   }
 
-  return deps.userRepository.update(id, input);
+  let payload: UserUpdateInput = input;
+  if (input.password && input.password.trim().length > 0) {
+    payload = {
+      ...input,
+      password: hashPassword(input.password.trim()),
+      temporaryPassword: null,
+    };
+  }
+
+  return deps.userRepository.update(id, payload);
 }

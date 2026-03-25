@@ -29,8 +29,10 @@ function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
 }
 
 export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRepository {
-  async findAll(filters?: { agenciaId?: string }): Promise<ComprovacaoListItem[]> {
+  async findAll(filters?: { agenciaId?: string; q?: string }): Promise<ComprovacaoListItem[]> {
     const db = getDb();
+    const q = (filters?.q ?? "").trim();
+    const qLike = `%${q}%`;
     let query: string;
     let params: unknown[];
     if (filters?.agenciaId) {
@@ -40,15 +42,17 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
         INNER JOIN comprovacao_demandas cd ON c.id = cd.comprovacao_id
         INNER JOIN demandas d ON cd.demanda_id = d.id
         WHERE d.agenciaId = ?
+        ${q ? "AND COALESCE(c.descricao, '') LIKE ?" : ""}
         GROUP BY c.id
         ORDER BY c.createdAt DESC`;
-      params = [filters.agenciaId];
+      params = q ? [filters.agenciaId, qLike] : [filters.agenciaId];
     } else {
       query = `SELECT c.*, 
         (SELECT COUNT(*) FROM comprovacao_demandas cd WHERE cd.comprovacao_id = c.id) as demandaCount
         FROM comprovacoes c
+        ${q ? "WHERE COALESCE(c.descricao, '') LIKE ?" : ""}
         ORDER BY c.createdAt DESC`;
-      params = [];
+      params = q ? [qLike] : [];
     }
     const rows = db.prepare(query).all(...params) as Array<Record<string, unknown>>;
     return rows.map((row) => ({
@@ -58,11 +62,13 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
   }
 
   async findPaginated(
-    filters: { agenciaId?: string } | undefined,
+    filters: { agenciaId?: string; q?: string } | undefined,
     pagination: { page: number; limit: number }
   ): Promise<ComprovacaoPaginatedResult> {
     const db = getDb();
     const { page, limit } = pagination;
+    const q = (filters?.q ?? "").trim();
+    const qLike = `%${q}%`;
     let baseQuery: string;
     let countQuery: string;
     let params: unknown[];
@@ -71,13 +77,14 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
       baseQuery = `FROM comprovacoes c
         INNER JOIN comprovacao_demandas cd ON c.id = cd.comprovacao_id
         INNER JOIN demandas d ON cd.demanda_id = d.id
-        WHERE d.agenciaId = ?`;
+        WHERE d.agenciaId = ?
+        ${q ? "AND COALESCE(c.descricao, '') LIKE ?" : ""}`;
       countQuery = `SELECT COUNT(DISTINCT c.id) as total ${baseQuery}`;
-      params = [filters.agenciaId];
+      params = q ? [filters.agenciaId, qLike] : [filters.agenciaId];
     } else {
-      baseQuery = "FROM comprovacoes c";
+      baseQuery = `FROM comprovacoes c ${q ? "WHERE COALESCE(c.descricao, '') LIKE ?" : ""}`;
       countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
-      params = [];
+      params = q ? [qLike] : [];
     }
 
     const countRow = db.prepare(countQuery).get(...params) as { total: number };
@@ -172,6 +179,14 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
       autor: input.autor,
       createdAt,
     };
+  }
+
+  async unlinkDemanda(comprovacaoId: string, demandaId: string): Promise<void> {
+    const db = getDb();
+    db.prepare("DELETE FROM comprovacao_demandas WHERE comprovacao_id = ? AND demanda_id = ?").run(
+      comprovacaoId,
+      demandaId
+    );
   }
 
   async remove(id: string): Promise<void> {

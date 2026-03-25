@@ -179,6 +179,7 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
                   <div className="flex items-center gap-1">
                     {canPreview(comp.tipoArquivo) && (
                       <button
+                        type="button"
                         onClick={() => handlePreview(comp)}
                         className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
                         title="Visualizar"
@@ -187,6 +188,7 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
                       </button>
                     )}
                     <button
+                      type="button"
                       onClick={() => handleDownload(comp)}
                       className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
                       title="Baixar"
@@ -195,6 +197,7 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
                     </button>
                     {canRemove && (
                       <button
+                        type="button"
                         onClick={() => handleRemove(comp)}
                         disabled={isPending}
                         className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"

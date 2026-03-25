@@ -5,6 +5,7 @@ import { getPool } from "@/lib/infra/db-pg";
 function rowToUser(row: Record<string, unknown>): User {
   const acessoRaw = row.acesso;
   const acesso = acessoRaw === undefined || acessoRaw === null ? true : Number(acessoRaw) === 1;
+  const tp = row.temporaryPassword;
   return {
     id: String(row.id),
     email: String(row.email),
@@ -13,6 +14,8 @@ function rowToUser(row: Record<string, unknown>): User {
     role: row.role as User["role"],
     agenciaId: row.agenciaId ? String(row.agenciaId) : undefined,
     acesso,
+    temporaryPassword:
+      tp !== undefined && tp !== null && String(tp).length > 0 ? String(tp) : undefined,
   };
 }
 
@@ -46,8 +49,17 @@ export class UserPostgresRepository implements IUserRepository {
     const pool = getPool();
     const acesso = input.acesso !== false ? 1 : 0;
     await pool.query(
-      "INSERT INTO users (id, email, password, name, role, \"agenciaId\", acesso) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-      [id, input.email, input.password, input.name ?? null, input.role, input.agenciaId ?? null, acesso]
+      `INSERT INTO users (id, email, password, name, role, "agenciaId", acesso, "temporaryPassword") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        id,
+        input.email,
+        input.password,
+        input.name ?? null,
+        input.role,
+        input.agenciaId ?? null,
+        acesso,
+        input.temporaryPassword ?? null,
+      ]
     );
     return { ...input, id, acesso: input.acesso !== false };
   }
@@ -58,13 +70,37 @@ export class UserPostgresRepository implements IUserRepository {
     const current = currentResult.rows[0] as Record<string, unknown> | undefined;
     if (!current) throw new Error("Usuário não encontrado.");
     const password = input.password ?? String(current.password);
-    const acessoBool = input.acesso === undefined ? current.acesso : input.acesso;
+    const acessoBool =
+      input.acesso === undefined ? Number(current.acesso) === 1 : input.acesso;
     const acesso = acessoBool ? 1 : 0;
+    const currentTp = current.temporaryPassword;
+    const temporaryPassword =
+      input.temporaryPassword !== undefined
+        ? input.temporaryPassword
+        : currentTp !== undefined && currentTp !== null && String(currentTp).length > 0
+          ? String(currentTp)
+          : null;
     await pool.query(
-      "UPDATE users SET email = $1, name = $2, role = $3, \"agenciaId\" = $4, password = $5, acesso = $6 WHERE id = $7",
-      [input.email, input.name ?? null, input.role, input.agenciaId ?? null, password, acesso, id]
+      `UPDATE users SET email = $1, name = $2, role = $3, "agenciaId" = $4, password = $5, acesso = $6, "temporaryPassword" = $7 WHERE id = $8`,
+      [
+        input.email,
+        input.name ?? null,
+        input.role,
+        input.agenciaId ?? null,
+        password,
+        acesso,
+        temporaryPassword,
+        id,
+      ]
     );
-    return { ...current, ...input, id, password, acesso: acessoBool } as User;
+    return {
+      ...rowToUser(current),
+      ...input,
+      id,
+      password,
+      acesso: acessoBool,
+      temporaryPassword: temporaryPassword ?? undefined,
+    };
   }
 
   async remove(id: string): Promise<void> {

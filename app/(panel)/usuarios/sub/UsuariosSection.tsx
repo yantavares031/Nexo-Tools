@@ -3,11 +3,11 @@
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import { UsuariosTable } from "./UsuariosTable";
-import type { User } from "@/types/globals";
+import type { UserPublic } from "@/types/globals";
 import type { Agencia } from "@/types/globals";
 
 interface UsuariosSectionProps {
-  users: User[];
+  users: UserPublic[];
   agencias: Agencia[];
 }
 

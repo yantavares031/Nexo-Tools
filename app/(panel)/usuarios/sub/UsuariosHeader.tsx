@@ -11,6 +11,7 @@ interface UsuariosHeaderProps {
 
 export function UsuariosHeader({ agencias }: UsuariosHeaderProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [addModalKey, setAddModalKey] = useState(0);
 
   return (
     <>
@@ -30,8 +31,10 @@ export function UsuariosHeader({ agencias }: UsuariosHeaderProps) {
       </div>
 
       <AdicionarUsuarioModal
+        key={addModalKey}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        onCreatedSuccess={() => setAddModalKey((k) => k + 1)}
         agencias={agencias}
       />
     </>

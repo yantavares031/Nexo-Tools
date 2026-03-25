@@ -3,21 +3,33 @@ import type { NextRequest } from "next/server";
 import { COOKIE_NAME } from "./lib/auth";
 import type { UserRole } from "./types/globals";
 
-const PUBLIC_PATHS = ["/login"];
+type ParsedSession = {
+  email: string;
+  name: string;
+  role: UserRole;
+  agenciaId?: string;
+  mustChangePassword: boolean;
+};
 
-function parseSession(
-  cookieValue: string | undefined
-): { role: UserRole; agenciaId?: string } | null {
+function parseSession(cookieValue: string | undefined): ParsedSession | null {
   if (!cookieValue) return null;
   try {
     const decoded = decodeURIComponent(cookieValue);
-    const { email, role, agenciaId } = JSON.parse(decoded) as {
+    const { email, name, role, agenciaId, mustChangePassword } = JSON.parse(decoded) as {
       email?: string;
+      name?: string;
       role?: UserRole;
       agenciaId?: string;
+      mustChangePassword?: boolean;
     };
     if (!email) return null;
-    return { role: role ?? "operator", agenciaId };
+    return {
+      email,
+      name: name ?? email,
+      role: role ?? "operator",
+      agenciaId,
+      mustChangePassword: Boolean(mustChangePassword),
+    };
   } catch {
     return null;
   }
@@ -28,20 +40,34 @@ export function proxy(request: NextRequest) {
   const cookie = request.cookies.get(COOKIE_NAME)?.value;
   const session = parseSession(cookie);
 
-  // Rotas públicas: se já logado, redireciona para /
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (pathname.startsWith("/login")) {
     if (session) {
+      if (session.mustChangePassword) {
+        return NextResponse.redirect(new URL("/primeiro-acesso", request.url));
+      }
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
 
-  // Não logado: redireciona para login
+  if (pathname.startsWith("/primeiro-acesso")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (!session.mustChangePassword) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return NextResponse.next();
+  }
+
   if (!session) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Permissão por role é verificada em cada página (antes de carregar dados)
+  if (session.mustChangePassword) {
+    return NextResponse.redirect(new URL("/primeiro-acesso", request.url));
+  }
+
   return NextResponse.next();
 }
 

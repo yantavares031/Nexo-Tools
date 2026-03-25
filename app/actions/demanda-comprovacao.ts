@@ -10,6 +10,7 @@ import {
 import type { Comprovacao } from "@/types/globals";
 import type { Demanda } from "@/types/globals";
 import { addDemandaComprovacaoUseCase } from "@/lib/use-cases/add-demanda-comprovacao.use-case";
+import { removeComprovacaoFromDemandaUseCase } from "@/lib/use-cases/remove-comprovacao-from-demanda.use-case";
 import { getSession } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -84,6 +85,22 @@ export async function createComprovacaoAction(
 
     const comprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
+
+    if (session.role === "agency") {
+      if (!session.agenciaId) {
+        return { error: "Usuário do tipo Agência sem agência vinculada." } as const;
+      }
+      for (const demandaId of demandaIds) {
+        const demanda = await demandaRepository.findById(demandaId);
+        if (!demanda) {
+          return { error: "Demanda não encontrada." } as const;
+        }
+        if (demanda.agenciaId !== session.agenciaId) {
+          return { error: "Você não tem permissão para vincular comprovação a esta demanda." } as const;
+        }
+      }
+    }
+
     const webhookConfigRepository = getWebhookConfigRepository();
     const webhookSender = getWebhookSender();
     const comprovacoes: Comprovacao[] = [];
@@ -179,13 +196,15 @@ export async function getComprovacaoDetalhesAction(
 
 export async function getComprovacoesPaginatedAction(
   page: number,
-  limit: number
+  limit: number,
+  filters?: { q?: string }
 ): Promise<import("@/lib/domain/demanda-comprovacao.repository").ComprovacaoPaginatedResult> {
   const session = await getSession();
   const comprovacaoRepository = getDemandaComprovacaoRepository();
   const agenciaId =
     session?.role === "agency" && session?.agenciaId ? session.agenciaId : undefined;
-  return comprovacaoRepository.findPaginated({ agenciaId }, { page, limit });
+  const q = filters?.q?.trim() || undefined;
+  return comprovacaoRepository.findPaginated({ agenciaId, q }, { page, limit });
 }
 
 export async function downloadComprovacaoAction(id: string): Promise<{
@@ -245,6 +264,37 @@ export async function removeComprovacaoAction(id: string): Promise<{ error?: str
     revalidatePath("/comprovacoes");
     revalidatePath("/comprovacoes/adicionar");
     return {};
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Erro ao remover comprovação.",
+    } as const;
+  }
+}
+
+export async function removeComprovacaoFromDemandaAction(
+  demandaId: string,
+  comprovacaoId: string
+): Promise<{ error?: string; removedComprovacao?: boolean }> {
+  const session = await getSession();
+  if (!session) {
+    return { error: "Não autenticado." } as const;
+  }
+  if (session.role !== "admin") {
+    return { error: "Apenas administradores podem remover comprovações." } as const;
+  }
+
+  try {
+    const demandaComprovacaoRepository = getDemandaComprovacaoRepository();
+    const demandaRepository = getDemandaRepository();
+
+    const result = await removeComprovacaoFromDemandaUseCase(
+      { demandaId, comprovacaoId },
+      { demandaComprovacaoRepository, demandaRepository }
+    );
+
+    revalidatePath("/");
+    revalidatePath("/comprovacoes");
+    return { removedComprovacao: result.removedComprovacao };
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Erro ao remover comprovação.",

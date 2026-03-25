@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { User } from "@/types/globals";
+import type { UserPublic } from "@/types/globals";
 import type { Agencia } from "@/types/globals";
 import { VerDetalhesUsuarioModal } from "@/modals/VerDetalhesUsuarioModal";
 
@@ -11,7 +11,7 @@ const ROLE_LABELS: Record<string, string> = {
   agency: "Agência",
 };
 
-function getRoleBadgeClass(role: User["role"]): string {
+function getRoleBadgeClass(role: UserPublic["role"]): string {
   const base = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium";
   switch (role) {
     case "admin":
@@ -37,7 +37,7 @@ function getAgenciaName(agencias: Agencia[], agenciaId?: string): string {
 }
 
 interface UsuariosTableProps {
-  users: User[];
+  users: UserPublic[];
   agencias: Agencia[];
   emptyMessage?: string;
 }
@@ -47,10 +47,10 @@ export function UsuariosTable({
   agencias,
   emptyMessage,
 }: UsuariosTableProps) {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserPublic | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  function handleRowClick(u: User) {
+  function handleRowClick(u: UserPublic) {
     setSelectedUser(u);
     setModalOpen(true);
   }

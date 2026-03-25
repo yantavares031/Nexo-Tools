@@ -20,9 +20,9 @@ export interface ComprovacaoPaginatedResult {
 
 /** Contrato do repositório de comprovações — permite trocar implementação (mock, Prisma, etc.). */
 export interface IDemandaComprovacaoRepository {
-  findAll(filters?: { agenciaId?: string }): Promise<ComprovacaoListItem[]>;
+  findAll(filters?: { agenciaId?: string; q?: string }): Promise<ComprovacaoListItem[]>;
   findPaginated(
-    filters: { agenciaId?: string } | undefined,
+    filters: { agenciaId?: string; q?: string } | undefined,
     pagination: ComprovacaoPagination
   ): Promise<ComprovacaoPaginatedResult>;
   findByDemandaId(demandaId: string): Promise<Comprovacao[]>;
@@ -30,6 +30,8 @@ export interface IDemandaComprovacaoRepository {
   findDemandaIdsByComprovacaoId(comprovacaoId: string): Promise<string[]>;
   /** Cria comprovação e vincula às demandas informadas (modelo N:M). */
   create(input: ComprovacaoInput, demandaIds: string[]): Promise<Comprovacao>;
+  /** Remove apenas o vínculo N:M entre demanda e comprovação. */
+  unlinkDemanda(comprovacaoId: string, demandaId: string): Promise<void>;
   remove(id: string): Promise<void>;
   /** Retorna IDs de demandas que têm pelo menos uma comprovação. */
   findDemandaIdsWithComprovacoes(agenciaId: string): Promise<string[]>;

@@ -27,7 +27,8 @@ export function initDb(database: Database.Database): void {
         name TEXT,
         role TEXT NOT NULL CHECK (role IN ('admin', 'operator', 'agency')),
         agenciaId TEXT,
-        acesso INTEGER NOT NULL DEFAULT 1
+        acesso INTEGER NOT NULL DEFAULT 1,
+        temporaryPassword TEXT
       );
 
       CREATE TABLE IF NOT EXISTS agencias (
@@ -137,6 +138,17 @@ export function initDb(database: Database.Database): void {
     }
   } catch {
     // ignora erro (tabela pode não existir ainda)
+  }
+
+  // Migração: senha temporária (primeiro acesso)
+  try {
+    const tableInfo = database.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+    const hasTemp = tableInfo.some((col) => col.name === "temporaryPassword");
+    if (!hasTemp) {
+      database.exec("ALTER TABLE users ADD COLUMN temporaryPassword TEXT");
+    }
+  } catch {
+    // ignora
   }
 
   // Tabela demanda_mensagens (se schema antigo não tiver)

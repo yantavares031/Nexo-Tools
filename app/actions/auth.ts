@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSession } from "@/lib/auth";
 import { loginUseCase } from "@/lib/use-cases/login.use-case";
+import { changePasswordFirstAccessUseCase } from "@/lib/use-cases/change-password-first-access.use-case";
 import { getUserRepository } from "@/lib/repositories";
 
 export async function loginAction(formData: FormData) {
@@ -20,12 +21,58 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=invalid");
   }
 
-  await createSession(
-    user.email,
-    user.name ?? user.email,
-    user.role,
-    user.agenciaId
-  );
+  await createSession({
+    userId: user.id,
+    email: user.email,
+    name: user.name ?? user.email,
+    role: user.role,
+    agenciaId: user.agenciaId,
+    mustChangePassword: user.mustChangePassword,
+  });
+
+  if (user.mustChangePassword) {
+    redirect("/primeiro-acesso");
+  }
+  redirect("/splash");
+}
+
+export async function changePasswordFirstAccessAction(
+  _prevState: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string } | null> {
+  const { getSession } = await import("@/lib/auth");
+  const session = await getSession();
+  if (!session?.userId) {
+    return { error: "Sessão inválida. Faça login novamente." };
+  }
+  if (!session.mustChangePassword) {
+    redirect("/");
+  }
+
+  const newPassword = (formData.get("newPassword") as string) ?? "";
+  const confirmPassword = (formData.get("confirmPassword") as string) ?? "";
+
+  const userRepository = getUserRepository();
+  try {
+    await changePasswordFirstAccessUseCase(
+      { userId: session.userId, newPassword, confirmPassword },
+      { userRepository }
+    );
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Erro ao alterar senha.",
+    };
+  }
+
+  await createSession({
+    userId: session.userId,
+    email: session.email,
+    name: session.name,
+    role: session.role,
+    agenciaId: session.agenciaId,
+    mustChangePassword: false,
+  });
+
   redirect("/splash");
 }
 

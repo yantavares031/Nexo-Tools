@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { getComprovacoesAction, removeComprovacaoAction } from "@/app/actions/demanda-comprovacao";
+import { getComprovacoesAction, removeComprovacaoFromDemandaAction } from "@/app/actions/demanda-comprovacao";
 import type { Comprovacao } from "@/types/globals";
 import { toast } from "sonner";
 import { Download, Trash2, Eye } from "lucide-react";
@@ -107,7 +107,7 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
   async function handleRemove(comprovacao: Comprovacao) {
     const ok = await confirm({
       title: "Remover comprovação",
-      message: `Deseja realmente remover "${comprovacao.nomeArquivo}"? A comprovação será removida de todas as demandas vinculadas.`,
+      message: `Deseja realmente remover "${comprovacao.nomeArquivo}" desta demanda? Se esta for a única demanda vinculada, a comprovação será removida do sistema.`,
       confirmLabel: "Remover",
       variant: "danger",
     });
@@ -115,12 +115,16 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
     if (!ok) return;
 
     startTransition(async () => {
-      const result = await removeComprovacaoAction(comprovacao.id);
+      const result = await removeComprovacaoFromDemandaAction(demandaId, comprovacao.id);
       if (result.error) {
         toast.error(result.error);
       } else {
         setComprovacoes((prev) => prev.filter((c) => c.id !== comprovacao.id));
-        toast.success("Comprovação removida com sucesso!");
+        toast.success(
+          result.removedComprovacao
+            ? "Comprovação removida do sistema!"
+            : "Comprovação desvinculada desta demanda!"
+        );
       }
     });
   }
@@ -170,6 +174,7 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
                 <div className="flex shrink-0 items-center gap-2">
                   {canPreview(comp.tipoArquivo) && (
                     <button
+                      type="button"
                       onClick={() => handlePreview(comp)}
                       className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
                       title="Visualizar arquivo"
@@ -178,6 +183,7 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={() => handleDownload(comp)}
                     className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
                     title="Baixar arquivo"
@@ -186,6 +192,7 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
                   </button>
                   {canRemove && (
                     <button
+                      type="button"
                       onClick={() => handleRemove(comp)}
                       disabled={isPending}
                       className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"

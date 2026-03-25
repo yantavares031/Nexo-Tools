@@ -1,5 +1,6 @@
 import type { UserRole } from "@/types/globals";
 import type { IUserRepository } from "@/lib/domain/user.repository";
+import { verifyPassword } from "@/lib/password";
 
 type Dependencies = {
   userRepository: IUserRepository;
@@ -16,15 +17,20 @@ export async function loginUseCase(
   name?: string;
   role: UserRole;
   agenciaId?: string;
+  mustChangePassword: boolean;
 } | null> {
   const user = await deps.userRepository.findByEmail(email);
-  if (!user || user.password !== password) return null;
+  if (!user || !verifyPassword(password, user.password)) return null;
   if (user.acesso === false) return null;
+  const mustChangePassword = Boolean(
+    user.temporaryPassword != null && String(user.temporaryPassword).length > 0
+  );
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
     agenciaId: user.agenciaId,
+    mustChangePassword,
   };
 }

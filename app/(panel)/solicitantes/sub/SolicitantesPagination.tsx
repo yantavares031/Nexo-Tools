@@ -4,29 +4,33 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface ComprovacoesPaginationProps {
+interface BaseParams {
+  q?: string;
+}
+
+interface SolicitantesPaginationProps {
   page: number;
   totalPages: number;
   total: number;
   limit: number;
-  q?: string;
+  baseParams: BaseParams;
 }
 
-function buildHref(pathname: string, targetPage: number, q?: string): string {
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  if (targetPage > 1) params.set("page", String(targetPage));
-  const qs = params.toString();
-  return qs ? `${pathname}?${qs}` : pathname;
+function buildHref(pathname: string, params: BaseParams, targetPage: number): string {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  if (targetPage > 1) sp.set("page", String(targetPage));
+  const query = sp.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
-export function ComprovacoesPagination({
+export function SolicitantesPagination({
   page,
   totalPages,
   total,
   limit,
-  q,
-}: ComprovacoesPaginationProps) {
+  baseParams,
+}: SolicitantesPaginationProps) {
   const pathname = usePathname();
 
   if (total <= 0) return null;
@@ -34,8 +38,8 @@ export function ComprovacoesPagination({
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 
-  const prevHref = page > 1 ? buildHref(pathname, page - 1, q) : null;
-  const nextHref = page < totalPages ? buildHref(pathname, page + 1, q) : null;
+  const prevHref = page > 1 ? buildHref(pathname, baseParams, page - 1) : null;
+  const nextHref = page < totalPages ? buildHref(pathname, baseParams, page + 1) : null;
 
   const pagesToShow: number[] = [];
   const maxVisible = 5;
@@ -51,10 +55,10 @@ export function ComprovacoesPagination({
   return (
     <div className="flex flex-col items-center justify-between gap-4 sm:flex-row sm:gap-0">
       <p className="text-sm text-slate-600">
-        Mostrando {start}–{end} de {total} comprovações
+        Mostrando {start}–{end} de {total} solicitantes
       </p>
 
-      <nav className="flex items-center gap-1" aria-label="Paginação de comprovações">
+      <nav className="flex items-center gap-1" aria-label="Paginação de solicitantes">
         {prevHref ? (
           <Link
             href={prevHref}
@@ -76,7 +80,7 @@ export function ComprovacoesPagination({
 
         <div className="flex items-center gap-1">
           {pagesToShow.map((p) => {
-            const href = buildHref(pathname, p, q);
+            const href = buildHref(pathname, baseParams, p);
             const isCurrent = p === page;
             return isCurrent ? (
               <span

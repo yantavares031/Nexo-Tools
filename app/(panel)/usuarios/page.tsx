@@ -6,14 +6,16 @@ import { getAgenciaRepository } from "@/lib/repositories";
 import { UsuariosSection } from "./sub/UsuariosSection";
 import { UsuariosHeader } from "./sub/UsuariosHeader";
 import { SearchParamsToaster } from "./sub/SearchParamsToaster";
+import { sanitizeUserForClient } from "@/lib/sanitize-user";
 
 export default async function UsuariosPage() {
   const userRepository = getUserRepository();
   const agenciaRepository = getAgenciaRepository();
-  const [users, agencias] = await Promise.all([
+  const [usersRaw, agencias] = await Promise.all([
     listUsersUseCase({ userRepository }),
     listAgenciasUseCase({ agenciaRepository }),
   ]);
+  const users = usersRaw.map(sanitizeUserForClient);
 
   return (
     <div className="p-6">

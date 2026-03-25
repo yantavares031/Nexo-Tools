@@ -27,7 +27,7 @@ export async function getDemandasFilterOptionsUseCase(
 
   const solicitantesComUnidade = solicitantes.map((s) => ({
     nome: s.nome,
-    unResponsavel: s.unResponsavel,
+    unResponsavel: s.unResponsavel ?? "",
   }));
   const solicitantesNomes = solicitantesComUnidade.map((s) => s.nome);
   const agenciasNomes = agencias.map((a) => a.nomeFantasia).sort();

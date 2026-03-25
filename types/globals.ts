@@ -15,14 +15,24 @@ export interface User {
   agenciaId?: string;
   /** true = liberado, false = bloqueado. Padrão true. */
   acesso: boolean;
+  /**
+   * Senha temporária em texto (primeiro acesso). Quando preenchida, o usuário deve alterar a senha no login.
+   * Não expor em props de componentes client.
+   */
+  temporaryPassword?: string | null;
 }
+
+/** Usuário sem campos sensíveis (listagens e modais no client). */
+export type UserPublic = Omit<User, "password" | "temporaryPassword">;
 
 /** Dados para criar um usuário (sem id). */
 export type UserInput = Omit<User, "id">;
 
 /** Dados para editar um usuário. password vazio = mantém a atual. */
-export type UserUpdateInput = Omit<User, "id" | "password"> & {
+export type UserUpdateInput = Omit<User, "id" | "password" | "temporaryPassword"> & {
   password?: string;
+  /** null = limpar senha temporária no banco. */
+  temporaryPassword?: string | null;
 };
 
 export type StatusDemanda = "faturado" | "comprometido" | "entregue";
@@ -54,7 +64,8 @@ export type DemandaInput = Omit<
 export interface Solicitante {
   id: string;
   nome: string;
-  unResponsavel: string;
+  /** Unidade responsável. Opcional. */
+  unResponsavel?: string;
 }
 
 /** Dados para criar um solicitante (sem id). */

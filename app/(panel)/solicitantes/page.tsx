@@ -1,15 +1,24 @@
 import { Suspense } from "react";
-import { listSolicitantesUseCase } from "@/lib/use-cases/list-solicitantes.use-case";
-import { getSolicitanteRepository } from "@/lib/repositories";
+import { getSolicitantesPaginatedAction } from "@/app/actions/solicitante";
 import { SolicitantesSection } from "./sub/SolicitantesSection";
 import { SolicitantesHeader } from "./sub/SolicitantesHeader";
+import { SolicitantesPagination } from "./sub/SolicitantesPagination";
 import { SearchParamsToaster } from "./sub/SearchParamsToaster";
 import { getUnidades } from "@/lib/unidades";
 
-export default async function SolicitantesPage() {
-  const solicitanteRepository = getSolicitanteRepository();
-  const [solicitantes, unidades] = await Promise.all([
-    listSolicitantesUseCase({ solicitanteRepository }),
+const DEFAULT_PAGE_SIZE = 15;
+
+export default async function SolicitantesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string }>;
+}) {
+  const { page: pageParam, q } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const searchQuery = (q as string)?.trim() || undefined;
+
+  const [result, unidades] = await Promise.all([
+    getSolicitantesPaginatedAction(page, DEFAULT_PAGE_SIZE, searchQuery),
     getUnidades(),
   ]);
 
@@ -22,7 +31,19 @@ export default async function SolicitantesPage() {
           <SearchParamsToaster />
         </Suspense>
 
-        <SolicitantesSection solicitantes={solicitantes} />
+        <SolicitantesSection
+          solicitantes={result.items}
+          unidades={unidades}
+          baseParams={{ q: searchQuery }}
+        />
+
+        <SolicitantesPagination
+          page={result.page}
+          totalPages={result.totalPages}
+          total={result.total}
+          limit={result.limit}
+          baseParams={{ q: searchQuery }}
+        />
       </div>
     </div>
   );

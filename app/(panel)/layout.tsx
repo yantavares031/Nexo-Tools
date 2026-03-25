@@ -14,6 +14,7 @@ export default async function PanelLayout({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (session.mustChangePassword) redirect("/primeiro-acesso");
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">

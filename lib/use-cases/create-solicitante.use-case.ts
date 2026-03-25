@@ -18,9 +18,7 @@ export async function createSolicitanteUseCase(
   );
 
   if (jaExiste) {
-    throw new Error(
-      "Já existe um solicitante cadastrado com este nome. Cada solicitante pertence a apenas uma unidade."
-    );
+    throw new Error("Já existe um solicitante cadastrado com este nome.");
   }
 
   return deps.solicitanteRepository.create({

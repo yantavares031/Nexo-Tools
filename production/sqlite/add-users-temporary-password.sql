@@ -1,0 +1,2 @@
+-- SQLite: IF NOT EXISTS em coluna não existe; use migração via app (DB/init) ou:
+-- ALTER TABLE users ADD COLUMN temporaryPassword TEXT;

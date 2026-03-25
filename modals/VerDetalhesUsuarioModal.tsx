@@ -7,7 +7,8 @@ import { updateUserAction, removeUserAction } from "@/app/actions/user";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { useConfirm } from "@/lib/confirm-context";
 import { Modal } from "@/components/Modal";
-import type { User } from "@/types/globals";
+import type { UserPublic } from "@/types/globals";
+type UserRole = UserPublic["role"];
 import type { Agencia } from "@/types/globals";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -17,7 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 interface VerDetalhesUsuarioModalProps {
-  user: User | null;
+  user: UserPublic | null;
   agencias: Agencia[];
   open: boolean;
   onClose: () => void;
@@ -67,7 +68,7 @@ export function VerDetalhesUsuarioModal({
     name: string;
     email: string;
     password: string;
-    role: User["role"];
+    role: UserRole;
     agenciaId: string;
     acesso: boolean;
   }>({
@@ -245,7 +246,7 @@ export function VerDetalhesUsuarioModal({
                     name="role"
                     value={values.role}
                     onChange={(e) => {
-                      const newRole = e.target.value as User["role"];
+                      const newRole = e.target.value as UserRole;
                       setValues((v) => ({
                         ...v,
                         role: newRole,

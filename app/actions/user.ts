@@ -7,15 +7,20 @@ import { updateUserUseCase } from "@/lib/use-cases/update-user.use-case";
 import { removeUserUseCase } from "@/lib/use-cases/remove-user.use-case";
 import { getUserRepository } from "@/lib/repositories";
 import type { UserInput, UserRole } from "@/types/globals";
+import { generateTemporaryPassword } from "@/lib/generate-temporary-password";
 
 const VALID_ROLES: UserRole[] = ["admin", "operator", "agency"];
 
+export type CreateUserActionState =
+  | null
+  | { error: string }
+  | { ok: true; temporaryPassword: string };
+
 export async function createUserAction(
-  _prevState: { error?: string } | null,
+  _prevState: CreateUserActionState,
   formData: FormData
-) {
+): Promise<CreateUserActionState> {
   const email = (formData.get("email") as string)?.trim() ?? "";
-  const password = (formData.get("password") as string) ?? "";
   const name = (formData.get("name") as string)?.trim() ?? "";
   const roleRaw = (formData.get("role") as string) ?? "operator";
   const role = VALID_ROLES.includes(roleRaw as UserRole)
@@ -24,21 +29,19 @@ export async function createUserAction(
   const agenciaId = (formData.get("agenciaId") as string)?.trim() || undefined;
   const acesso = formData.get("acesso") !== "false";
 
-  if (!email || !password) {
-    return {
-      error: "E-mail e senha são obrigatórios.",
-    } as const;
+  if (!email) {
+    return { error: "E-mail é obrigatório." };
   }
 
   if (!["admin", "operator", "agency"].includes(role)) {
-    return {
-      error: "Perfil inválido.",
-    } as const;
+    return { error: "Perfil inválido." };
   }
+
+  const plainPassword = generateTemporaryPassword(14);
 
   const input: UserInput = {
     email,
-    password,
+    password: plainPassword,
     name: name || undefined,
     role,
     agenciaId: role === "agency" ? agenciaId : undefined,
@@ -52,11 +55,11 @@ export async function createUserAction(
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Erro ao cadastrar usuário.",
-    } as const;
+    };
   }
 
   revalidatePath("/usuarios");
-  redirect("/usuarios");
+  return { ok: true, temporaryPassword: plainPassword };
 }
 
 export async function updateUserAction(

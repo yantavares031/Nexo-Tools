@@ -8,6 +8,9 @@ export default async function SplashPage() {
   if (!session) {
     redirect("/login");
   }
+  if (session.mustChangePassword) {
+    redirect("/primeiro-acesso");
+  }
 
   return <SplashScreenClient />;
 }

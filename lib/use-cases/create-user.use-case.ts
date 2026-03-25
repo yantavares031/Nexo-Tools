@@ -1,5 +1,6 @@
 import type { User, UserInput } from "@/types/globals";
 import type { IUserRepository } from "@/lib/domain/user.repository";
+import { hashPassword } from "@/lib/password";
 
 type Dependencies = {
   userRepository: IUserRepository;
@@ -19,5 +20,11 @@ export async function createUserUseCase(
     throw new Error("Usuários do tipo Agência precisam ter uma agência vinculada.");
   }
 
-  return deps.userRepository.create(input);
+  const plain = input.password;
+  const hashed = hashPassword(plain);
+  return deps.userRepository.create({
+    ...input,
+    password: hashed,
+    temporaryPassword: plain,
+  });
 }
