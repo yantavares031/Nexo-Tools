@@ -7,12 +7,14 @@ type Dependencies = {
 
 /** Caso de uso: obter dados do dashboard por unidade responsável — faturado e comprometido. */
 export async function getDashboardUnidadesUseCase(
-  params: { agenciaId?: string } | void,
+  params: { agenciaId?: string; agenciaNomeLegacy?: string } | void,
   deps: Dependencies
 ): Promise<DashboardUnidade[]> {
   const agenciaId = params && typeof params === "object" ? params.agenciaId : undefined;
+  const agenciaNomeLegacy =
+    params && typeof params === "object" ? params.agenciaNomeLegacy : undefined;
   const demandas = await deps.demandaRepository.findAll(
-    agenciaId ? { agenciaId } : undefined
+    agenciaId ? { agenciaId, agenciaNomeLegacy } : undefined
   );
 
   const byUnidade = new Map<

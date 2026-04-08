@@ -1,17 +1,222 @@
 "use client";
 
-import { useActionState, useRef, useCallback, useState, useEffect } from "react";
-import { useFormStatus } from "react-dom";
-import { Workflow } from "lucide-react";
+import {
+  useActionState,
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+  startTransition,
+} from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  ExternalLink,
+  File,
+  FileArchive,
+  FileAudio,
+  FileSpreadsheet,
+  FileText,
+  FileVideo,
+  Image,
+  Presentation,
+  Workflow,
+} from "lucide-react";
 import { createDemandaAction } from "@/app/actions/demanda";
+import { getDeskfyTaskDetailsAction } from "@/app/actions/deskfy-task-details";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { CurrencyInputControlled } from "@/components/CurrencyInputControlled";
 import { Modal } from "@/components/Modal";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { DemandaCentrosCusto } from "./sub/DemandaCentrosCusto";
-import type { DemandaCentroCusto } from "@/types/globals";
+import type {
+  DemandaCentroCusto,
+  DeskfyTaskDetailsAnexo,
+  DeskfyTaskDetailsResponse,
+} from "@/types/globals";
 import { formatBrazilianCurrency } from "@/lib/currency";
 import type { DemandaImportadaPreview } from "@/lib/deskfy/deskfy-workflow-import-preview.types";
+import { formatDeskfyBriefingFieldLabel } from "@/lib/deskfy/format-deskfy-briefing-label";
+import { DeskfyAnexoPreviewModal } from "@/modals/DeskfyAnexoPreviewModal";
+
+type ImportTabId = "dados" | "briefing" | "anexos";
+
+type AttachmentVisual = {
+  Icon: LucideIcon;
+  wrapperClass: string;
+  iconClass: string;
+  typeLabel: string;
+};
+
+function deskfyAttachmentVisual(extension?: string, contentType?: string): AttachmentVisual {
+  const ext = (extension ?? "").toLowerCase().replace(/^\./, "");
+  const ct = (contentType ?? "").toLowerCase();
+
+  if (ext === "pdf" || ct.includes("pdf")) {
+    return {
+      Icon: FileText,
+      wrapperClass: "bg-red-50 ring-1 ring-red-100",
+      iconClass: "text-red-600",
+      typeLabel: "PDF",
+    };
+  }
+
+  if (
+    ct.startsWith("image/") ||
+    ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "heic", "ico"].includes(ext)
+  ) {
+    return {
+      Icon: Image,
+      wrapperClass: "bg-emerald-50 ring-1 ring-emerald-100",
+      iconClass: "text-emerald-600",
+      typeLabel: ext ? ext.toUpperCase() : "Imagem",
+    };
+  }
+
+  if (
+    ["xls", "xlsx", "csv", "ods"].includes(ext) ||
+    ct.includes("spreadsheet") ||
+    ct.includes("excel") ||
+    ct === "text/csv"
+  ) {
+    return {
+      Icon: FileSpreadsheet,
+      wrapperClass: "bg-green-50 ring-1 ring-green-100",
+      iconClass: "text-green-700",
+      typeLabel: ext ? ext.toUpperCase() : "Planilha",
+    };
+  }
+
+  if (
+    ["doc", "docx", "odt", "rtf", "txt", "md"].includes(ext) ||
+    ct.includes("wordprocessing") ||
+    ct === "text/plain"
+  ) {
+    return {
+      Icon: FileText,
+      wrapperClass: "bg-blue-50 ring-1 ring-blue-100",
+      iconClass: "text-blue-600",
+      typeLabel: ext ? ext.toUpperCase() : "Documento",
+    };
+  }
+
+  if (["ppt", "pptx", "odp"].includes(ext) || ct.includes("presentation")) {
+    return {
+      Icon: Presentation,
+      wrapperClass: "bg-orange-50 ring-1 ring-orange-100",
+      iconClass: "text-orange-600",
+      typeLabel: ext ? ext.toUpperCase() : "Apresentação",
+    };
+  }
+
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext) || ct.includes("zip") || ct.includes("compressed")) {
+    return {
+      Icon: FileArchive,
+      wrapperClass: "bg-amber-50 ring-1 ring-amber-100",
+      iconClass: "text-amber-700",
+      typeLabel: ext ? ext.toUpperCase() : "Arquivo",
+    };
+  }
+
+  if (ct.startsWith("video/") || ["mp4", "webm", "mov", "avi", "mkv"].includes(ext)) {
+    return {
+      Icon: FileVideo,
+      wrapperClass: "bg-violet-50 ring-1 ring-violet-100",
+      iconClass: "text-violet-600",
+      typeLabel: ext ? ext.toUpperCase() : "Vídeo",
+    };
+  }
+
+  if (ct.startsWith("audio/") || ["mp3", "wav", "ogg", "m4a"].includes(ext)) {
+    return {
+      Icon: FileAudio,
+      wrapperClass: "bg-fuchsia-50 ring-1 ring-fuchsia-100",
+      iconClass: "text-fuchsia-600",
+      typeLabel: ext ? ext.toUpperCase() : "Áudio",
+    };
+  }
+
+  return {
+    Icon: File,
+    wrapperClass: "bg-slate-100 ring-1 ring-slate-200",
+    iconClass: "text-slate-600",
+    typeLabel: ext ? ext.toUpperCase() : "Arquivo",
+  };
+}
+
+function ImportarDemandaAnexoCard({
+  anexo,
+  onOpenPreview,
+}: {
+  anexo: DeskfyTaskDetailsAnexo;
+  onOpenPreview: (url: string, title: string, extension?: string, contentType?: string) => void;
+}) {
+  const href = anexo.publicUrl?.trim() || anexo.url?.trim() || "";
+  const displayName = anexo.name?.trim() || `Anexo ${anexo.id}`;
+  const visual = deskfyAttachmentVisual(anexo.extension, anexo.contentType);
+  const { Icon } = visual;
+
+  const cardClass =
+    "group flex w-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400";
+
+  const body = (
+    <>
+      <div
+        className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${visual.wrapperClass}`}
+        aria-hidden
+      >
+        <Icon className={`size-5 ${visual.iconClass}`} strokeWidth={1.75} />
+      </div>
+      <div className="min-w-0 flex-1 text-left">
+        <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{displayName}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+            {visual.typeLabel}
+          </span>
+          {anexo.contentType ? (
+            <span className="text-left text-[11px] text-slate-400">{anexo.contentType}</span>
+          ) : null}
+        </div>
+        {!href ? (
+          <p className="mt-2 text-left text-xs text-amber-700">URL pública indisponível.</p>
+        ) : null}
+      </div>
+      {href ? (
+        <ExternalLink
+          className="size-4 shrink-0 text-slate-300 transition group-hover:text-blue-500"
+          aria-hidden
+        />
+      ) : null}
+    </>
+  );
+
+  if (href) {
+    return (
+      <button
+        type="button"
+        className={cardClass}
+        onClick={() => onOpenPreview(href, displayName, anexo.extension, anexo.contentType)}
+        aria-label={`Pré-visualizar ${displayName}`}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <div className={`${cardClass} cursor-default hover:border-slate-200 hover:shadow-sm`}>{body}</div>
+  );
+}
+
+function briefingValueToDisplay(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
 
 interface ImportarDemandaModalProps {
   open: boolean;
@@ -27,39 +232,30 @@ function getOcPiFromPreview(item: DemandaImportadaPreview): string {
   return `SEB-${item.id}`;
 }
 
-function ImportSubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      form="importar-demanda-form"
-      disabled={pending}
-      className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
-    >
-      {pending ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Importando...
-        </>
-      ) : (
-        "Importar"
-      )}
-    </button>
-  );
-}
-
 export function ImportarDemandaModal({
   open,
   onClose,
   options,
   initialData,
 }: ImportarDemandaModalProps) {
-  const [state, formAction] = useActionState(createDemandaAction, null);
+  const [state, formAction, isImportPending] = useActionState(
+    createDemandaAction,
+    null
+  );
   useToastOnActionError(state);
   const unResponsavelRef = useRef<HTMLInputElement>(null);
   const [centrosCusto, setCentrosCusto] = useState<DemandaCentroCusto[]>([]);
   const [valorTotal, setValorTotal] = useState(0);
+  const [activeTab, setActiveTab] = useState<ImportTabId>("dados");
+  const [deskfyDetails, setDeskfyDetails] = useState<DeskfyTaskDetailsResponse | null>(null);
+  const [deskfyLoading, setDeskfyLoading] = useState(false);
+  const [deskfyError, setDeskfyError] = useState<string | null>(null);
+  const [anexoPreview, setAnexoPreview] = useState<{
+    url: string;
+    title: string;
+    extension?: string;
+    contentType?: string;
+  } | null>(null);
 
   const demanda = initialData?.demanda ?? "";
   const solicitante = initialData?.solicitante ?? "";
@@ -76,6 +272,11 @@ export function ImportarDemandaModal({
     )?.unResponsavel ?? "";
   const ocPi = initialData ? getOcPiFromPreview(initialData) : "";
   const mesYyyyMm = initialData?.mesYyyyMm ?? "";
+
+  const handleCloseImportModal = useCallback(() => {
+    setAnexoPreview(null);
+    onClose();
+  }, [onClose]);
 
   const handleSolicitanteChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,11 +297,60 @@ export function ImportarDemandaModal({
     }
   }, [open, unResponsavel]);
 
+  useEffect(() => {
+    if (!open || !initialData?.id) {
+      queueMicrotask(() => {
+        setDeskfyDetails(null);
+        setDeskfyError(null);
+        setDeskfyLoading(false);
+      });
+      return;
+    }
+
+    startTransition(() => {
+      setActiveTab("dados");
+      setDeskfyDetails(null);
+      setDeskfyError(null);
+      setDeskfyLoading(true);
+    });
+
+    let cancelled = false;
+    void getDeskfyTaskDetailsAction(initialData.id).then((result) => {
+      if (cancelled) return;
+      setDeskfyLoading(false);
+      if (result.error) {
+        setDeskfyError(result.error);
+        setDeskfyDetails(null);
+        return;
+      }
+      setDeskfyDetails(result.data ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, initialData?.id]);
+
   if (!initialData) return null;
 
+  const briefing = deskfyDetails?.briefing;
+  const briefingPublicUrls = briefing?.publicUrls;
+  const briefingFieldEntries = briefing
+    ? Object.entries(briefing).filter(([key]) => key !== "publicUrls")
+    : [];
+  const anexosList = deskfyDetails?.anexos ?? [];
+
   return (
-    <Modal open={open} onClose={onClose} maxWidth="3xl" ariaLabelledby="importar-modal-title">
-      <Modal.Header onClose={onClose}>
+    <>
+    <Modal
+      open={open}
+      onClose={handleCloseImportModal}
+      maxWidth="3xl"
+      ariaLabelledby="importar-modal-title"
+      escapeEnabled={!anexoPreview && !isImportPending}
+      closeOnOverlayClick={!isImportPending}
+    >
+      <Modal.Header onClose={handleCloseImportModal} closeDisabled={isImportPending}>
         <h2 id="importar-modal-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
           <Workflow className="size-5 shrink-0" />
           Importar demanda
@@ -126,10 +376,41 @@ export function ImportarDemandaModal({
           }
           formAction(formData);
         }}
-        className="max-h-[70vh] p-6"
+        className="flex max-h-[70vh] flex-col p-0"
       >
+        <div className="shrink-0 px-6 pt-4">
+          <div className="flex border-b border-slate-200" role="tablist" aria-label="Seções da importação">
+            {(
+              [
+                { id: "dados" as const, label: "Dados" },
+                { id: "briefing" as const, label: "Briefing" },
+                { id: "anexos" as const, label: "Anexos" },
+              ] as const
+            ).map(({ id, label }) => {
+              const isSelected = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => setActiveTab(id)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    isSelected
+                      ? "border-b-2 border-blue-500 text-blue-600"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <input type="hidden" name="redirectTo" value="importar" />
-        <div className="space-y-3">
+        <div className={`space-y-3 ${activeTab !== "dados" ? "hidden" : ""}`}>
           <div>
             <label htmlFor="import-demanda" className="mb-1 block text-sm font-medium text-slate-600">
               Demanda *
@@ -297,17 +578,147 @@ export function ImportarDemandaModal({
             />
           )}
         </div>
+
+        <div className={`space-y-4 ${activeTab !== "briefing" ? "hidden" : ""}`} role="tabpanel">
+          {deskfyLoading && (
+            <p className="text-left text-sm text-slate-500">Carregando briefing e anexos na Deskfy…</p>
+          )}
+          {!deskfyLoading && deskfyError && (
+            <p className="text-left text-sm text-red-600">{deskfyError}</p>
+          )}
+          {!deskfyLoading && !deskfyError && !briefing && (
+            <p className="text-left text-sm text-slate-500">Nenhum briefing retornado para esta demanda.</p>
+          )}
+          {!deskfyLoading && !deskfyError && briefing && (
+            <>
+              <h3 className="text-left text-lg font-semibold text-slate-800">Campos do formulário</h3>
+              <ol className="m-0 list-none space-y-3 p-0" aria-label="Campos do formulário do briefing">
+                {briefingFieldEntries.length === 0 ? (
+                  <li className="text-left text-sm text-slate-500">Nenhum campo de texto no briefing.</li>
+                ) : (
+                  briefingFieldEntries.map(([key, value], index) => {
+                    const n = index + 1;
+                    const labelText = formatDeskfyBriefingFieldLabel(key);
+                    return (
+                      <li key={key} className="list-none">
+                        <article
+                          className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100"
+                          aria-label={`Campo ${n} de ${briefingFieldEntries.length}: ${labelText}`}
+                        >
+                          <div className="space-y-2 p-4">
+                            <h4 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-left text-sm font-semibold leading-snug text-slate-800">
+                              <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold tabular-nums text-blue-700 ring-1 ring-blue-100">
+                                {n}
+                              </span>
+                              <span className="min-w-0 flex-1">{labelText}</span>
+                            </h4>
+                            <div className="rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2.5 text-left text-sm leading-relaxed text-slate-800 whitespace-pre-wrap wrap-break-word">
+                              {briefingValueToDisplay(value)}
+                            </div>
+                          </div>
+                        </article>
+                      </li>
+                    );
+                  })
+                )}
+              </ol>
+
+              {briefingPublicUrls && Object.keys(briefingPublicUrls).length > 0 && (
+                <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <h3 className="text-left text-lg font-semibold text-slate-800">Anexos do briefing</h3>
+                  {Object.entries(briefingPublicUrls).map(([fieldKey, urls]) => (
+                    <div key={fieldKey}>
+                      <p className="mb-2 text-left text-sm font-medium text-slate-600">
+                        {formatDeskfyBriefingFieldLabel(fieldKey)}
+                      </p>
+                      <ul className="space-y-2">
+                        {(urls ?? []).map((href, idx) => (
+                          <li key={`${fieldKey}-${idx}`} className="text-left">
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+                            >
+                              <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+                              {urls.length > 1 ? `Abrir arquivo ${idx + 1}` : "Abrir arquivo"}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className={`space-y-3 ${activeTab !== "anexos" ? "hidden" : ""}`} role="tabpanel">
+          {deskfyLoading && (
+            <p className="text-left text-sm text-slate-500">Carregando anexos na Deskfy…</p>
+          )}
+          {!deskfyLoading && deskfyError && (
+            <p className="text-left text-sm text-red-600">{deskfyError}</p>
+          )}
+          {!deskfyLoading && !deskfyError && anexosList.length === 0 && (
+            <p className="text-left text-sm text-slate-500">Nenhum anexo nesta demanda.</p>
+          )}
+          {!deskfyLoading && !deskfyError && anexosList.length > 0 && (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {anexosList.map((anexo) => (
+                <li key={anexo.id} className="min-w-0 list-none">
+                  <ImportarDemandaAnexoCard
+                    anexo={anexo}
+                    onOpenPreview={(url, title, extension, contentType) =>
+                      setAnexoPreview({ url, title, extension, contentType })
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        </div>
       </Modal.Body>
       <Modal.Footer>
         <button
           type="button"
-          onClick={onClose}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          onClick={handleCloseImportModal}
+          disabled={isImportPending}
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancelar
         </button>
-        <ImportSubmitButton />
+        <button
+          type="submit"
+          form="importar-demanda-form"
+          disabled={isImportPending}
+          aria-busy={isImportPending}
+          className="flex min-w-30 items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isImportPending ? (
+            <>
+              <span
+                className="size-4 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent"
+                aria-hidden
+              />
+              Importando…
+            </>
+          ) : (
+            "Importar"
+          )}
+        </button>
       </Modal.Footer>
     </Modal>
+    <DeskfyAnexoPreviewModal
+      open={anexoPreview != null}
+      onClose={() => setAnexoPreview(null)}
+      url={anexoPreview?.url ?? ""}
+      title={anexoPreview?.title ?? ""}
+      extension={anexoPreview?.extension}
+      contentType={anexoPreview?.contentType}
+    />
+    </>
   );
 }

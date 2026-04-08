@@ -1,4 +1,4 @@
-import type { DeskfyWorkflowReportItem } from "@/types/globals";
+import type { DeskfyTaskDetailsResponse, DeskfyWorkflowReportItem } from "@/types/globals";
 
 export type DeskfyWorkflowReportQuery = {
   initialDate: string;
@@ -10,8 +10,13 @@ export type DeskfyWorkflowReportQuery = {
   generateAttachmentPublicUrl?: boolean;
 };
 
+export type DeskfyTaskDetailsQuery = {
+  generateAttachmentPublicUrl?: boolean;
+};
+
 /** Contrato para consultar relatórios de solicitações por workflow na Deskfy. */
 export interface IDeskfyWorkflowReportsService {
   getWorkflowReport(query: DeskfyWorkflowReportQuery): Promise<DeskfyWorkflowReportItem[]>;
+  getTaskDetails(taskId: number, query?: DeskfyTaskDetailsQuery): Promise<DeskfyTaskDetailsResponse>;
 }
 

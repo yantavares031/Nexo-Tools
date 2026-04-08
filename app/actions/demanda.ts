@@ -11,6 +11,7 @@ import {
   getDemandaCentroCustoRepository,
   getWebhookConfigRepository,
   getWebhookSender,
+  getAgenciaRepository,
 } from "@/lib/repositories";
 import { parseBrazilianCurrency } from "@/lib/currency";
 import { getSession } from "@/lib/auth";
@@ -78,6 +79,7 @@ export async function createDemandaAction(
   }
 
   const demandaRepository = getDemandaRepository();
+  const agenciaRepository = getAgenciaRepository();
   const demandaCentroCustoRepository = getDemandaCentroCustoRepository();
   const webhookConfigRepository = getWebhookConfigRepository();
   const webhookSender = getWebhookSender();
@@ -93,6 +95,7 @@ export async function createDemandaAction(
       session?.role,
       {
         demandaRepository,
+        agenciaRepository,
         demandaCentroCustoRepository,
         webhookConfigRepository,
         webhookSender,
@@ -147,8 +150,9 @@ export async function updateDemandaAction(
   };
 
   const demandaRepository = getDemandaRepository();
+  const agenciaRepository = getAgenciaRepository();
   try {
-    await updateDemandaUseCase(id, input, { demandaRepository });
+    await updateDemandaUseCase(id, input, { demandaRepository, agenciaRepository });
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar demanda.",

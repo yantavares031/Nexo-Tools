@@ -8,7 +8,12 @@ type Dependencies = { demandaRepository: IDemandaRepository };
  * status entregue ou comprometido, opcionalmente filtradas por mes e busca.
  */
 export async function getDemandasParaComprovacaoUseCase(
-  filters: { mes?: string; search?: string; agenciaId?: string },
+  filters: {
+    mes?: string;
+    search?: string;
+    agenciaId?: string;
+    agenciaNomeLegacy?: string;
+  },
   deps: Dependencies
 ): Promise<Demanda[]> {
   const repoFilters: DemandaFilters = {
@@ -16,6 +21,7 @@ export async function getDemandasParaComprovacaoUseCase(
     search: filters.search?.trim() || undefined,
     mes: filters.mes?.trim() || undefined,
     agenciaId: filters.agenciaId,
+    agenciaNomeLegacy: filters.agenciaNomeLegacy,
   };
   return deps.demandaRepository.findAll(repoFilters);
 }

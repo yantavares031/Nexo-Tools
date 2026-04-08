@@ -14,6 +14,11 @@ export interface DemandaFilters {
   comprovacao?: "comprovado" | "nao_comprovado";
   /** Filtra por ID da agência (ex.: para usuário agency ver só as demandas dele). */
   agenciaId?: string;
+  /**
+   * Com agenciaId: inclui demandas antigas sem agenciaId cujo campo texto `agencia`
+   * coincide com o nome fantasia (ex.: cadastro/importação só preenchia o nome).
+   */
+  agenciaNomeLegacy?: string;
 }
 
 export interface DemandaPagination {

@@ -2,7 +2,7 @@
 
 import { useState, useActionState, useRef, useEffect, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { Check, CircleMinus, Workflow } from "lucide-react";
+import { Check, CircleMinus, FileSignature, Workflow } from "lucide-react";
 import { updateDemandaAction, removeDemandaAction } from "@/app/actions/demanda";
 import type { Demanda } from "@/types/globals";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
@@ -11,6 +11,7 @@ import { useConfirm } from "@/lib/confirm-context";
 import { DemandaComprovacoes } from "./sub/DemandaComprovacoes";
 import { DemandaCentrosCusto } from "./sub/DemandaCentrosCusto";
 import { DemandaDetalhesGeral } from "./sub/DemandaDetalhesGeral";
+import { DemandaOrdemCompra } from "./sub/DemandaOrdemCompra";
 import { Tab } from "@/components/Tab";
 import { Modal } from "@/components/Modal";
 import type { UserRole } from "@/types/globals";
@@ -148,6 +149,12 @@ export function VerDetalhesDemandaModal({
               <Tab.Item id="geral">Geral</Tab.Item>
               <Tab.Item id="centros-custo">Centros de Custo</Tab.Item>
               <Tab.Item id="comprovacoes">Comprovações / Notas Fiscais</Tab.Item>
+              <Tab.Item id="ordem-compra">
+                <span className="flex items-center gap-1.5">
+                  <FileSignature className="size-3.5 shrink-0 text-slate-500" aria-hidden />
+                  Ordem de compra
+                </span>
+              </Tab.Item>
             </Tab.List>
             <Tab.Panels>
               <Tab.Panel id="geral">
@@ -173,6 +180,9 @@ export function VerDetalhesDemandaModal({
                   userRole={userRole}
                   onPreviewOpenChange={setIsPreviewOpen}
                 />
+              </Tab.Panel>
+              <Tab.Panel id="ordem-compra">
+                <DemandaOrdemCompra demanda={demanda} demandaId={demanda.id} />
               </Tab.Panel>
             </Tab.Panels>
           </Tab>

@@ -1,18 +1,30 @@
 import type { Comprovacao, ComprovacaoInput } from "@/types/globals";
 import type {
   IDemandaComprovacaoRepository,
+  ComprovacaoAgenciaFilters,
   ComprovacaoListItem,
   ComprovacaoPaginatedResult,
 } from "@/lib/domain/demanda-comprovacao.repository";
 import { getDb } from "@/DB/db";
 import { randomUUID } from "crypto";
-import fs from "fs";
 import path from "path";
+import { deleteStoredUploadFile } from "@/lib/stored-upload";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "comprovacoes");
 
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+function demandaAgenciaWhereSql(
+  filters: Pick<ComprovacaoAgenciaFilters, "agenciaId" | "agenciaNomeLegacy">
+): { clause: string; params: unknown[] } {
+  if (!filters.agenciaId) return { clause: "", params: [] };
+  const legacy = filters.agenciaNomeLegacy?.trim();
+  if (legacy) {
+    return {
+      clause:
+        "(d.agenciaId = ? OR ((d.agenciaId IS NULL OR TRIM(COALESCE(d.agenciaId, '')) = '') AND d.agencia = ?))",
+      params: [filters.agenciaId, legacy],
+    };
+  }
+  return { clause: "d.agenciaId = ?", params: [filters.agenciaId] };
 }
 
 function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
@@ -29,23 +41,24 @@ function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
 }
 
 export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRepository {
-  async findAll(filters?: { agenciaId?: string; q?: string }): Promise<ComprovacaoListItem[]> {
+  async findAll(filters?: ComprovacaoAgenciaFilters): Promise<ComprovacaoListItem[]> {
     const db = getDb();
     const q = (filters?.q ?? "").trim();
     const qLike = `%${q}%`;
     let query: string;
     let params: unknown[];
     if (filters?.agenciaId) {
+      const { clause, params: agParams } = demandaAgenciaWhereSql(filters);
       query = `SELECT c.*, 
         (SELECT COUNT(*) FROM comprovacao_demandas cd2 WHERE cd2.comprovacao_id = c.id) as demandaCount
         FROM comprovacoes c
         INNER JOIN comprovacao_demandas cd ON c.id = cd.comprovacao_id
         INNER JOIN demandas d ON cd.demanda_id = d.id
-        WHERE d.agenciaId = ?
+        WHERE ${clause}
         ${q ? "AND COALESCE(c.descricao, '') LIKE ?" : ""}
         GROUP BY c.id
         ORDER BY c.createdAt DESC`;
-      params = q ? [filters.agenciaId, qLike] : [filters.agenciaId];
+      params = q ? [...agParams, qLike] : agParams;
     } else {
       query = `SELECT c.*, 
         (SELECT COUNT(*) FROM comprovacao_demandas cd WHERE cd.comprovacao_id = c.id) as demandaCount
@@ -62,7 +75,7 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
   }
 
   async findPaginated(
-    filters: { agenciaId?: string; q?: string } | undefined,
+    filters: ComprovacaoAgenciaFilters | undefined,
     pagination: { page: number; limit: number }
   ): Promise<ComprovacaoPaginatedResult> {
     const db = getDb();
@@ -74,13 +87,14 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
     let params: unknown[];
 
     if (filters?.agenciaId) {
+      const { clause, params: agParams } = demandaAgenciaWhereSql(filters);
       baseQuery = `FROM comprovacoes c
         INNER JOIN comprovacao_demandas cd ON c.id = cd.comprovacao_id
         INNER JOIN demandas d ON cd.demanda_id = d.id
-        WHERE d.agenciaId = ?
+        WHERE ${clause}
         ${q ? "AND COALESCE(c.descricao, '') LIKE ?" : ""}`;
       countQuery = `SELECT COUNT(DISTINCT c.id) as total ${baseQuery}`;
-      params = q ? [filters.agenciaId, qLike] : [filters.agenciaId];
+      params = q ? [...agParams, qLike] : agParams;
     } else {
       baseQuery = `FROM comprovacoes c ${q ? "WHERE COALESCE(c.descricao, '') LIKE ?" : ""}`;
       countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
@@ -193,25 +207,26 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
     const db = getDb();
     const comprovacao = await this.findById(id);
     if (comprovacao) {
-      const filePath = path.join(UPLOADS_DIR, comprovacao.caminhoArquivo);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      await deleteStoredUploadFile(comprovacao.caminhoArquivo, UPLOADS_DIR);
       db.prepare("DELETE FROM comprovacao_demandas WHERE comprovacao_id = ?").run(id);
       db.prepare("DELETE FROM comprovacoes WHERE id = ?").run(id);
     }
   }
 
-  async findDemandaIdsWithComprovacoes(agenciaId: string): Promise<string[]> {
+  async findDemandaIdsWithComprovacoes(filters: {
+    agenciaId: string;
+    agenciaNomeLegacy?: string;
+  }): Promise<string[]> {
     const db = getDb();
+    const { clause, params } = demandaAgenciaWhereSql(filters);
     const rows = db
       .prepare(
         `SELECT DISTINCT cd.demanda_id as demandaId
          FROM comprovacao_demandas cd
          INNER JOIN demandas d ON cd.demanda_id = d.id
-         WHERE d.agenciaId = ?`
+         WHERE ${clause}`
       )
-      .all(agenciaId) as Array<{ demandaId: string }>;
+      .all(...params) as Array<{ demandaId: string }>;
     return rows.map((r) => r.demandaId);
   }
 }

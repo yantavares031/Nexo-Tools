@@ -121,6 +121,37 @@ export interface DemandaComprovacao extends Comprovacao {
 /** @deprecated Use ComprovacaoInput + demandaIds[]. */
 export type DemandaComprovacaoInput = ComprovacaoInput & { demandaId: string };
 
+/** Status do fluxo de assinatura da ordem de compra (documento PDF). */
+export type OrdemCompraStatus = "em_aberto" | "assinada";
+
+/** Pedido de assinatura de OC: anexo PDF vinculado a uma demanda. */
+export interface OrdemCompra {
+  id: string;
+  demandaId: string;
+  nomeArquivo: string;
+  tipoArquivo: string;
+  tamanho: number;
+  caminhoArquivo: string;
+  /** PDF assinado pelo admin (só preenchido quando status é assinada). */
+  nomeArquivoAssinado?: string;
+  tipoArquivoAssinado?: string;
+  tamanhoAssinado?: number;
+  caminhoArquivoAssinado?: string;
+  status: OrdemCompraStatus;
+  autor: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** Dados para criar uma ordem de compra (timestamps e status fixo em aberto no repositório). */
+export type OrdemCompraCreateInput = Pick<
+  OrdemCompra,
+  "demandaId" | "nomeArquivo" | "tipoArquivo" | "tamanho" | "caminhoArquivo" | "autor"
+> & {
+  /** Se informado, o repositório usa este id (ex.: mesmo UUID do path no R2). */
+  id?: string;
+};
+
 export interface DemandaCentroCusto {
   id: string;
   demandaId: string;
@@ -179,6 +210,27 @@ export interface WebhookConfig {
 
 /** Dados para salvar a configuração de webhook (sem id e timestamps). */
 export type WebhookConfigInput = Omit<WebhookConfig, "id" | "createdAt" | "updatedAt">;
+
+/** Configuração SMTP (Gmail e compatíveis) — uma única linha no sistema. */
+export interface SmtpConfig {
+  id: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  /** Senha de app ou credencial SMTP (armazenada no banco). */
+  smtpPassword: string;
+  enabled: boolean;
+  updatedAt?: string;
+}
+
+/** Dados para a tela de integrações (sem expor senha). */
+export interface SmtpConfigPanel {
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  enabled: boolean;
+  hasPassword: boolean;
+}
 
 /** Tipos Deskfy (relatórios de workflow). */
 export type DeskfyWorkflowPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -259,4 +311,29 @@ export interface DeskfyWorkflowReportItem {
   anexos?: DeskfyWorkflowAnexo[];
   resp_formulario?: DeskfyWorkflowRespFormulario[];
   historico_colunas?: DeskfyWorkflowHistoricoColunas[];
+}
+
+/** Resposta do endpoint task-details (importação / modal). */
+export interface DeskfyTaskDetailsAnexo {
+  id: number;
+  name?: string;
+  extension?: string;
+  contentType?: string;
+  url?: string;
+  isPrivate?: boolean;
+  type?: string;
+  publicUrl?: string | null;
+}
+
+/** Briefing da task: campos dinâmicos + URLs públicas por campo de arquivo. */
+export type DeskfyTaskDetailsBriefing = {
+  publicUrls?: Record<string, string[]>;
+} & Record<string, unknown>;
+
+export interface DeskfyTaskDetailsResponse {
+  solicitacao?: Record<string, unknown>;
+  responsaveis?: string | null;
+  anexos?: DeskfyTaskDetailsAnexo[];
+  subtarefas?: unknown;
+  briefing?: DeskfyTaskDetailsBriefing | null;
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
 import { getDemandaRepository } from "@/lib/repositories";
 import { getDemandasParaComprovacaoUseCase } from "@/lib/use-cases/get-demandas-para-comprovacao.use-case";
 import { AddComprovacaoForm } from "./sub/AddComprovacaoForm";
@@ -41,16 +42,18 @@ export default async function AddComprovacaoPage({
   const mesOptions = getMesOptions();
 
   const demandaRepository = getDemandaRepository();
+  const agencyScope = await getAgencyDemandaScope(session);
   const filters = {
     mes: mesParaFiltro,
     search: q?.trim() || undefined,
-    agenciaId: session.role === "agency" ? session.agenciaId : undefined,
+    agenciaId: agencyScope?.agenciaId,
+    agenciaNomeLegacy: agencyScope?.agenciaNomeLegacy,
   };
   const demandas = await getDemandasParaComprovacaoUseCase(filters, { demandaRepository });
 
   return (
     <div className="p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center gap-4">
           <Link
             href="/comprovacoes"

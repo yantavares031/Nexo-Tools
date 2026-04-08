@@ -66,7 +66,12 @@ function buildWhereAndParams(filters?: DemandaFilters): { where: string; params:
   if (filters?.comprovacao === "nao_comprovado") {
     conditions.push("NOT EXISTS (SELECT 1 FROM comprovacao_demandas cd WHERE cd.demanda_id = demandas.id)");
   }
-  if (filters?.agenciaId) {
+  if (filters?.agenciaId && filters?.agenciaNomeLegacy?.trim()) {
+    conditions.push(
+      "(agenciaId = ? OR ((agenciaId IS NULL OR TRIM(COALESCE(agenciaId, '')) = '') AND agencia = ?))"
+    );
+    params.push(filters.agenciaId, filters.agenciaNomeLegacy.trim());
+  } else if (filters?.agenciaId) {
     conditions.push("agenciaId = ?");
     params.push(filters.agenciaId);
   }

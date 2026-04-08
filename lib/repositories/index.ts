@@ -9,10 +9,12 @@ export {
   getSolicitanteRepository,
   getAgenciaRepository,
   getDemandaComprovacaoRepository,
+  getOrdemCompraRepository,
   getDemandaCentroCustoRepository,
   getCentroCustoRepository,
   getDemandaMensagemRepository,
   getWebhookConfigRepository,
   getDeskfyImportBoardRepository,
+  getSmtpConfigRepository,
 } from "@/lib/infra/repositories";
 export { getWebhookSender } from "@/lib/infra/webhook-sender";

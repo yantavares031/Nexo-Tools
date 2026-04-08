@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getSession } from "@/lib/auth";
+import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
 import { listDemandasPaginatedUseCase } from "@/lib/use-cases/list-demandas-paginated.use-case";
 import { getDemandasFilterOptionsUseCase } from "@/lib/use-cases/get-demandas-filter-options.use-case";
 import { getDemandaRepository, getSolicitanteRepository, getAgenciaRepository } from "@/lib/repositories";
@@ -30,6 +31,7 @@ export default async function DemandasPage({
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
   const session = await getSession();
+  const agencyScope = await getAgencyDemandaScope(session);
 
   const comprovacaoFilter: "comprovado" | "nao_comprovado" | undefined =
     comprovacao === "comprovado" || comprovacao === "nao_comprovado" ? comprovacao : undefined;
@@ -38,14 +40,11 @@ export default async function DemandasPage({
     solicitante,
     unResponsavel,
     status,
-    agencia,
+    ...(agencyScope ? {} : { agencia }),
     mes,
     comprovacao: comprovacaoFilter,
   };
-  const filters =
-    session?.role === "agency" && session?.agenciaId
-      ? { ...baseFilters, agenciaId: session.agenciaId }
-      : baseFilters;
+  const filters = agencyScope ? { ...baseFilters, ...agencyScope } : baseFilters;
 
   const demandaRepository = getDemandaRepository();
   const solicitanteRepository = getSolicitanteRepository();
@@ -56,15 +55,23 @@ export default async function DemandasPage({
       { page, limit: DEFAULT_PAGE_SIZE },
       { demandaRepository }
     ),
-    getDemandasFilterOptionsUseCase(
-      session?.role === "agency" && session?.agenciaId
-        ? { agenciaId: session.agenciaId }
-        : undefined,
-      { demandaRepository, solicitanteRepository, agenciaRepository }
-    ),
+    getDemandasFilterOptionsUseCase(agencyScope ?? undefined, {
+      demandaRepository,
+      solicitanteRepository,
+      agenciaRepository,
+    }),
   ]);
 
-  const filterKey = [q, solicitante, unResponsavel, status, agencia, mes, comprovacao, session?.agenciaId].join("|");
+  const filterKey = [
+    q,
+    solicitante,
+    unResponsavel,
+    status,
+    agencyScope ? "" : agencia,
+    mes,
+    comprovacao,
+    agencyScope?.agenciaId,
+  ].join("|");
 
   return (
     <div className="p-6">

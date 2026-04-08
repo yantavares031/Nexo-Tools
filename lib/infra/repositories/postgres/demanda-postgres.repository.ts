@@ -80,7 +80,13 @@ function buildWhereAndParams(
       "NOT EXISTS (SELECT 1 FROM comprovacao_demandas cd WHERE cd.demanda_id = demandas.id)"
     );
   }
-  if (filters?.agenciaId) {
+  if (filters?.agenciaId && filters?.agenciaNomeLegacy?.trim()) {
+    conditions.push(
+      `("agenciaId" = $${idx} OR (("agenciaId" IS NULL OR TRIM(COALESCE("agenciaId", '')) = '') AND agencia = $${idx + 1}))`
+    );
+    params.push(filters.agenciaId, filters.agenciaNomeLegacy.trim());
+    idx += 2;
+  } else if (filters?.agenciaId) {
     conditions.push(`"agenciaId" = $${idx}`);
     params.push(filters.agenciaId);
     idx++;

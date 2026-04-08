@@ -1,11 +1,99 @@
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 
 const BACKUPS_PREFIX = "backups/";
+
+/** Prefixos no bucket nexo-tools (pastas no painel R2). */
+export const R2_KEY_PREFIX_COMPROVACOES = "comprovacoes/";
+export const R2_KEY_PREFIX_ORDENS_COMPRA = "ordens-compra/";
+
+const APP_OBJECT_PREFIXES = [R2_KEY_PREFIX_COMPROVACOES, R2_KEY_PREFIX_ORDENS_COMPRA] as const;
+
+export function isR2AppObjectKey(key: string): boolean {
+  return APP_OBJECT_PREFIXES.some((p) => key.startsWith(p));
+}
+
+export function buildComprovacaoObjectKey(fileId: string, ext: string): string {
+  return `${R2_KEY_PREFIX_COMPROVACOES}${fileId}${ext}`;
+}
+
+/** PDF enviado pela agência: ordens-compra/{ordemId}/agencia/{fileId}.ext */
+export function buildOrdemCompraAgenciaObjectKey(
+  ordemCompraId: string,
+  fileId: string,
+  ext: string
+): string {
+  return `${R2_KEY_PREFIX_ORDENS_COMPRA}${ordemCompraId}/agencia/${fileId}${ext}`;
+}
+
+/** PDF da OC assinada (admin): ordens-compra/{ordemId}/assinado/{fileId}.ext */
+export function buildOrdemCompraAssinadoObjectKey(
+  ordemCompraId: string,
+  fileId: string,
+  ext: string
+): string {
+  return `${R2_KEY_PREFIX_ORDENS_COMPRA}${ordemCompraId}/assinado/${fileId}${ext}`;
+}
+
+function assertAppObjectKey(key: string): void {
+  if (!isR2AppObjectKey(key)) {
+    throw new Error(`Chave R2 de app inválida: ${key}`);
+  }
+}
+
+/**
+ * Upload de anexos do painel (comprovações / ordens de compra), fora do prefixo backups/.
+ */
+export async function putAppObjectToR2(input: {
+  key: string;
+  body: Buffer;
+  contentType: string;
+}): Promise<void> {
+  assertAppObjectKey(input.key);
+  const bucket = process.env.R2_BUCKET_NAME;
+  if (!bucket) {
+    throw new Error("R2_BUCKET_NAME não configurado.");
+  }
+  const client = getR2S3Client();
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: input.key,
+      Body: input.body,
+      ContentType: input.contentType,
+    })
+  );
+}
+
+export async function getAppObjectBufferFromR2(key: string): Promise<Buffer> {
+  assertAppObjectKey(key);
+  const bucket = process.env.R2_BUCKET_NAME;
+  if (!bucket) {
+    throw new Error("R2_BUCKET_NAME não configurado.");
+  }
+  const client = getR2S3Client();
+  const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  const body = res.Body;
+  if (!body) {
+    throw new Error("Objeto vazio no R2.");
+  }
+  return Buffer.from(await body.transformToByteArray());
+}
+
+export async function deleteAppObjectFromR2(key: string): Promise<void> {
+  assertAppObjectKey(key);
+  const bucket = process.env.R2_BUCKET_NAME;
+  if (!bucket) {
+    throw new Error("R2_BUCKET_NAME não configurado.");
+  }
+  const client = getR2S3Client();
+  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+}
 
 function getMaxBackupsRetained(): number {
   const raw = process.env.BACKUP_R2_MAX_RETAINED?.trim();

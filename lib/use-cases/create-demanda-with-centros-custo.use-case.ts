@@ -3,13 +3,16 @@ import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { IDemandaCentroCustoRepository } from "@/lib/domain/demanda-centro-custo.repository";
 import type { IWebhookConfigRepository } from "@/lib/domain/webhook-config.repository";
 import type { IWebhookSender } from "@/lib/domain/webhook-sender";
+import type { IAgenciaRepository } from "@/lib/domain/agencia.repository";
 import { createDemandaUseCase } from "./create-demanda.use-case";
+import { applyAgenciaIdToDemandaInputUseCase } from "./apply-agencia-id-to-demanda-input.use-case";
 import { saveDemandaCentrosCustoUseCase } from "./save-demanda-centros-custo.use-case";
 import { dispatchWebhookForEventUseCase } from "./dispatch-webhook-for-event.use-case";
 import type { DemandaCentroCustoInput } from "@/types/globals";
 
 type Dependencies = {
   demandaRepository: IDemandaRepository;
+  agenciaRepository: IAgenciaRepository;
   demandaCentroCustoRepository: IDemandaCentroCustoRepository;
   /** Opcional: quando informado, dispara webhook "demanda.criada" após criar a demanda. */
   webhookConfigRepository?: IWebhookConfigRepository;
@@ -31,8 +34,12 @@ export async function createDemandaWithCentrosCustoUseCase(
     throw new Error("Agências não podem cadastrar demandas.");
   }
 
+  const inputComAgenciaId = await applyAgenciaIdToDemandaInputUseCase(input, {
+    agenciaRepository: deps.agenciaRepository,
+  });
+
   // Criar a demanda
-  const demandaCriada = await createDemandaUseCase(input, {
+  const demandaCriada = await createDemandaUseCase(inputComAgenciaId, {
     demandaRepository: deps.demandaRepository,
   });
 

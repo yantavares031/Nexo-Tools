@@ -12,21 +12,36 @@ import type { Demanda } from "@/types/globals";
 import { addDemandaComprovacaoUseCase } from "@/lib/use-cases/add-demanda-comprovacao.use-case";
 import { removeComprovacaoFromDemandaUseCase } from "@/lib/use-cases/remove-comprovacao-from-demanda.use-case";
 import { getSession } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
+import {
+  getAgencyDemandaScope,
+  demandaMatchesAgenciaScope,
+} from "@/lib/agency-demanda-scope";
 import path from "path";
 import { randomUUID } from "crypto";
+import {
+  buildComprovacaoObjectKey,
+  putAppObjectToR2,
+} from "@/lib/r2-upload";
+import { readStoredUploadFile } from "@/lib/stored-upload";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "comprovacoes");
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".pdf", ".xml", ".txt", ".docx", ".doc", ".xlsx", ".xls", ".jpg", ".jpeg", ".png"];
 
-// Garantir que o diretório existe
-async function ensureUploadsDir() {
-  try {
-    await mkdir(UPLOADS_DIR, { recursive: true });
-  } catch (error) {
-    console.error("Erro ao criar diretório de uploads:", error);
-  }
+function contentTypeForComprovacaoExt(ext: string): string {
+  const map: Record<string, string> = {
+    ".pdf": "application/pdf",
+    ".xml": "application/xml",
+    ".txt": "text/plain",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".doc": "application/msword",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".xls": "application/vnd.ms-excel",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+  };
+  return map[ext.toLowerCase()] ?? "application/octet-stream";
 }
 
 function getFileExtension(filename: string): string {
@@ -81,13 +96,12 @@ export async function createComprovacaoAction(
   }
 
   try {
-    await ensureUploadsDir();
-
     const comprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
 
     if (session.role === "agency") {
-      if (!session.agenciaId) {
+      const scope = await getAgencyDemandaScope(session);
+      if (!scope) {
         return { error: "Usuário do tipo Agência sem agência vinculada." } as const;
       }
       for (const demandaId of demandaIds) {
@@ -95,7 +109,7 @@ export async function createComprovacaoAction(
         if (!demanda) {
           return { error: "Demanda não encontrada." } as const;
         }
-        if (demanda.agenciaId !== session.agenciaId) {
+        if (!demandaMatchesAgenciaScope(demanda, scope)) {
           return { error: "Você não tem permissão para vincular comprovação a esta demanda." } as const;
         }
       }
@@ -108,19 +122,22 @@ export async function createComprovacaoAction(
     for (const file of validFiles) {
       const fileId = randomUUID();
       const ext = getFileExtension(file.name);
-      const fileName = `${fileId}${ext}`;
-      const filePath = path.join(UPLOADS_DIR, fileName);
+      const objectKey = buildComprovacaoObjectKey(fileId, ext);
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      await writeFile(filePath, buffer);
+      await putAppObjectToR2({
+        key: objectKey,
+        body: buffer,
+        contentType: contentTypeForComprovacaoExt(ext),
+      });
 
       const comprovacao = await addDemandaComprovacaoUseCase(
         {
           nomeArquivo: file.name,
           tipoArquivo: ext,
           tamanho: file.size,
-          caminhoArquivo: fileName,
+          caminhoArquivo: objectKey,
           descricao,
           autor: session.name ?? "",
         },
@@ -162,9 +179,10 @@ export async function getComprovacoesListAction(filters?: {
   const session = await getSession();
   if (!session) return [];
   const comprovacaoRepository = getDemandaComprovacaoRepository();
-  const agenciaId =
-    session.role === "agency" && session.agenciaId ? session.agenciaId : filters?.agenciaId;
-  return comprovacaoRepository.findAll({ agenciaId });
+  const agencyScope = await getAgencyDemandaScope(session);
+  const agenciaId = agencyScope?.agenciaId ?? filters?.agenciaId;
+  const agenciaNomeLegacy = agencyScope?.agenciaNomeLegacy;
+  return comprovacaoRepository.findAll({ agenciaId, agenciaNomeLegacy });
 }
 
 export interface ComprovacaoDetalhesResult {
@@ -201,15 +219,19 @@ export async function getComprovacoesPaginatedAction(
 ): Promise<import("@/lib/domain/demanda-comprovacao.repository").ComprovacaoPaginatedResult> {
   const session = await getSession();
   const comprovacaoRepository = getDemandaComprovacaoRepository();
-  const agenciaId =
-    session?.role === "agency" && session?.agenciaId ? session.agenciaId : undefined;
+  const agencyScope = await getAgencyDemandaScope(session);
+  const agenciaId = agencyScope?.agenciaId;
+  const agenciaNomeLegacy = agencyScope?.agenciaNomeLegacy;
   const q = filters?.q?.trim() || undefined;
-  return comprovacaoRepository.findPaginated({ agenciaId, q }, { page, limit });
+  return comprovacaoRepository.findPaginated(
+    { agenciaId, agenciaNomeLegacy, q },
+    { page, limit }
+  );
 }
 
 export async function downloadComprovacaoAction(id: string): Promise<{
   error?: string;
-  file?: { path: string; nomeArquivo: string; tipoArquivo: string };
+  file?: { buffer: Buffer; nomeArquivo: string; tipoArquivo: string };
 }> {
   const comprovacaoRepository = getDemandaComprovacaoRepository();
   const comprovacao = await comprovacaoRepository.findById(id);
@@ -218,15 +240,18 @@ export async function downloadComprovacaoAction(id: string): Promise<{
     return { error: "Comprovação não encontrada." } as const;
   }
 
-  const filePath = path.join(UPLOADS_DIR, comprovacao.caminhoArquivo);
-
-  return {
-    file: {
-      path: filePath,
-      nomeArquivo: comprovacao.nomeArquivo,
-      tipoArquivo: comprovacao.tipoArquivo,
-    },
-  };
+  try {
+    const buffer = await readStoredUploadFile(comprovacao.caminhoArquivo, UPLOADS_DIR);
+    return {
+      file: {
+        buffer,
+        nomeArquivo: comprovacao.nomeArquivo,
+        tipoArquivo: comprovacao.tipoArquivo,
+      },
+    };
+  } catch {
+    return { error: "Arquivo não encontrado." } as const;
+  }
 }
 
 export async function removeComprovacaoAction(id: string): Promise<{ error?: string }> {

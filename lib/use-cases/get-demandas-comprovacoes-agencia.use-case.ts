@@ -16,16 +16,18 @@ export interface DemandasComprovacoesResult {
 
 /** Caso de uso: obter relatório de demandas comprovadas e não comprovadas para uma agência. */
 export async function getDemandasComprovacoesAgenciaUseCase(
-  agenciaId: string,
+  scope: { agenciaId: string; agenciaNomeLegacy?: string },
   deps: Dependencies
 ): Promise<DemandasComprovacoesResult> {
   // Buscar todas as demandas da agência
-  const demandas = await deps.demandaRepository.findAll({ agenciaId });
+  const demandas = await deps.demandaRepository.findAll({
+    agenciaId: scope.agenciaId,
+    agenciaNomeLegacy: scope.agenciaNomeLegacy,
+  });
 
   // Buscar IDs de demandas que têm comprovações
-  const demandaIdsComComprovacoes = await deps.comprovacaoRepository.findDemandaIdsWithComprovacoes(
-    agenciaId
-  );
+  const demandaIdsComComprovacoes =
+    await deps.comprovacaoRepository.findDemandaIdsWithComprovacoes(scope);
   const setComprovadas = new Set(demandaIdsComComprovacoes);
 
   // Separar em comprovadas e não comprovadas

@@ -1,10 +1,20 @@
 import type { UserRole } from "@/types/globals";
 
 /** Rotas que operator não pode acessar (exclusivas de admin). */
-const FORBIDDEN_FOR_OPERATOR = ["/agencias", "/usuarios", "/integracoes"];
+const FORBIDDEN_FOR_OPERATOR = [
+  "/agencias",
+  "/usuarios",
+  "/integracoes",
+  "/ordens-compra",
+];
 
 /** Rotas que agency não pode acessar (só vê dashboard e demandas). */
 const FORBIDDEN_FOR_AGENCY = ["/agencias", "/usuarios", "/solicitantes", "/centros-custo", "/integracoes"];
+
+/** OC: apenas admin e agência. */
+export function canAccessOrdensCompra(role: UserRole | null): boolean {
+  return role === "admin" || role === "agency";
+}
 
 /** Verifica se o role pode acessar a rota. */
 export function canAccessRoute(role: UserRole | null, pathname: string): boolean {
@@ -21,7 +31,24 @@ export function canAccessRoute(role: UserRole | null, pathname: string): boolean
 
 /** Itens de menu permitidos por role. */
 export const MENU_ITEMS_BY_ROLE: Record<UserRole, string[]> = {
-  admin: ["/dashboard", "/", "/comprovacoes", "/usuarios", "/solicitantes", "/agencias", "/centros-custo", "/integracoes"],
+  admin: [
+    "/dashboard",
+    "/",
+    "/comprovacoes",
+    "/ordens-compra",
+    "/usuarios",
+    "/solicitantes",
+    "/agencias",
+    "/centros-custo",
+    "/integracoes",
+  ],
   operator: ["/dashboard", "/", "/comprovacoes", "/solicitantes", "/centros-custo"],
-  agency: ["/dashboard", "/", "/comprovacoes", "/comprovacoes/adicionar"],
+  agency: [
+    "/dashboard",
+    "/",
+    "/comprovacoes",
+    "/comprovacoes/adicionar",
+    "/ordens-compra",
+    "/ordens-compra/adicionar",
+  ],
 };

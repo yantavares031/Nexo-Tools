@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { downloadComprovacaoAction } from "@/app/actions/demanda-comprovacao";
-import { readFile } from "fs/promises";
-import path from "path";
 
 export async function GET(
   request: NextRequest,
@@ -19,13 +17,12 @@ export async function GET(
       return NextResponse.json({ error: "Arquivo não encontrado" }, { status: 404 });
     }
 
-    // Ler arquivo do sistema de arquivos
-    const fileBuffer = await readFile(result.file.path);
+    const fileBuffer = result.file.buffer;
     const ext = result.file.tipoArquivo.toLowerCase();
 
     // Para PDF, retornar como PDF para embed
     if (ext === ".pdf") {
-      return new NextResponse(fileBuffer, {
+      return new NextResponse(new Uint8Array(fileBuffer), {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `inline; filename="${encodeURIComponent(result.file.nomeArquivo)}"`,
@@ -35,7 +32,7 @@ export async function GET(
 
     // Para TXT, retornar como texto plano
     if (ext === ".txt") {
-      return new NextResponse(fileBuffer, {
+      return new NextResponse(fileBuffer.toString("utf-8"), {
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
         },

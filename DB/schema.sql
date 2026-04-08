@@ -74,6 +74,29 @@ CREATE TABLE IF NOT EXISTS comprovacao_demandas (
 CREATE INDEX IF NOT EXISTS idx_comprovacao_demandas_comprovacao ON comprovacao_demandas (comprovacao_id);
 CREATE INDEX IF NOT EXISTS idx_comprovacao_demandas_demanda ON comprovacao_demandas (demanda_id);
 
+-- Ordens de compra (OC): documento PDF para assinatura do gerente, vinculado a uma demanda
+CREATE TABLE IF NOT EXISTS ordens_compra (
+  id TEXT PRIMARY KEY,
+  demandaId TEXT NOT NULL,
+  nomeArquivo TEXT NOT NULL,
+  tipoArquivo TEXT NOT NULL,
+  tamanho INTEGER NOT NULL,
+  caminhoArquivo TEXT NOT NULL,
+  nomeArquivoAssinado TEXT,
+  tipoArquivoAssinado TEXT,
+  tamanhoAssinado INTEGER,
+  caminhoArquivoAssinado TEXT,
+  status TEXT NOT NULL CHECK (status IN ('em_aberto', 'assinada')),
+  autor TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT,
+  FOREIGN KEY (demandaId) REFERENCES demandas(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ordens_compra_demandaId ON ordens_compra (demandaId);
+CREATE INDEX IF NOT EXISTS idx_ordens_compra_status ON ordens_compra (status);
+CREATE INDEX IF NOT EXISTS idx_ordens_compra_createdAt ON ordens_compra (createdAt);
+
 CREATE TABLE IF NOT EXISTS demanda_comprovacoes (
   id TEXT PRIMARY KEY,
   demandaId TEXT NOT NULL,
@@ -118,7 +141,7 @@ CREATE TABLE IF NOT EXISTS demanda_mensagens (
 
 CREATE INDEX IF NOT EXISTS idx_demanda_mensagens_demandaId ON demanda_mensagens (demandaId);
 
--- Boards Deskfy permitidos na importação (configurável em Integrações > Configurações)
+-- Boards Deskfy permitidos na importação (Integrações > Filtro de Boards)
 CREATE TABLE IF NOT EXISTS deskfy_import_boards (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE
@@ -136,6 +159,17 @@ CREATE TABLE IF NOT EXISTS webhook_config (
   contact_list TEXT NOT NULL DEFAULT '[]',
   createdAt TEXT,
   updatedAt TEXT
+);
+
+-- SMTP (Gmail / integrações — uma única linha)
+CREATE TABLE IF NOT EXISTS smtp_config (
+  id TEXT PRIMARY KEY,
+  smtp_host TEXT NOT NULL DEFAULT 'smtp.gmail.com',
+  smtp_port INTEGER NOT NULL DEFAULT 587,
+  smtp_user TEXT NOT NULL DEFAULT '',
+  smtp_password TEXT NOT NULL DEFAULT '',
+  enabled INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT
 );
 
 -- Histórico de backups enviados ao armazenamento (ex.: R2)

@@ -10,6 +10,10 @@ interface ComprovacaoPreviewModalProps {
   tipoArquivo: string;
   open: boolean;
   onClose: () => void;
+  /** Padrão: comprovações. Use "ordens-compra" para documento de OC. */
+  apiResource?: "comprovacoes" | "ordens-compra";
+  /** Para OC: qual versão do PDF abrir na API (`?versao=assinada`). */
+  previewVersao?: "original" | "assinada";
 }
 
 export function ComprovacaoPreviewModal({
@@ -18,6 +22,8 @@ export function ComprovacaoPreviewModal({
   tipoArquivo,
   open,
   onClose,
+  apiResource = "comprovacoes",
+  previewVersao = "original",
 }: ComprovacaoPreviewModalProps) {
   const [content, setContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -36,10 +42,15 @@ export function ComprovacaoPreviewModal({
         setIsLoading(true);
         setError(null);
 
+        const base = `/api/${apiResource}`;
+        const versaoQs =
+          apiResource === "ordens-compra" && previewVersao === "assinada"
+            ? "?versao=assinada"
+            : "";
         if (tipoArquivo.toLowerCase() === ".pdf") {
-          setContent(`/api/comprovacoes/${comprovacaoId}/preview`);
+          setContent(`${base}/${comprovacaoId}/preview${versaoQs}`);
         } else if (tipoArquivo.toLowerCase() === ".txt") {
-          const response = await fetch(`/api/comprovacoes/${comprovacaoId}/preview`);
+          const response = await fetch(`${base}/${comprovacaoId}/preview${versaoQs}`);
           if (!response.ok) throw new Error("Erro ao carregar arquivo");
           const text = await response.text();
           setContent(text);
@@ -52,7 +63,7 @@ export function ComprovacaoPreviewModal({
     }
 
     loadPreview();
-  }, [open, comprovacaoId, tipoArquivo]);
+  }, [open, comprovacaoId, tipoArquivo, apiResource, previewVersao]);
 
   const isPdf = tipoArquivo.toLowerCase() === ".pdf";
   const isTxt = tipoArquivo.toLowerCase() === ".txt";

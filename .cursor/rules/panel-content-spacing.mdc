@@ -1,0 +1,35 @@
+---
+description: Espaçamento do conteúdo principal do painel (referência Demandas)
+globs: app/(panel)/**/page.tsx
+alwaysApply: true
+---
+
+# Painel — largura e espaçamento do conteúdo
+
+O conteúdo das páginas em `app/(panel)/` deve alinhar-se ao padrão da página **Demandas** (`app/(panel)/page.tsx`), para não “afastar” o bloco do menu lateral.
+
+## Padrão obrigatório
+
+Envolver o conteúdo da página em:
+
+```tsx
+<div className="p-6">
+  <div className="mx-auto max-w-6xl space-y-6">
+    {/* … */}
+  </div>
+</div>
+```
+
+- **`p-6`**: padding do bloco em relação ao `<main>` (mesma distância do topo e das laterais em relação à área útil).
+- **`mx-auto max-w-6xl`**: largura máxima **6xl** (igual Demandas, Agências, Usuários, etc.). **Não** usar `max-w-4xl` nem `max-w-3xl` em listagens/páginas de painel — isso centraliza uma coluna estreita e aumenta o vazio entre sidebar e conteúdo.
+
+## Exceções
+
+- **`app/(panel)/dashboard/`**: pode manter o padrão já definido nessa rota (tipografia e grids próprios), desde que o wrapper externo continue coerente com o restante do painel.
+- **Formulários muito estreitos**: se um formulário precisar de largura menor, restringir com `max-w-*` **só no bloco interno** (ex.: card do form), não no wrapper da página inteira.
+
+## Checklist ao criar/editar página do painel
+
+- [ ] Wrapper externo `p-6`
+- [ ] Container interno `mx-auto max-w-6xl space-y-6` (ou `space-y-*` equivalente)
+- [ ] Não substituir `max-w-6xl` por `max-w-4xl` “para caber melhor” sem alinhamento com o time

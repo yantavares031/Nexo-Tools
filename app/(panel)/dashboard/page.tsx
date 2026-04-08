@@ -1,4 +1,5 @@
 import { getSession } from "@/lib/auth";
+import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
 import { getDashboardAgenciasUseCase } from "@/lib/use-cases/get-dashboard-agencias.use-case";
 import { getDashboardUnidadesUseCase } from "@/lib/use-cases/get-dashboard-unidades.use-case";
 import { getDemandasComprovacoesAgenciaUseCase } from "@/lib/use-cases/get-demandas-comprovacoes-agencia.use-case";
@@ -16,11 +17,11 @@ export const revalidate = 0;
 
 export default async function DashboardPage() {
   const session = await getSession();
+  const agencyScope = await getAgencyDemandaScope(session);
 
-  const agencyParams =
-    session?.role === "agency" && session?.agenciaId
-      ? { agenciaId: session.agenciaId }
-      : undefined;
+  const agencyParams = agencyScope
+    ? { agenciaId: agencyScope.agenciaId, agenciaNomeLegacy: agencyScope.agenciaNomeLegacy }
+    : undefined;
 
   const demandaRepository = getDemandaRepository();
   const agenciaRepository = getAgenciaRepository();
@@ -33,8 +34,8 @@ export default async function DashboardPage() {
       agenciaRepository,
     }),
     getDashboardUnidadesUseCase(agencyParams, { demandaRepository }),
-    isAgencyOnly && session?.agenciaId
-      ? getDemandasComprovacoesAgenciaUseCase(session.agenciaId, {
+    isAgencyOnly && agencyScope
+      ? getDemandasComprovacoesAgenciaUseCase(agencyScope, {
           demandaRepository,
           comprovacaoRepository,
         })

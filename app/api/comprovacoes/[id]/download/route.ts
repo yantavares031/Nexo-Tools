@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { downloadComprovacaoAction } from "@/app/actions/demanda-comprovacao";
-import { readFile } from "fs/promises";
-import path from "path";
 
 export async function GET(
   request: NextRequest,
@@ -19,8 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Arquivo não encontrado" }, { status: 404 });
     }
 
-    // Ler arquivo do sistema de arquivos
-    const fileBuffer = await readFile(result.file.path);
+    const fileBuffer = result.file.buffer;
 
     // Determinar content-type baseado na extensão
     const contentTypeMap: Record<string, string> = {
@@ -38,7 +35,7 @@ export async function GET(
 
     const contentType = contentTypeMap[result.file.tipoArquivo.toLowerCase()] || "application/octet-stream";
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${encodeURIComponent(result.file.nomeArquivo)}"`,

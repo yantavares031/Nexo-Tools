@@ -330,4 +330,73 @@ export function initDb(database: Database.Database): void {
   } catch {
     // ignora
   }
+
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS ordens_compra (
+        id TEXT PRIMARY KEY,
+        demandaId TEXT NOT NULL,
+        nomeArquivo TEXT NOT NULL,
+        tipoArquivo TEXT NOT NULL,
+        tamanho INTEGER NOT NULL,
+        caminhoArquivo TEXT NOT NULL,
+        nomeArquivoAssinado TEXT,
+        tipoArquivoAssinado TEXT,
+        tamanhoAssinado INTEGER,
+        caminhoArquivoAssinado TEXT,
+        status TEXT NOT NULL CHECK (status IN ('em_aberto', 'assinada')),
+        autor TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT,
+        FOREIGN KEY (demandaId) REFERENCES demandas(id) ON DELETE CASCADE
+      )
+    `);
+    database.exec(
+      "CREATE INDEX IF NOT EXISTS idx_ordens_compra_demandaId ON ordens_compra (demandaId)"
+    );
+    database.exec(
+      "CREATE INDEX IF NOT EXISTS idx_ordens_compra_status ON ordens_compra (status)"
+    );
+    database.exec(
+      "CREATE INDEX IF NOT EXISTS idx_ordens_compra_createdAt ON ordens_compra (createdAt)"
+    );
+  } catch {
+    // ignora
+  }
+
+  // Migração: colunas do PDF assinado (OC)
+  try {
+    const ocInfo = database.prepare("PRAGMA table_info(ordens_compra)").all() as { name: string }[];
+    const col = (n: string) => ocInfo.some((c) => c.name === n);
+    if (!col("nomeArquivoAssinado")) {
+      database.exec("ALTER TABLE ordens_compra ADD COLUMN nomeArquivoAssinado TEXT");
+    }
+    if (!col("tipoArquivoAssinado")) {
+      database.exec("ALTER TABLE ordens_compra ADD COLUMN tipoArquivoAssinado TEXT");
+    }
+    if (!col("tamanhoAssinado")) {
+      database.exec("ALTER TABLE ordens_compra ADD COLUMN tamanhoAssinado INTEGER");
+    }
+    if (!col("caminhoArquivoAssinado")) {
+      database.exec("ALTER TABLE ordens_compra ADD COLUMN caminhoArquivoAssinado TEXT");
+    }
+  } catch {
+    // ignora
+  }
+
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS smtp_config (
+        id TEXT PRIMARY KEY,
+        smtp_host TEXT NOT NULL DEFAULT 'smtp.gmail.com',
+        smtp_port INTEGER NOT NULL DEFAULT 587,
+        smtp_user TEXT NOT NULL DEFAULT '',
+        smtp_password TEXT NOT NULL DEFAULT '',
+        enabled INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT
+      )
+    `);
+  } catch {
+    // ignora
+  }
 }

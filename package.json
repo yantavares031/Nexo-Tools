@@ -15,25 +15,29 @@
     "db:init-postgres": "tsx scripts/db-init-postgres.ts",
     "backup": "tsx scripts/backup.ts",
     "docker:push": "docker buildx build --platform linux/amd64 -t yantavares021/nexo-tools:latest --push .",
-    "docker:build": "docker buildx build --platform linux/amd64 -t yantavares021/nexo-tools:latest --load ."
+    "docker:build": "docker buildx build --platform linux/amd64 -t yantavares021/nexo-tools:latest --load .",
+    "tunnel:db": "ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=999 -o TCPKeepAlive=yes -L 127.0.0.1:4420:127.0.0.1:4420 yan@nexo.sebraelinks.com"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
     "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.3.1",
     "lucide-react": "^0.563.0",
+    "mammoth": "^1.12.0",
     "next": "16.1.6",
+    "nodemailer": "^8.0.4",
     "pg": "^8.20.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
     "sonner": "^2.0.7",
-    "dotenv": "^17.3.1",
     "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

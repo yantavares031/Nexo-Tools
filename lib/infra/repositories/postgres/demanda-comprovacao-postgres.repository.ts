@@ -1,18 +1,35 @@
 import type { Comprovacao, ComprovacaoInput } from "@/types/globals";
 import type {
   IDemandaComprovacaoRepository,
+  ComprovacaoAgenciaFilters,
   ComprovacaoListItem,
   ComprovacaoPaginatedResult,
 } from "@/lib/domain/demanda-comprovacao.repository";
 import { getPool } from "@/lib/infra/db-pg";
 import { randomUUID } from "crypto";
-import fs from "fs";
 import path from "path";
+import { deleteStoredUploadFile } from "@/lib/stored-upload";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "comprovacoes");
 
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+function buildDemandaAgenciaWhere(
+  filters: Pick<ComprovacaoAgenciaFilters, "agenciaId" | "agenciaNomeLegacy">,
+  startIdx: number
+): { clause: string; params: unknown[]; nextIdx: number } {
+  if (!filters.agenciaId) return { clause: "", params: [], nextIdx: startIdx };
+  const legacy = filters.agenciaNomeLegacy?.trim();
+  if (legacy) {
+    return {
+      clause: `(d."agenciaId" = $${startIdx} OR ((d."agenciaId" IS NULL OR TRIM(COALESCE(d."agenciaId", '')) = '') AND d.agencia = $${startIdx + 1}))`,
+      params: [filters.agenciaId, legacy],
+      nextIdx: startIdx + 2,
+    };
+  }
+  return {
+    clause: `d."agenciaId" = $${startIdx}`,
+    params: [filters.agenciaId],
+    nextIdx: startIdx + 1,
+  };
 }
 
 function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
@@ -31,23 +48,24 @@ function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
 export class DemandaComprovacaoPostgresRepository
   implements IDemandaComprovacaoRepository
 {
-  async findAll(filters?: { agenciaId?: string; q?: string }): Promise<ComprovacaoListItem[]> {
+  async findAll(filters?: ComprovacaoAgenciaFilters): Promise<ComprovacaoListItem[]> {
     const pool = getPool();
     const q = (filters?.q ?? "").trim();
     const qLike = `%${q}%`;
     let query: string;
     let params: unknown[] | undefined;
     if (filters?.agenciaId) {
+      const { clause, params: agParams, nextIdx } = buildDemandaAgenciaWhere(filters, 1);
       query = `SELECT c.*, 
         (SELECT COUNT(*)::int FROM comprovacao_demandas cd2 WHERE cd2.comprovacao_id = c.id) as "demandaCount"
         FROM comprovacoes c
         INNER JOIN comprovacao_demandas cd ON c.id = cd.comprovacao_id
         INNER JOIN demandas d ON cd.demanda_id = d.id
-        WHERE d."agenciaId" = $1
-        ${q ? 'AND COALESCE(c.descricao, \'\') ILIKE $2' : ""}
+        WHERE ${clause}
+        ${q ? `AND COALESCE(c.descricao, '') ILIKE $${nextIdx}` : ""}
         GROUP BY c.id
         ORDER BY c."createdAt" DESC`;
-      params = q ? [filters.agenciaId, qLike] : [filters.agenciaId];
+      params = q ? [...agParams, qLike] : agParams;
     } else {
       query = `SELECT c.*, 
         (SELECT COUNT(*)::int FROM comprovacao_demandas cd WHERE cd.comprovacao_id = c.id) as "demandaCount"
@@ -64,7 +82,7 @@ export class DemandaComprovacaoPostgresRepository
   }
 
   async findPaginated(
-    filters: { agenciaId?: string; q?: string } | undefined,
+    filters: ComprovacaoAgenciaFilters | undefined,
     pagination: { page: number; limit: number }
   ): Promise<ComprovacaoPaginatedResult> {
     const pool = getPool();
@@ -73,18 +91,27 @@ export class DemandaComprovacaoPostgresRepository
     const qLike = `%${q}%`;
 
     if (filters?.agenciaId) {
-      const where = `WHERE d."agenciaId" = $1 ${q ? 'AND COALESCE(c.descricao, \'\') ILIKE $2' : ""}`;
+      const { clause, params: agParams, nextIdx } = buildDemandaAgenciaWhere(filters, 1);
+      const qPart = q
+        ? ` AND COALESCE(c.descricao, '') ILIKE $${nextIdx}`
+        : "";
+      const where = `WHERE ${clause}${qPart}`;
+      const countParams = q ? [...agParams, qLike] : agParams;
       const countResult = await pool.query(
         `SELECT COUNT(DISTINCT c.id)::int as total FROM comprovacoes c
          INNER JOIN comprovacao_demandas cd ON c.id = cd.comprovacao_id
          INNER JOIN demandas d ON cd.demanda_id = d.id
          ${where}`,
-        q ? [filters.agenciaId, qLike] : [filters.agenciaId]
+        countParams
       );
       const total = (countResult.rows[0] as { total: number }).total;
       const totalPages = Math.max(1, Math.ceil(total / limit));
       const pageSafe = Math.max(1, Math.min(page, totalPages));
       const offset = (pageSafe - 1) * limit;
+
+      const limIdx = q ? nextIdx + 1 : nextIdx;
+      const offIdx = q ? nextIdx + 2 : nextIdx + 1;
+      const dataParams = q ? [...agParams, qLike, limit, offset] : [...agParams, limit, offset];
 
       const dataResult = await pool.query(
         `SELECT c.*, 
@@ -95,8 +122,8 @@ export class DemandaComprovacaoPostgresRepository
           ${where}
           GROUP BY c.id
           ORDER BY c."createdAt" DESC
-          LIMIT $${q ? 3 : 2} OFFSET $${q ? 4 : 3}`,
-        q ? [filters.agenciaId, qLike, limit, offset] : [filters.agenciaId, limit, offset]
+          LIMIT $${limIdx} OFFSET $${offIdx}`,
+        dataParams
       );
       const items = (dataResult.rows as Array<Record<string, unknown>>).map((row) => ({
         ...rowToComprovacao(row),
@@ -216,10 +243,7 @@ export class DemandaComprovacaoPostgresRepository
     const pool = getPool();
     const comprovacao = await this.findById(id);
     if (comprovacao) {
-      const filePath = path.join(UPLOADS_DIR, comprovacao.caminhoArquivo);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      await deleteStoredUploadFile(comprovacao.caminhoArquivo, UPLOADS_DIR);
       await pool.query(
         "DELETE FROM comprovacao_demandas WHERE comprovacao_id = $1",
         [id]
@@ -228,14 +252,18 @@ export class DemandaComprovacaoPostgresRepository
     }
   }
 
-  async findDemandaIdsWithComprovacoes(agenciaId: string): Promise<string[]> {
+  async findDemandaIdsWithComprovacoes(filters: {
+    agenciaId: string;
+    agenciaNomeLegacy?: string;
+  }): Promise<string[]> {
     const pool = getPool();
+    const { clause, params } = buildDemandaAgenciaWhere(filters, 1);
     const result = await pool.query(
       `SELECT DISTINCT cd.demanda_id as "demandaId"
        FROM comprovacao_demandas cd
        INNER JOIN demandas d ON cd.demanda_id = d.id
-       WHERE d."agenciaId" = $1`,
-      [agenciaId]
+       WHERE ${clause}`,
+      params
     );
     return (result.rows as Array<{ demandaId: string }>).map((r) => r.demandaId);
   }
