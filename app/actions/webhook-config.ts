@@ -6,6 +6,15 @@ import { saveWebhookConfigUseCase } from "@/lib/use-cases/save-webhook-config.us
 import { getWebhookConfigRepository } from "@/lib/repositories";
 import { getSession } from "@/lib/auth";
 import type { WebhookConfig, WebhookEventCode, WebhookContact } from "@/types/globals";
+import {
+  formDataToWebhookConfigRaw,
+  parseWebhookContactListJson,
+  parseWebhookEventsJson,
+  testWebhookUrlSchema,
+  webhookConfigFormSchema,
+} from "@/lib/validation/schemas/webhook-actions";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
 
 export async function getWebhookConfigAction(): Promise<
   { config: WebhookConfig } | { error: string }
@@ -19,6 +28,7 @@ export async function getWebhookConfigAction(): Promise<
     const config = await getWebhookConfigUseCase({ webhookConfigRepository: repo });
     return { config };
   } catch (err) {
+    logServerActionError("getWebhookConfigAction", err);
     return {
       error: err instanceof Error ? err.message : "Erro ao carregar configuração de webhook.",
     };
@@ -33,50 +43,28 @@ export async function updateWebhookConfigAction(
   if (!session) return { error: "Não autenticado" };
   if (session.role !== "admin") return { error: "Sem permissão para editar integrações." };
 
-  const url = (formData.get("url") as string)?.trim() ?? "";
-  const enabled = formData.get("enabled") === "true";
-  const whatsappMod = formData.get("whatsappMod") === "true";
-  const eventsRaw = formData.get("events") as string | null;
-  let events: WebhookEventCode[] = [];
-  if (eventsRaw) {
-    try {
-      const parsed = JSON.parse(eventsRaw) as unknown[];
-      events = parsed.filter(
-        (e): e is WebhookEventCode =>
-          e === "demanda.criada" || e === "demanda.comprovada"
-      );
-    } catch {
-      events = [];
-    }
-  }
-  const contactListRaw = formData.get("contactList") as string | null;
-  let contactList: WebhookContact[] = [];
-  if (contactListRaw) {
-    try {
-      const parsed = JSON.parse(contactListRaw) as unknown[];
-      contactList = parsed
-        .filter(
-          (c): c is WebhookContact =>
-            typeof c === "object" && c !== null && "phone" in c && typeof (c as WebhookContact).phone === "string"
-        )
-        .map((c) => ({
-          phone: (c as WebhookContact).phone.trim(),
-          name: (c as WebhookContact).name?.trim() || undefined,
-        }))
-        .filter((c) => c.phone.length > 0);
-    } catch {
-      contactList = [];
-    }
+  const parsed = webhookConfigFormSchema.safeParse(formDataToWebhookConfigRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) };
   }
 
-  const result = await saveWebhookConfigUseCase(
-    { url, enabled, events, whatsappMod, contactList },
-    { webhookConfigRepository: getWebhookConfigRepository() }
-  );
+  const { url, enabled, whatsappMod, eventsJson, contactListJson } = parsed.data;
+  const events: WebhookEventCode[] = parseWebhookEventsJson(eventsJson);
+  const contactList: WebhookContact[] = parseWebhookContactListJson(contactListJson);
 
-  if ("error" in result) return { error: result.error };
-  revalidatePath("/integracoes");
-  return {};
+  try {
+    const result = await saveWebhookConfigUseCase(
+      { url, enabled, events, whatsappMod, contactList },
+      { webhookConfigRepository: getWebhookConfigRepository() }
+    );
+
+    if ("error" in result) return { error: result.error };
+    revalidatePath("/integracoes");
+    return {};
+  } catch (err) {
+    logServerActionError("updateWebhookConfigAction", err, { enabled });
+    return { error: err instanceof Error ? err.message : "Erro ao salvar webhook." };
+  }
 }
 
 export async function testWebhookAction(
@@ -86,8 +74,12 @@ export async function testWebhookAction(
   if (!session) return { error: "Não autenticado" };
   if (session.role !== "admin") return { error: "Sem permissão para testar webhook." };
 
-  const trimmed = (url ?? "").trim();
-  if (!trimmed) return { error: "Informe a URL do webhook para testar." };
+  const parsed = testWebhookUrlSchema.safeParse({ url });
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) };
+  }
+
+  const trimmed = parsed.data.url;
 
   try {
     const res = await fetch(trimmed, {
@@ -105,6 +97,7 @@ export async function testWebhookAction(
     }
     return { success: true };
   } catch (err) {
+    logServerActionError("testWebhookAction", err, { url: trimmed });
     const message = err instanceof Error ? err.message : "Erro ao enviar teste";
     return { error: message };
   }

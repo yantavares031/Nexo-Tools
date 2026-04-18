@@ -1,0 +1,23 @@
+---
+description: Listagens em repositório — limites, paginação e custo em SSR
+globs: lib/infra/repositories/**/*.ts,lib/domain/*.repository.ts,lib/use-cases/list-*.ts
+alwaysApply: false
+---
+
+# Repositórios — listas sem estouro
+
+## Princípio (adaptado)
+
+- **Evitar** `findAll()` sem limite em tabelas que crescem (demandas, mensagens, anexos, etc.) em caminhos usados em **SSR** ou **painel**.
+- **Preferir** paginação ou cap explícito documentado:
+  - Use case: `listDemandasPaginatedUseCase` + `findPaginated` no repositório de demandas.
+  - Novas listagens grandes: expor `limit` / `offset` ou cursor no **contrato** do repositório e no use case.
+
+## Ao adicionar método `find*` novo
+
+- Perguntar: “quantos registros no pior caso?” — se > centenas, **paginar** ou **filtrar obrigatório**.
+- Dashboards/agregados: preferir queries com **GROUP BY** / **COUNT** no SQL, não carregar todas as linhas para somar em memória (salvo volume garantido pequeno).
+
+## UI
+
+- A UI **não** importa repositório; chama **Server Action** → use case (já em `clean-architecture.mdc`).

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useActionState, useCallback } from "react";
-import { useFormStatus } from "react-dom";
+import { useState, useActionState, useCallback, useEffect, useRef } from "react";
 import { Users, Copy, Check } from "lucide-react";
 import { createUserAction, type CreateUserActionState } from "@/app/actions/user";
 import { Modal } from "@/components/Modal";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type { Agencia } from "@/types/globals";
 import { toast } from "sonner";
@@ -17,38 +17,40 @@ interface AdicionarUsuarioModalProps {
   agencias: Agencia[];
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      form="adicionar-usuario-form"
-      disabled={pending}
-      className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
-    >
-      {pending ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Adicionando...
-        </>
-      ) : (
-        "Adicionar"
-      )}
-    </button>
-  );
-}
-
 export function AdicionarUsuarioModal({
   open,
   onClose,
   onCreatedSuccess,
   agencias,
 }: AdicionarUsuarioModalProps) {
-  const [state, formAction] = useActionState(createUserAction, null as CreateUserActionState);
+  const [state, formAction, isPending] = useActionState(createUserAction, null as CreateUserActionState);
   const [acesso, setAcesso] = useState(true);
   const [copied, setCopied] = useState(false);
+  const emailFeedbackRef = useRef<string | null>(null);
   useToastOnActionError(state && "error" in state ? state : null);
+
+  useEffect(() => {
+    if (!state || !("ok" in state) || !state.ok) {
+      emailFeedbackRef.current = null;
+      return;
+    }
+    const key = `${state.userEmail}-${state.emailNotice}-${state.emailError ?? ""}`;
+    if (emailFeedbackRef.current === key) return;
+    emailFeedbackRef.current = key;
+
+    if (state.emailNotice === "sent") {
+      toast.success("E-mail com login e senha temporária enviado.", { id: "create-user-email-notice" });
+    } else if (state.emailNotice === "skipped_smtp") {
+      toast.message(
+        "SMTP não configurado: envie a senha manualmente ou configure em Integrações.",
+        { id: "create-user-email-notice" }
+      );
+    } else if (state.emailNotice === "failed" && state.emailError) {
+      toast.error(`Usuário criado, mas o e-mail não foi enviado: ${state.emailError}`, {
+        id: "create-user-email-notice",
+      });
+    }
+  }, [state]);
 
   const handleClose = useCallback(() => {
     setCopied(false);
@@ -78,8 +80,13 @@ export function AdicionarUsuarioModal({
       onClose={showSuccess ? handleConcluir : handleClose}
       maxWidth="md"
       ariaLabelledby="modal-usuario-title"
+      escapeEnabled={showSuccess || !isPending}
+      closeOnOverlayClick={showSuccess || !isPending}
     >
-      <Modal.Header onClose={showSuccess ? handleConcluir : handleClose}>
+      <Modal.Header
+        onClose={showSuccess ? handleConcluir : handleClose}
+        closeDisabled={!showSuccess && isPending}
+      >
         <h2
           id="modal-usuario-title"
           className="flex items-center gap-2 text-lg font-semibold text-slate-800"
@@ -92,11 +99,26 @@ export function AdicionarUsuarioModal({
       {showSuccess && state && "ok" in state && state.ok ? (
         <>
           <Modal.Body>
-            <p className="text-sm text-slate-600">
-              Foi gerada uma <strong>senha temporária</strong>. Ela está salva no banco até o primeiro
-              acesso. Envie ao usuário por um canal seguro. No primeiro login ele deverá definir uma nova
-              senha.
-            </p>
+            {state.emailNotice === "sent" ? (
+              <p className="text-sm text-slate-600">
+                Enviamos um e-mail para <strong className="break-all">{state.userEmail}</strong> com o{" "}
+                <strong>login</strong> e a <strong>senha temporária</strong>. No primeiro acesso será
+                solicitada a <strong>alteração da senha</strong>. Abaixo você pode copiar a senha como
+                reserva, se precisar.
+              </p>
+            ) : state.emailNotice === "skipped_smtp" ? (
+              <p className="text-sm text-slate-600">
+                O envio automático por e-mail não está ativo (configure o SMTP em{" "}
+                <strong>Integrações</strong>). Copie a <strong>senha temporária</strong> abaixo e envie por
+                um canal seguro. No primeiro login será solicitada a alteração da senha.
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">
+                Não foi possível enviar o e-mail automaticamente. Copie a <strong>senha temporária</strong>{" "}
+                abaixo e envie por um canal seguro para <strong className="break-all">{state.userEmail}</strong>
+                . No primeiro login será solicitada a alteração da senha.
+              </p>
+            )}
             <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <code className="min-w-0 flex-1 break-all text-sm font-mono text-slate-800">
                 {state.temporaryPassword}
@@ -134,13 +156,16 @@ export function AdicionarUsuarioModal({
                   name="email"
                   type="email"
                   required
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                   placeholder="usuario@exemplo.com"
                 />
               </div>
 
               <p className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                A senha será <strong>gerada automaticamente</strong> e exibida após o cadastro.
+                A senha será <strong>gerada automaticamente</strong>. Se o SMTP estiver configurado em{" "}
+                <strong>Integrações</strong>, o usuário receberá um e-mail com login e senha temporária; caso
+                contrário, a senha será exibida aqui após o cadastro.
               </p>
 
               <div>
@@ -151,7 +176,8 @@ export function AdicionarUsuarioModal({
                   id="name"
                   name="name"
                   type="text"
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                   placeholder="Nome do usuário"
                 />
               </div>
@@ -164,7 +190,8 @@ export function AdicionarUsuarioModal({
                   id="role"
                   name="role"
                   required
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                 >
                   <option value="operator">Operador</option>
                   <option value="admin">Admin</option>
@@ -179,7 +206,8 @@ export function AdicionarUsuarioModal({
                 <select
                   id="agenciaId"
                   name="agenciaId"
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                 >
                   <option value="">Selecione (obrigatório para perfil Agência)</option>
                   {agencias.map((a) => (
@@ -196,8 +224,9 @@ export function AdicionarUsuarioModal({
                   id="acesso"
                   type="checkbox"
                   checked={acesso}
+                  disabled={isPending}
                   onChange={(e) => setAcesso(e.target.checked)}
-                  className="size-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400"
+                  className="size-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400 disabled:opacity-50"
                 />
                 <label htmlFor="acesso" className="text-sm font-medium text-slate-600">
                   Acesso liberado
@@ -209,11 +238,18 @@ export function AdicionarUsuarioModal({
             <button
               type="button"
               onClick={handleClose}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              disabled={isPending}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
             >
               Cancelar
             </button>
-            <SubmitButton />
+            <FormActionSubmitButton
+              form="adicionar-usuario-form"
+              pending={isPending}
+              pendingLabel="Adicionando..."
+            >
+              Adicionar
+            </FormActionSubmitButton>
           </Modal.Footer>
         </>
       )}

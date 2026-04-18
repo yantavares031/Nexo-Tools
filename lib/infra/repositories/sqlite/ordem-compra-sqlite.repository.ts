@@ -50,6 +50,7 @@ function rowToOrdemCompra(row: Record<string, unknown>): OrdemCompra {
     caminhoArquivoAssinado: optionalString(row, "caminhoArquivoAssinado"),
     status: row.status as OrdemCompraStatus,
     autor: String(row.autor),
+    enviadoPorEmail: optionalString(row, "enviadoPorEmail"),
     createdAt: String(row.createdAt),
     updatedAt: row.updatedAt ? String(row.updatedAt) : undefined,
   };
@@ -62,9 +63,10 @@ export class OrdemCompraSqliteRepository implements IOrdemCompraRepository {
     const createdAt = new Date().toISOString();
     const status: OrdemCompraStatus = "em_aberto";
 
+    const enviadoPor = input.enviadoPorEmail?.trim() || null;
     db.prepare(
-      `INSERT INTO ordens_compra (id, demandaId, nomeArquivo, tipoArquivo, tamanho, caminhoArquivo, status, autor, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO ordens_compra (id, demandaId, nomeArquivo, tipoArquivo, tamanho, caminhoArquivo, status, autor, enviadoPorEmail, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       input.demandaId,
@@ -74,6 +76,7 @@ export class OrdemCompraSqliteRepository implements IOrdemCompraRepository {
       input.caminhoArquivo,
       status,
       input.autor,
+      enviadoPor,
       createdAt
     );
 
@@ -86,6 +89,7 @@ export class OrdemCompraSqliteRepository implements IOrdemCompraRepository {
       caminhoArquivo: input.caminhoArquivo,
       status,
       autor: input.autor,
+      enviadoPorEmail: enviadoPor ?? undefined,
       createdAt,
     };
   }

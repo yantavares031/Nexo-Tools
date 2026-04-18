@@ -7,27 +7,36 @@ import { updateSolicitanteUseCase } from "@/lib/use-cases/update-solicitante.use
 import { removeSolicitanteUseCase } from "@/lib/use-cases/remove-solicitante.use-case";
 import { getSolicitanteRepository } from "@/lib/repositories";
 import type { SolicitanteInput } from "@/types/globals";
+import {
+  createSolicitanteFormSchema,
+  formDataToCreateSolicitanteRaw,
+  formDataToUpdateSolicitanteRaw,
+  updateSolicitanteFormSchema,
+} from "@/lib/validation/schemas/solicitante-form";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
+import { parseEntityId, paginationLimitSchema, paginationPageSchema } from "@/lib/validation/schemas/common";
 
 export async function createSolicitanteAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const nome = (formData.get("nome") as string)?.trim() ?? "";
-  const unResponsavel = (formData.get("unResponsavel") as string)?.trim() ?? "";
-
-  if (!nome) {
-    return {
-      error: "Nome é obrigatório.",
-    } as const;
+  const parsed = createSolicitanteFormSchema.safeParse(formDataToCreateSolicitanteRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) } as const;
   }
 
-  const input: SolicitanteInput = { nome, unResponsavel: unResponsavel || undefined };
+  const input: SolicitanteInput = {
+    nome: parsed.data.nome,
+    unResponsavel: parsed.data.unResponsavel,
+  };
 
   const solicitanteRepository = getSolicitanteRepository();
 
   try {
     await createSolicitanteUseCase(input, { solicitanteRepository });
   } catch (err) {
+    logServerActionError("createSolicitanteAction", err, { nome: input.nome });
     return {
       error: err instanceof Error ? err.message : "Erro ao cadastrar solicitante.",
     } as const;
@@ -41,10 +50,15 @@ export async function getSolicitantesPaginatedAction(
   limit: number,
   q?: string
 ): Promise<import("@/lib/domain/solicitante.repository").SolicitantePaginatedResult> {
+  const p = paginationPageSchema.safeParse(page);
+  const l = paginationLimitSchema.safeParse(limit);
+  const pageN = p.success ? p.data : 1;
+  const limitN = l.success ? l.data : 20;
+
   const solicitanteRepository = getSolicitanteRepository();
   return solicitanteRepository.findPaginated(
     q ? { q } : undefined,
-    { page, limit }
+    { page: pageN, limit: limitN }
   );
 }
 
@@ -52,22 +66,22 @@ export async function updateSolicitanteAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const id = formData.get("id") as string;
-  const nome = (formData.get("nome") as string)?.trim() ?? "";
-  const unResponsavel = (formData.get("unResponsavel") as string)?.trim() ?? "";
-
-  if (!id || !nome) {
-    return { error: "Dados inválidos." } as const;
+  const parsed = updateSolicitanteFormSchema.safeParse(formDataToUpdateSolicitanteRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) } as const;
   }
+
+  const { id, nome, unResponsavel } = parsed.data;
 
   const solicitanteRepository = getSolicitanteRepository();
   try {
     await updateSolicitanteUseCase(
       id,
-      { nome, unResponsavel: unResponsavel || undefined },
+      { nome, unResponsavel },
       { solicitanteRepository }
     );
   } catch (err) {
+    logServerActionError("updateSolicitanteAction", err, { id });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar solicitante.",
     } as const;
@@ -80,8 +94,18 @@ export async function updateSolicitanteAction(
 }
 
 export async function removeSolicitanteAction(id: string) {
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    redirect("/solicitantes?error=" + encodeURIComponent(idCheck.error));
+  }
+
   const solicitanteRepository = getSolicitanteRepository();
-  await removeSolicitanteUseCase(id, { solicitanteRepository });
+  try {
+    await removeSolicitanteUseCase(idCheck.id, { solicitanteRepository });
+  } catch (err) {
+    logServerActionError("removeSolicitanteAction", err, { id: idCheck.id });
+    redirect("/solicitantes?error=" + encodeURIComponent("Erro ao remover solicitante."));
+  }
   revalidatePath("/solicitantes");
   revalidatePath("/");
   revalidatePath("/dashboard");

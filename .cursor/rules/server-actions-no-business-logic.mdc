@@ -23,7 +23,7 @@ alwaysApply: true
 
 ## ✅ Permitido na Action
 
-1. **Parsing**: ler FormData, parseBrazilianCurrency, montar objeto de input.
+1. **Parsing e validação de fronteira**: ler FormData, `parseBrazilianCurrency`, montar objeto; **validar formato** com Zod (`lib/validation/schemas/`) — e-mail, enums, tamanhos — ver `server-actions-boundary.mdc`. Isso **não** substitui regras de negócio no use case.
 2. **Autorização**: getSession(), checar role para permitir ou negar a chamada.
 3. **Chamar use case**: passar input e repositórios (ou factory).
 4. **Resposta**: try/catch, retornar `{ error: err.message }` ou redirect/revalidatePath.

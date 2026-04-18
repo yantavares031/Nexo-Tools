@@ -1,5 +1,6 @@
 import { loginAction } from "@/app/actions/auth";
 import { APP_VERSION } from "@/lib/version";
+import { FormSubmitButton } from "@/components/FormActionSubmitButton";
 import { WorkflowIllustration } from "./sub/WorkflowIllustration";
 import { LoginPageClient } from "./sub/LoginPageClient";
 
@@ -93,17 +94,13 @@ export default async function LoginPage({
                 />
               </div>
 
-              <button
-                type="submit"
-                className="mt-3 w-full rounded-full bg-blue-500/90 py-3 text-sm font-medium text-white transition hover:bg-blue-500"
+              <FormSubmitButton
+                pendingLabel="Entrando..."
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500/90 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:pointer-events-none disabled:opacity-50"
               >
                 Entrar
-              </button>
+              </FormSubmitButton>
             </form>
-
-            <p className="mt-6 text-center text-xs text-slate-400/80 md:text-left">
-              Admin: admin@nexo.com / admin123 — Operator: user@nexo.com / user123 — Agency: agency@nexo.com / agency123
-            </p>
           </div>
         </main>
       </div>

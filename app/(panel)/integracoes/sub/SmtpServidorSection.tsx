@@ -5,6 +5,7 @@ import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { saveSmtpConfigAction, testSmtpEmailAction } from "@/app/actions/smtp-config";
 import { toast } from "sonner";
 import { Toggle } from "@/components/Toggle";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { Mail } from "lucide-react";
 import type { SmtpConfigPanel } from "@/types/globals";
 
@@ -13,7 +14,7 @@ interface SmtpServidorSectionProps {
 }
 
 export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) {
-  const [state, formAction] = useActionState(saveSmtpConfigAction, null);
+  const [state, formAction, isPendingSave] = useActionState(saveSmtpConfigAction, null);
   const [isTesting, startTransition] = useTransition();
   const [enabled, setEnabled] = useState(initialPanel.enabled);
   const [testEmail, setTestEmail] = useState("");
@@ -66,7 +67,8 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
             type="text"
             defaultValue={initialPanel.smtpHost}
             placeholder="smtp.gmail.com"
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            disabled={isPendingSave}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           />
         </div>
 
@@ -81,7 +83,8 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
             min={1}
             max={65535}
             defaultValue={initialPanel.smtpPort}
-            className="w-full max-w-[140px] rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            disabled={isPendingSave}
+            className="w-full max-w-[140px] rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           />
           <p className="mt-1 text-xs text-slate-500">Gmail: 587 (TLS) ou 465 (SSL).</p>
         </div>
@@ -97,7 +100,8 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
             autoComplete="username"
             defaultValue={initialPanel.smtpUser}
             placeholder="sua.conta@gmail.com"
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            disabled={isPendingSave}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           />
         </div>
 
@@ -113,7 +117,8 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
             placeholder={
               initialPanel.hasPassword ? "Deixe em branco para manter a senha salva" : "Cole a senha de app"
             }
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            disabled={isPendingSave}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           />
         </div>
 
@@ -122,6 +127,7 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
             name="enabled"
             checked={enabled}
             onChange={setEnabled}
+            disabled={isPendingSave}
             label="Habilitar envio de e-mail pelo sistema"
           />
           <p className="text-xs text-slate-500">
@@ -130,13 +136,33 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
           </p>
         </div>
 
-        <div className="flex justify-end pt-2">
-          <button
-            type="submit"
-            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
+        <div>
+          <label
+            htmlFor="oc-notify-emails"
+            className="mb-1 block text-sm font-medium text-slate-600"
           >
+            E-mails — notificações de ordem de compra
+          </label>
+          <textarea
+            id="oc-notify-emails"
+            name="ordemCompraNotifyEmails"
+            rows={5}
+            defaultValue={initialPanel.ordemCompraNotifyEmailsText}
+            disabled={isPendingSave}
+            placeholder={"financeiro@exemplo.com\ncompras@exemplo.com"}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Um endereço por linha (ou separados por vírgula). Recebem aviso quando uma agência envia uma
+            OC e, após a assinatura pelo admin, uma cópia do PDF assinado. O usuário da agência que enviou
+            a OC também recebe e-mails automáticos (cópia de backup).
+          </p>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <FormActionSubmitButton pending={isPendingSave} pendingLabel="Salvando...">
             Salvar
-          </button>
+          </FormActionSubmitButton>
         </div>
       </form>
 
@@ -160,15 +186,23 @@ export function SmtpServidorSection({ initialPanel }: SmtpServidorSectionProps) 
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
               placeholder="destino@exemplo.com"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              disabled={isTesting || isPendingSave}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
             />
           </div>
           <button
             type="submit"
-            disabled={isTesting}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            disabled={isTesting || isPendingSave}
+            className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
           >
-            {isTesting ? "Enviando…" : "Enviar teste"}
+            {isTesting ? (
+              <>
+                <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                Enviando…
+              </>
+            ) : (
+              "Enviar teste"
+            )}
           </button>
         </form>
       </div>

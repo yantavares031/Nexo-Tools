@@ -33,6 +33,7 @@ export default async function IntegracoesPage() {
           smtpUser: "",
           enabled: false,
           hasPassword: false,
+          ordemCompraNotifyEmailsText: "",
         };
 
   return (

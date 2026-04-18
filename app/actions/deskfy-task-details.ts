@@ -3,6 +3,9 @@
 import { getSession } from "@/lib/auth";
 import { getDeskfyWorkflowReportsService } from "@/lib/infra/deskfy-workflow-reports.service";
 import { getDeskfyTaskDetailsUseCase } from "@/lib/use-cases/get-deskfy-task-details.use-case";
+import { logServerActionError } from "@/lib/server-action-log";
+import { deskfyTaskIdSchema } from "@/lib/validation/schemas/deskfy-forms";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import type { DeskfyTaskDetailsResponse } from "@/types/globals";
 
 export async function getDeskfyTaskDetailsAction(
@@ -12,7 +15,11 @@ export async function getDeskfyTaskDetailsAction(
   if (!session) return { error: "Não autenticado" };
   if (session.role === "agency") return { error: "Sem permissão para importar demandas." };
 
-  const taskId = Number.parseInt(String(taskIdRaw).trim(), 10);
+  const taskIdParsed = deskfyTaskIdSchema.safeParse(taskIdRaw);
+  if (!taskIdParsed.success) {
+    return { error: zodErrorToActionMessage(taskIdParsed.error) };
+  }
+  const taskId = taskIdParsed.data;
 
   try {
     const data = await getDeskfyTaskDetailsUseCase(taskId, {
@@ -20,6 +27,7 @@ export async function getDeskfyTaskDetailsAction(
     });
     return { data };
   } catch (err) {
+    logServerActionError("getDeskfyTaskDetailsAction", err, { taskId });
     return {
       error: err instanceof Error ? err.message : "Erro ao carregar detalhes da demanda na Deskfy.",
     };

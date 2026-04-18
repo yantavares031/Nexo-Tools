@@ -346,6 +346,7 @@ export function initDb(database: Database.Database): void {
         caminhoArquivoAssinado TEXT,
         status TEXT NOT NULL CHECK (status IN ('em_aberto', 'assinada')),
         autor TEXT NOT NULL,
+        enviadoPorEmail TEXT,
         createdAt TEXT NOT NULL,
         updatedAt TEXT,
         FOREIGN KEY (demandaId) REFERENCES demandas(id) ON DELETE CASCADE
@@ -380,6 +381,9 @@ export function initDb(database: Database.Database): void {
     if (!col("caminhoArquivoAssinado")) {
       database.exec("ALTER TABLE ordens_compra ADD COLUMN caminhoArquivoAssinado TEXT");
     }
+    if (!col("enviadoPorEmail")) {
+      database.exec("ALTER TABLE ordens_compra ADD COLUMN enviadoPorEmail TEXT");
+    }
   } catch {
     // ignora
   }
@@ -393,9 +397,19 @@ export function initDb(database: Database.Database): void {
         smtp_user TEXT NOT NULL DEFAULT '',
         smtp_password TEXT NOT NULL DEFAULT '',
         enabled INTEGER NOT NULL DEFAULT 0,
+        ordem_compra_notify_emails TEXT NOT NULL DEFAULT '[]',
         updated_at TEXT
       )
     `);
+  } catch {
+    // ignora
+  }
+
+  try {
+    const smtpInfo = database.prepare("PRAGMA table_info(smtp_config)").all() as { name: string }[];
+    if (smtpInfo.length > 0 && !smtpInfo.some((c) => c.name === "ordem_compra_notify_emails")) {
+      database.exec("ALTER TABLE smtp_config ADD COLUMN ordem_compra_notify_emails TEXT DEFAULT '[]'");
+    }
   } catch {
     // ignora
   }

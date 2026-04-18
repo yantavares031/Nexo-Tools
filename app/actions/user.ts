@@ -5,46 +5,55 @@ import { revalidatePath } from "next/cache";
 import { createUserUseCase } from "@/lib/use-cases/create-user.use-case";
 import { updateUserUseCase } from "@/lib/use-cases/update-user.use-case";
 import { removeUserUseCase } from "@/lib/use-cases/remove-user.use-case";
-import { getUserRepository } from "@/lib/repositories";
+import { getUserRepository, getSmtpConfigRepository } from "@/lib/repositories";
 import type { UserInput, UserRole } from "@/types/globals";
 import { generateTemporaryPassword } from "@/lib/generate-temporary-password";
+import { sendNewUserCredentialsEmailUseCase } from "@/lib/use-cases/send-new-user-credentials-email.use-case";
+import { getPublicAppBaseUrlForEmail } from "@/lib/public-app-url";
+import {
+  createUserFormSchema,
+  formDataToCreateUserRaw,
+} from "@/lib/validation/schemas/create-user-form";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
+import {
+  formDataToUpdateUserRaw,
+  updateUserFormSchema,
+} from "@/lib/validation/schemas/update-user-form";
+import { parseUserRecordId } from "@/lib/validation/schemas/common";
 
-const VALID_ROLES: UserRole[] = ["admin", "operator", "agency"];
+export type CreateUserEmailNotice = "sent" | "skipped_smtp" | "failed";
 
 export type CreateUserActionState =
   | null
   | { error: string }
-  | { ok: true; temporaryPassword: string };
+  | {
+      ok: true;
+      userEmail: string;
+      temporaryPassword: string;
+      emailNotice: CreateUserEmailNotice;
+      emailError?: string;
+    };
 
 export async function createUserAction(
   _prevState: CreateUserActionState,
   formData: FormData
 ): Promise<CreateUserActionState> {
-  const email = (formData.get("email") as string)?.trim() ?? "";
-  const name = (formData.get("name") as string)?.trim() ?? "";
-  const roleRaw = (formData.get("role") as string) ?? "operator";
-  const role = VALID_ROLES.includes(roleRaw as UserRole)
-    ? (roleRaw as UserRole)
-    : "operator";
-  const agenciaId = (formData.get("agenciaId") as string)?.trim() || undefined;
-  const acesso = formData.get("acesso") !== "false";
-
-  if (!email) {
-    return { error: "E-mail é obrigatório." };
+  const parsed = createUserFormSchema.safeParse(formDataToCreateUserRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) };
   }
 
-  if (!["admin", "operator", "agency"].includes(role)) {
-    return { error: "Perfil inválido." };
-  }
+  const { email, name, role, agenciaId, acesso } = parsed.data;
 
   const plainPassword = generateTemporaryPassword(14);
 
   const input: UserInput = {
     email,
     password: plainPassword,
-    name: name || undefined,
-    role,
-    agenciaId: role === "agency" ? agenciaId : undefined,
+    name,
+    role: role as UserRole,
+    agenciaId,
     acesso,
   };
 
@@ -53,13 +62,43 @@ export async function createUserAction(
   try {
     await createUserUseCase(input, { userRepository });
   } catch (err) {
+    logServerActionError("createUserAction", err, { email });
     return {
       error: err instanceof Error ? err.message : "Erro ao cadastrar usuário.",
     };
   }
 
+  const loginPageUrl = `${getPublicAppBaseUrlForEmail()}/login`;
+  const emailResult = await sendNewUserCredentialsEmailUseCase(
+    {
+      to: email,
+      recipientName: name,
+      loginEmail: email,
+      temporaryPassword: plainPassword,
+      loginPageUrl,
+    },
+    { smtpConfigRepository: getSmtpConfigRepository() }
+  );
+
+  let emailNotice: CreateUserEmailNotice;
+  let emailError: string | undefined;
+  if (emailResult.status === "sent") {
+    emailNotice = "sent";
+  } else if (emailResult.status === "skipped") {
+    emailNotice = "skipped_smtp";
+  } else {
+    emailNotice = "failed";
+    emailError = emailResult.message;
+  }
+
   revalidatePath("/usuarios");
-  return { ok: true, temporaryPassword: plainPassword };
+  return {
+    ok: true,
+    userEmail: email,
+    temporaryPassword: plainPassword,
+    emailNotice,
+    emailError,
+  };
 }
 
 export async function updateUserAction(
@@ -67,37 +106,35 @@ export async function updateUserAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const email = (formData.get("email") as string)?.trim() ?? "";
-  const password = (formData.get("password") as string) ?? "";
-  const name = (formData.get("name") as string)?.trim() ?? "";
-  const roleRaw = (formData.get("role") as string) ?? "operator";
-  const role = VALID_ROLES.includes(roleRaw as UserRole)
-    ? (roleRaw as UserRole)
-    : "operator";
-  const agenciaId = (formData.get("agenciaId") as string)?.trim() || undefined;
-  const acessoRaw = formData.get("acesso");
-  const acesso = acessoRaw === "true";
-
-  if (!email) {
-    return { error: "E-mail é obrigatório." } as const;
+  const idCheck = parseUserRecordId(id);
+  if (!idCheck.ok) {
+    return { error: idCheck.error } as const;
   }
+
+  const parsed = updateUserFormSchema.safeParse(formDataToUpdateUserRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) } as const;
+  }
+
+  const { email, password, name, role, agenciaId, acesso } = parsed.data;
 
   const userRepository = getUserRepository();
 
   try {
     await updateUserUseCase(
-      id,
+      idCheck.id,
       {
         email,
         password: password || undefined,
-        name: name || undefined,
-        role,
-        agenciaId: role === "agency" ? agenciaId : undefined,
+        name,
+        role: role as UserRole,
+        agenciaId,
         acesso,
       },
       { userRepository }
     );
   } catch (err) {
+    logServerActionError("updateUserAction", err, { id: idCheck.id, email });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar usuário.",
     } as const;
@@ -108,8 +145,18 @@ export async function updateUserAction(
 }
 
 export async function removeUserAction(id: string) {
+  const idCheck = parseUserRecordId(id);
+  if (!idCheck.ok) {
+    redirect("/usuarios?error=" + encodeURIComponent(idCheck.error));
+  }
+
   const userRepository = getUserRepository();
-  await removeUserUseCase(id, { userRepository });
+  try {
+    await removeUserUseCase(idCheck.id, { userRepository });
+  } catch (err) {
+    logServerActionError("removeUserAction", err, { id: idCheck.id });
+    redirect("/usuarios?error=" + encodeURIComponent("Erro ao remover usuário."));
+  }
   revalidatePath("/usuarios");
   redirect("/usuarios?removed=1");
 }

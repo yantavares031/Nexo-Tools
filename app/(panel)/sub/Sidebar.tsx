@@ -18,6 +18,7 @@ import type { UserRole } from "@/types/globals";
 import { canAccessRoute } from "@/lib/roles";
 
 const ALL_MENU_ITEMS = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/", label: "Demandas", icon: Workflow },
   { href: "/comprovacoes", label: "Comprovações", icon: FileCheck },
   { href: "/ordens-compra", label: "Ordens de compra", icon: FileSignature },
@@ -26,7 +27,6 @@ const ALL_MENU_ITEMS = [
   { href: "/centros-custo", label: "Centros de Custo", icon: Tag },
   { href: "/usuarios", label: "Usuários", icon: Users },
   { href: "/integracoes", label: "Integrações", icon: Plug },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ] as const;
 
 interface SidebarProps {

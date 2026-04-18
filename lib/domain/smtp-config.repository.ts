@@ -3,7 +3,7 @@ import type { SmtpConfig } from "@/types/globals";
 /** Valores finais já mesclados (senha nova ou a existente). */
 export type SmtpConfigPersistInput = Pick<
   SmtpConfig,
-  "smtpHost" | "smtpPort" | "smtpUser" | "smtpPassword" | "enabled"
+  "smtpHost" | "smtpPort" | "smtpUser" | "smtpPassword" | "enabled" | "ordemCompraNotifyEmails"
 >;
 
 export interface ISmtpConfigRepository {

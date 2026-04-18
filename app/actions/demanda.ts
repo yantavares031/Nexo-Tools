@@ -16,6 +16,14 @@ import {
 import { parseBrazilianCurrency } from "@/lib/currency";
 import { getSession } from "@/lib/auth";
 import type { DemandaInput } from "@/types/globals";
+import {
+  demandaFormFieldsSchema,
+  formDataToDemandaRaw,
+  parseCentrosCustoJson,
+} from "@/lib/validation/schemas/demanda-form";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
+import { parseEntityId } from "@/lib/validation/schemas/common";
 
 export async function createDemandaAction(
   _prevState: { error?: string } | null,
@@ -23,58 +31,45 @@ export async function createDemandaAction(
 ) {
   const session = await getSession();
 
-  const demanda = (formData.get("demanda") as string)?.trim() ?? "";
-  const solicitante = (formData.get("solicitante") as string)?.trim() ?? "";
-  const unResponsavel = (formData.get("unResponsavel") as string)?.trim() ?? "";
-  const obs = (formData.get("obs") as string)?.trim() ?? "";
-  const status = (formData.get("status") as string) ?? "comprometido";
-  const valor = parseBrazilianCurrency((formData.get("valor") as string) ?? "");
-  const centroDeCusto = (formData.get("centroDeCusto") as string)?.trim() ?? "";
-  const ocPi = (formData.get("ocPi") as string)?.trim() ?? "";
-  const mes = (formData.get("mes") as string)?.trim() ?? "";
-  const agencia = (formData.get("agencia") as string)?.trim() || undefined;
-
-  if (!demanda || !solicitante || !unResponsavel) {
-    return { error: "Demanda, solicitante e unidade responsável são obrigatórios." } as const;
+  const fields = demandaFormFieldsSchema.safeParse(formDataToDemandaRaw(formData));
+  if (!fields.success) {
+    return { error: zodErrorToActionMessage(fields.error) } as const;
   }
+  const f = fields.data;
+
+  const valor = parseBrazilianCurrency(f.valor);
 
   const input: DemandaInput = {
-    demanda,
-    solicitante,
-    unResponsavel,
-    obs,
-    status: status as "faturado" | "comprometido" | "entregue",
+    demanda: f.demanda,
+    solicitante: f.solicitante,
+    unResponsavel: f.unResponsavel,
+    obs: f.obs,
+    status: f.status,
     valor,
-    centroDeCusto,
-    ocPi,
-    mes,
-    agencia,
+    centroDeCusto: f.centroDeCusto,
+    ocPi: f.ocPi,
+    mes: f.mes,
+    agencia: f.agencia,
   };
 
-  // Validar centros de custo antes de criar a demanda (regra de negócio no use case)
-  const centrosCustoJson = formData.get("centrosCusto") as string | null;
-  let centrosCusto: Array<{ centroDeCusto: string; valor: number; ordem: number }> | null = null;
-  
-  if (centrosCustoJson) {
-    try {
-      centrosCusto = JSON.parse(centrosCustoJson) as Array<{ centroDeCusto: string; valor: number; ordem: number }>;
-      if (centrosCusto.length > 0) {
-        const validation = validateCentrosCustoUseCase({
-          centrosCusto: centrosCusto.map((cc) => ({
-            centroDeCusto: cc.centroDeCusto,
-            valor: cc.valor,
-            ordem: cc.ordem,
-          })),
-          valorTotalDemanda: valor,
-        });
+  const centrosParsed = parseCentrosCustoJson(f.centrosCustoJson ?? null);
+  if (!centrosParsed.ok) {
+    return { error: centrosParsed.error } as const;
+  }
+  let centrosCusto = centrosParsed.data.length > 0 ? centrosParsed.data : null;
 
-        if (!validation.isValid) {
-          return { error: validation.error } as const;
-        }
-      }
-    } catch (err) {
-      console.error("Erro ao validar centros de custo:", err);
-      return { error: "Erro ao processar os centros de custo." } as const;
+  if (centrosCusto && centrosCusto.length > 0) {
+    const validation = validateCentrosCustoUseCase({
+      centrosCusto: centrosCusto.map((cc) => ({
+        centroDeCusto: cc.centroDeCusto,
+        valor: cc.valor,
+        ordem: cc.ordem,
+      })),
+      valorTotalDemanda: valor,
+    });
+
+    if (!validation.isValid) {
+      return { error: validation.error } as const;
     }
   }
 
@@ -102,6 +97,7 @@ export async function createDemandaAction(
       }
     );
   } catch (err) {
+    logServerActionError("createDemandaAction", err, { demanda: input.demanda });
     return {
       error: err instanceof Error ? err.message : "Erro ao criar demanda.",
     } as const;
@@ -109,7 +105,7 @@ export async function createDemandaAction(
 
   revalidatePath("/");
   revalidatePath("/dashboard");
-  const redirectTo = (formData.get("redirectTo") as string)?.trim();
+  const redirectTo = f.redirectTo.trim();
   if (redirectTo === "importar") {
     redirect("/demandas/importar?imported=1");
   }
@@ -121,39 +117,38 @@ export async function updateDemandaAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const demanda = (formData.get("demanda") as string)?.trim() ?? "";
-  const solicitante = (formData.get("solicitante") as string)?.trim() ?? "";
-  const unResponsavel = (formData.get("unResponsavel") as string)?.trim() ?? "";
-  const obs = (formData.get("obs") as string)?.trim() ?? "";
-  const status = (formData.get("status") as string) ?? "comprometido";
-  const valor = parseBrazilianCurrency((formData.get("valor") as string) ?? "");
-  const centroDeCusto = (formData.get("centroDeCusto") as string)?.trim() ?? "";
-  const ocPi = (formData.get("ocPi") as string)?.trim() ?? "";
-  const mes = (formData.get("mes") as string)?.trim() ?? "";
-  const agencia = (formData.get("agencia") as string)?.trim() || undefined;
-
-  if (!demanda || !solicitante || !unResponsavel) {
-    return { error: "Demanda, solicitante e unidade responsável são obrigatórios." } as const;
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    return { error: idCheck.error } as const;
   }
 
+  const fields = demandaFormFieldsSchema.safeParse(formDataToDemandaRaw(formData));
+  if (!fields.success) {
+    return { error: zodErrorToActionMessage(fields.error) } as const;
+  }
+  const f = fields.data;
+
+  const valor = parseBrazilianCurrency(f.valor);
+
   const input: DemandaInput = {
-    demanda,
-    solicitante,
-    unResponsavel,
-    obs,
-    status: status as "faturado" | "comprometido" | "entregue",
+    demanda: f.demanda,
+    solicitante: f.solicitante,
+    unResponsavel: f.unResponsavel,
+    obs: f.obs,
+    status: f.status,
     valor,
-    centroDeCusto,
-    ocPi,
-    mes,
-    agencia,
+    centroDeCusto: f.centroDeCusto,
+    ocPi: f.ocPi,
+    mes: f.mes,
+    agencia: f.agencia,
   };
 
   const demandaRepository = getDemandaRepository();
   const agenciaRepository = getAgenciaRepository();
   try {
-    await updateDemandaUseCase(id, input, { demandaRepository, agenciaRepository });
+    await updateDemandaUseCase(idCheck.id, input, { demandaRepository, agenciaRepository });
   } catch (err) {
+    logServerActionError("updateDemandaAction", err, { id: idCheck.id });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar demanda.",
     } as const;
@@ -164,8 +159,18 @@ export async function updateDemandaAction(
 }
 
 export async function removeDemandaAction(id: string) {
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    redirect("/?error=" + encodeURIComponent(idCheck.error));
+  }
+
   const demandaRepository = getDemandaRepository();
-  await removeDemandaUseCase(id, { demandaRepository });
+  try {
+    await removeDemandaUseCase(idCheck.id, { demandaRepository });
+  } catch (err) {
+    logServerActionError("removeDemandaAction", err, { id: idCheck.id });
+    redirect("/?error=" + encodeURIComponent("Erro ao remover demanda."));
+  }
   revalidatePath("/");
   revalidatePath("/dashboard");
   redirect("/?removed=1");

@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { updateAgenciaAction } from "@/app/actions/agencia";
 import { CurrencyInput } from "@/components/CurrencyInput";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type { Agencia } from "@/types/globals";
 
@@ -17,29 +17,8 @@ interface AgenciaFormProps {
   boards?: BoardOption[];
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
-    >
-      {pending ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Atualizando...
-        </>
-      ) : (
-        "Atualizar"
-      )}
-    </button>
-  );
-}
-
 export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
-  const [state, formAction] = useActionState(
+  const [state, formAction, isPending] = useActionState(
     updateAgenciaAction.bind(null, agencia.id),
     null
   );
@@ -60,7 +39,8 @@ export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
           type="text"
           required
           defaultValue={agencia.nomeFantasia}
-          className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+          disabled={isPending}
+          className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           placeholder="Ex: La Marka"
         />
       </div>
@@ -78,7 +58,8 @@ export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
           type="text"
           required
           defaultValue={agencia.cnpj}
-          className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+          disabled={isPending}
+          className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           placeholder="00.000.000/0001-00"
         />
       </div>
@@ -94,6 +75,8 @@ export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
           id="orcamentoAnual"
           name="orcamentoAnual"
           defaultValue={agencia.orcamentoAnual}
+          disabled={isPending}
+          className="disabled:opacity-50"
         />
       </div>
 
@@ -109,7 +92,8 @@ export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
             id="boardId"
             name="boardId"
             defaultValue={agencia.boardId ?? ""}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            disabled={isPending}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           >
             <option value="">Nenhum</option>
             {boards.map((b) => (
@@ -122,7 +106,9 @@ export function AgenciaForm({ agencia, boards = [] }: AgenciaFormProps) {
       ) : null}
 
       <div className="pt-2">
-        <SubmitButton />
+        <FormActionSubmitButton pending={isPending} pendingLabel="Atualizando...">
+          Atualizar
+        </FormActionSubmitButton>
       </div>
     </form>
   );

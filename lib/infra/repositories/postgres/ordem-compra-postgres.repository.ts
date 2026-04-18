@@ -55,6 +55,7 @@ function rowToOrdemCompra(row: Record<string, unknown>): OrdemCompra {
     caminhoArquivoAssinado: optionalStringPg(row, "caminhoArquivoAssinado"),
     status: row.status as OrdemCompraStatus,
     autor: String(row.autor),
+    enviadoPorEmail: optionalStringPg(row, "enviadoPorEmail"),
     createdAt: String(row.createdAt),
     updatedAt: row.updatedAt ? String(row.updatedAt) : undefined,
   };
@@ -67,9 +68,10 @@ export class OrdemCompraPostgresRepository implements IOrdemCompraRepository {
     const createdAt = new Date().toISOString();
     const status: OrdemCompraStatus = "em_aberto";
 
+    const enviadoPor = input.enviadoPorEmail?.trim() || null;
     await pool.query(
-      `INSERT INTO ordens_compra (id, "demandaId", "nomeArquivo", "tipoArquivo", tamanho, "caminhoArquivo", status, autor, "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO ordens_compra (id, "demandaId", "nomeArquivo", "tipoArquivo", tamanho, "caminhoArquivo", status, autor, "enviadoPorEmail", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         id,
         input.demandaId,
@@ -79,6 +81,7 @@ export class OrdemCompraPostgresRepository implements IOrdemCompraRepository {
         input.caminhoArquivo,
         status,
         input.autor,
+        enviadoPor,
         createdAt,
       ]
     );
@@ -92,6 +95,7 @@ export class OrdemCompraPostgresRepository implements IOrdemCompraRepository {
       caminhoArquivo: input.caminhoArquivo,
       status,
       autor: input.autor,
+      enviadoPorEmail: enviadoPor ?? undefined,
       createdAt,
     };
   }

@@ -5,6 +5,7 @@ import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { updateWebhookConfigAction, testWebhookAction } from "@/app/actions/webhook-config";
 import { toast } from "sonner";
 import { Toggle } from "@/components/Toggle";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import type { WebhookConfig, WebhookEventCode, WebhookContact } from "@/types/globals";
 
 const EVENT_OPTIONS: { value: WebhookEventCode; label: string }[] = [
@@ -17,7 +18,7 @@ interface WebhooksFormProps {
 }
 
 export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
-  const [state, formAction] = useActionState(updateWebhookConfigAction, null);
+  const [state, formAction, isPendingSave] = useActionState(updateWebhookConfigAction, null);
   const [isTesting, startTransition] = useTransition();
   const [enabled, setEnabled] = useState(initialConfig?.enabled ?? false);
   const [whatsappMod, setWhatsappMod] = useState(initialConfig?.whatsappMod ?? false);
@@ -98,7 +99,8 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
             type="url"
             defaultValue={defaultUrl}
             placeholder="https://exemplo.com/webhook"
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            disabled={isPendingSave}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
           />
         </div>
 
@@ -107,6 +109,7 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
             name="enabled"
             checked={enabled}
             onChange={setEnabled}
+            disabled={isPendingSave}
             label="Habilitar webhook"
           />
           <p className="text-xs text-slate-500">
@@ -119,6 +122,7 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
             name="whatsappMod"
             checked={whatsappMod}
             onChange={setWhatsappMod}
+            disabled={isPendingSave}
             label="Modo WhatsApp"
           />
           <p className="text-xs text-slate-500">
@@ -142,19 +146,22 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
                     placeholder="Telefone"
                     value={contact.phone}
                     onChange={(e) => updateContact(index, "phone", e.target.value)}
-                    className="w-32 rounded border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    disabled={isPendingSave}
+                    className="w-32 rounded border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                   />
                   <input
                     type="text"
                     placeholder="Nome (opcional)"
                     value={contact.name ?? ""}
                     onChange={(e) => updateContact(index, "name", e.target.value)}
-                    className="min-w-32 flex-1 rounded border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    disabled={isPendingSave}
+                    className="min-w-32 flex-1 rounded border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                   />
                   <button
                     type="button"
                     onClick={() => removeContact(index)}
-                    className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
+                    disabled={isPendingSave}
+                    className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                   >
                     Remover
                   </button>
@@ -163,7 +170,8 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
               <button
                 type="button"
                 onClick={addContact}
-                className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                disabled={isPendingSave}
+                className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
               >
                 Adicionar contato
               </button>
@@ -187,7 +195,8 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
                   name="event-option"
                   value={opt.value}
                   defaultChecked={defaultEvents.includes(opt.value)}
-                  className="size-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400"
+                  disabled={isPendingSave}
+                  className="size-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400 disabled:opacity-50"
                 />
                 <span className="text-sm text-slate-800">{opt.label}</span>
               </label>
@@ -200,17 +209,21 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
           <button
             type="button"
             onClick={handleTest}
-            disabled={isTesting}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            disabled={isTesting || isPendingSave}
+            className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
           >
-            {isTesting ? "Testando..." : "Testar"}
+            {isTesting ? (
+              <>
+                <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                Testando...
+              </>
+            ) : (
+              "Testar"
+            )}
           </button>
-          <button
-            type="submit"
-            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-          >
+          <FormActionSubmitButton pending={isPendingSave} pendingLabel="Salvando...">
             Salvar
-          </button>
+          </FormActionSubmitButton>
         </div>
       </form>
     </div>

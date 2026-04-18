@@ -1,6 +1,7 @@
 import type { User, UserInput, UserUpdateInput } from "@/types/globals";
 import type { IUserRepository } from "@/lib/domain/user.repository";
 import { getPool } from "@/lib/infra/db-pg";
+import { randomUUID } from "crypto";
 
 function rowToUser(row: Record<string, unknown>): User {
   const acessoRaw = row.acesso;
@@ -45,7 +46,7 @@ export class UserPostgresRepository implements IUserRepository {
   }
 
   async create(input: UserInput): Promise<User> {
-    const id = String(Date.now());
+    const id = randomUUID();
     const pool = getPool();
     const acesso = input.acesso !== false ? 1 : 0;
     await pool.query(

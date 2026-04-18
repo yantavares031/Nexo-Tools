@@ -10,6 +10,13 @@ export function SearchParamsToaster() {
   const shownRef = useRef(false);
 
   useEffect(() => {
+    const err = searchParams.get("error");
+    if (err && !shownRef.current) {
+      toast.error(err);
+      shownRef.current = true;
+      router.replace("/usuarios");
+      return;
+    }
     if (searchParams.has("removed") && !shownRef.current) {
       toast.success("Usuário removido com sucesso.");
       shownRef.current = true;
@@ -20,7 +27,11 @@ export function SearchParamsToaster() {
       shownRef.current = true;
       router.replace("/usuarios");
     }
-    if (!searchParams.has("removed") && !searchParams.has("updated")) {
+    if (
+      !searchParams.has("removed") &&
+      !searchParams.has("updated") &&
+      !searchParams.get("error")
+    ) {
       shownRef.current = false;
     }
   }, [searchParams, router]);

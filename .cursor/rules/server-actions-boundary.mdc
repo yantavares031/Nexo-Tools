@@ -1,0 +1,62 @@
+---
+description: Server Actions como fronteira zero trust, validação, efeitos colaterais e erros
+alwaysApply: true
+---
+
+# Server Actions — fronteira externa (zero trust)
+
+Toda **Server Action** é uma **API pública**: qualquer client pode invocar. Não confiar na UI.
+
+## Validação na action (1)
+
+- **Converter** `FormData` em objeto bruto (`string` / campos esperados) e validar com **Zod** em `lib/validation/schemas/` (padrão: `safeParse` + mensagem ao usuário).
+- **Proibido** repassar `FormData` ou `any` direto ao use case sem validação de formato.
+- Mensagens de validação: **pt-BR**, claras; use `zodErrorToActionMessage` ou equivalente.
+
+**Referência:** `createUserAction` + `lib/validation/schemas/create-user-form.ts`.
+
+## Tipos no use case (2)
+
+- Use cases recebem **tipos explícitos** (`UserInput`, DTOs em `types/globals.ts` ou input dedicado). **Sem `any`** em assinaturas de use case.
+
+## Efeitos colaterais (3)
+
+- **Sempre `await`** em e-mails, webhooks e I/O após mutação, **ou** tratamento explícito (ex.: `.catch` + `logServerActionError`).
+- **Proibido** fire-and-forget que deixe o sistema inconsistente sem registro.
+
+## Camadas (4)
+
+- Action: parse/validação, **autorização** (`getSession` / role), chamar **um ou mais use cases**, `revalidatePath` / `redirect`, retorno seguro.
+- **Proibido** acessar DB/repositório direto na action (já detalhado em `clean-architecture.mdc` e `server-actions-no-business-logic.mdc`).
+
+## Erros (6–7)
+
+- No `catch`, chamar **`logServerActionError("nomeDaAction", err, { contexto mínimo })`** (servidor) antes de responder.
+- Ao cliente: **`{ error: string }`** ou redirect — **nunca** stack, SQL, nomes de tabelas ou detalhes internos.
+- Erros de negócio vindos do use case (`throw new Error("…")`) podem expor **apenas** a mensagem já pensada para usuário.
+
+## Transações (8)
+
+- Operações que precisam ser atômicas (várias escritas) ficam no **repositório / use case** com transação do driver (ex.: `BEGIN`/`COMMIT` no SQLite, transação PG), não “metade na action”.
+
+## Segredos (10)
+
+- **Apenas** em código server (actions, use cases, infra). **Nunca** `process.env.*SECRET*` em Client Components ou props para client.
+
+## Observabilidade (11)
+
+- Falhas inesperadas na action: **log no servidor** com `logServerActionError` (ou padrão equivalente).
+
+## Inventário backend (NEXO Tools)
+
+| Camada | Local | Função |
+|--------|--------|--------|
+| Actions | `app/actions/*.ts` | Entrada HTTP-like, auth, validação, orquestração fina |
+| Use cases | `lib/use-cases/*.ts` | Regras e orquestração de domínio |
+| Contratos | `lib/domain/*.repository.ts`, `lib/contracts/` | Interfaces |
+| Infra | `lib/infra/repositories/`, `lib/infra/*` | SQLite/Postgres, SMTP, S3, etc. |
+| Tipos | `types/globals.ts` | DTOs/entidades compartilhadas |
+
+**Actions existentes:** `auth`, `user`, `demanda`, `demanda-centro-custo`, `demanda-comprovacao`, `demanda-mensagem`, `solicitante`, `agencia`, `centro-custo`, `smtp-config`, `webhook-config`, `ordem-compra`, `deskfy-import-boards`, `deskfy-task-details`, `deskfy-workflow-report`.
+
+Compatível com: `next-ssr-server-actions.mdc`, `clean-architecture.mdc`, `server-actions-no-business-logic.mdc`.

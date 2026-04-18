@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useActionState, useRef, useEffect, useTransition } from "react";
-import { useFormStatus } from "react-dom";
 import { Check, CircleMinus, FileSignature, Workflow } from "lucide-react";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { updateDemandaAction, removeDemandaAction } from "@/app/actions/demanda";
 import type { Demanda } from "@/types/globals";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
@@ -25,29 +25,6 @@ interface VerDetalhesDemandaModalProps {
   userRole?: UserRole;
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
-    >
-      {pending ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Salvando...
-        </>
-      ) : (
-        <>
-          <Check className="size-3.5 stroke-[2.5]" />
-          Salvar
-        </>
-      )}
-    </button>
-  );
-}
-
 export function VerDetalhesDemandaModal({
   demanda,
   options,
@@ -58,7 +35,7 @@ export function VerDetalhesDemandaModal({
 }: VerDetalhesDemandaModalProps) {
   const [isPendingRemove, startTransition] = useTransition();
   const { confirm } = useConfirm();
-  const [state, formAction] = useActionState(
+  const [state, formAction, isPendingSave] = useActionState(
     updateDemandaAction.bind(null, demanda?.id ?? ""),
     null
   );
@@ -128,11 +105,11 @@ export function VerDetalhesDemandaModal({
       onClose={onClose}
       maxWidth="5xl"
       ariaLabelledby="modal-detalhes-title"
-      escapeEnabled={!isPendingRemove && !isPreviewOpen}
-      closeOnOverlayClick={!isPendingRemove}
+      escapeEnabled={!isPendingRemove && !isPreviewOpen && !isPendingSave}
+      closeOnOverlayClick={!isPendingRemove && !isPendingSave}
       innerClassName="flex max-h-[90vh] flex-col overflow-hidden"
     >
-      <Modal.Header onClose={onClose} closeDisabled={isPendingRemove}>
+      <Modal.Header onClose={onClose} closeDisabled={isPendingRemove || isPendingSave}>
         <h2 id="modal-detalhes-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
           <Workflow className="size-5 shrink-0" />
           Detalhes da demanda
@@ -189,11 +166,17 @@ export function VerDetalhesDemandaModal({
         </div>
         {!readOnly && (
           <Modal.Footer>
-            <SubmitButton />
+            <FormActionSubmitButton
+              pending={isPendingSave}
+              pendingLabel="Salvando..."
+              idleStart={<Check className="size-3.5 stroke-[2.5]" />}
+            >
+              Salvar
+            </FormActionSubmitButton>
             <button
               type="button"
               onClick={handleRemover}
-              disabled={isPendingRemove}
+              disabled={isPendingRemove || isPendingSave}
               className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPendingRemove ? (

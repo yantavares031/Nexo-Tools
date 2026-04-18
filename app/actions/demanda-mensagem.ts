@@ -5,6 +5,10 @@ import { addDemandaMensagemUseCase } from "@/lib/use-cases/add-demanda-mensagem.
 import { getDemandaMensagemRepository } from "@/lib/repositories";
 import { getSession } from "@/lib/auth";
 import type { DemandaMensagem } from "@/types/globals";
+import { addDemandaMensagemPayloadSchema } from "@/lib/validation/schemas/demanda-mensagem-payload";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
+import { parseEntityId } from "@/lib/validation/schemas/common";
 
 export async function addDemandaMensagemAction(
   demandaId: string,
@@ -15,12 +19,17 @@ export async function addDemandaMensagemAction(
     return { error: "Não autenticado." } as const;
   }
 
+  const parsed = addDemandaMensagemPayloadSchema.safeParse({ demandaId, mensagem });
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) } as const;
+  }
+
   const mensagemRepository = getDemandaMensagemRepository();
   try {
     const novaMensagem = await addDemandaMensagemUseCase(
       {
-        demandaId,
-        mensagem,
+        demandaId: parsed.data.demandaId,
+        mensagem: parsed.data.mensagem,
         autor: session.name,
       },
       {
@@ -30,6 +39,7 @@ export async function addDemandaMensagemAction(
     revalidatePath("/");
     return { mensagem: novaMensagem };
   } catch (err) {
+    logServerActionError("addDemandaMensagemAction", err, { demandaId: parsed.data.demandaId });
     return {
       error: err instanceof Error ? err.message : "Erro ao adicionar mensagem.",
     } as const;
@@ -39,6 +49,10 @@ export async function addDemandaMensagemAction(
 export async function getDemandaMensagensAction(
   demandaId: string
 ): Promise<DemandaMensagem[]> {
+  const idCheck = parseEntityId(demandaId);
+  if (!idCheck.ok) {
+    return [];
+  }
   const mensagemRepository = getDemandaMensagemRepository();
-  return mensagemRepository.findByDemandaId(demandaId);
+  return mensagemRepository.findByDemandaId(idCheck.id);
 }

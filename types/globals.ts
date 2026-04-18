@@ -139,6 +139,8 @@ export interface OrdemCompra {
   caminhoArquivoAssinado?: string;
   status: OrdemCompraStatus;
   autor: string;
+  /** E-mail do usuário da agência que enviou a OC (notificação quando assinada). */
+  enviadoPorEmail?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -146,7 +148,13 @@ export interface OrdemCompra {
 /** Dados para criar uma ordem de compra (timestamps e status fixo em aberto no repositório). */
 export type OrdemCompraCreateInput = Pick<
   OrdemCompra,
-  "demandaId" | "nomeArquivo" | "tipoArquivo" | "tamanho" | "caminhoArquivo" | "autor"
+  | "demandaId"
+  | "nomeArquivo"
+  | "tipoArquivo"
+  | "tamanho"
+  | "caminhoArquivo"
+  | "autor"
+  | "enviadoPorEmail"
 > & {
   /** Se informado, o repositório usa este id (ex.: mesmo UUID do path no R2). */
   id?: string;
@@ -220,6 +228,11 @@ export interface SmtpConfig {
   /** Senha de app ou credencial SMTP (armazenada no banco). */
   smtpPassword: string;
   enabled: boolean;
+  /**
+   * E-mails que recebem cópia das notificações de ordem de compra (envio pela agência e OC assinada).
+   * Persistido como JSON no banco.
+   */
+  ordemCompraNotifyEmails: string[];
   updatedAt?: string;
 }
 
@@ -230,6 +243,8 @@ export interface SmtpConfigPanel {
   smtpUser: string;
   enabled: boolean;
   hasPassword: boolean;
+  /** Um e-mail por linha (ou separados por vírgula) para a UI. */
+  ordemCompraNotifyEmailsText: string;
 }
 
 /** Tipos Deskfy (relatórios de workflow). */

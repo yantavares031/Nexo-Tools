@@ -4,6 +4,17 @@ import { getDb } from "@/DB/db";
 
 const ROW_ID = "default";
 
+function parseNotifyEmailsJson(raw: unknown): string[] {
+  if (raw == null || String(raw).trim() === "") return [];
+  try {
+    const v = JSON.parse(String(raw)) as unknown;
+    if (!Array.isArray(v)) return [];
+    return v.filter((e): e is string => typeof e === "string" && e.trim().length > 0).map((e) => e.trim());
+  } catch {
+    return [];
+  }
+}
+
 function rowToConfig(row: Record<string, unknown>): SmtpConfig {
   return {
     id: String(row.id),
@@ -12,6 +23,7 @@ function rowToConfig(row: Record<string, unknown>): SmtpConfig {
     smtpUser: String(row.smtp_user ?? ""),
     smtpPassword: String(row.smtp_password ?? ""),
     enabled: Number(row.enabled) === 1,
+    ordemCompraNotifyEmails: parseNotifyEmailsJson(row.ordem_compra_notify_emails),
     updatedAt: row.updated_at ? String(row.updated_at) : undefined,
   };
 }
@@ -32,21 +44,23 @@ export class SmtpConfigSqliteRepository implements ISmtpConfigRepository {
     const user = input.smtpUser.trim();
 
     const existing = await this.get();
+    const notifyJson = JSON.stringify(input.ordemCompraNotifyEmails ?? []);
     if (existing) {
       db.prepare(
-        `UPDATE smtp_config SET smtp_host = ?, smtp_port = ?, smtp_user = ?, smtp_password = ?, enabled = ?, updated_at = ? WHERE id = ?`
+        `UPDATE smtp_config SET smtp_host = ?, smtp_port = ?, smtp_user = ?, smtp_password = ?, enabled = ?, ordem_compra_notify_emails = ?, updated_at = ? WHERE id = ?`
       ).run(
         host,
         input.smtpPort,
         user,
         input.smtpPassword,
         input.enabled ? 1 : 0,
+        notifyJson,
         now,
         ROW_ID
       );
     } else {
       db.prepare(
-        `INSERT INTO smtp_config (id, smtp_host, smtp_port, smtp_user, smtp_password, enabled, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO smtp_config (id, smtp_host, smtp_port, smtp_user, smtp_password, enabled, ordem_compra_notify_emails, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         ROW_ID,
         host,
@@ -54,6 +68,7 @@ export class SmtpConfigSqliteRepository implements ISmtpConfigRepository {
         user,
         input.smtpPassword,
         input.enabled ? 1 : 0,
+        notifyJson,
         now
       );
     }

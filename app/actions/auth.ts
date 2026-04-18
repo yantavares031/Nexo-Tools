@@ -5,14 +5,22 @@ import { createSession } from "@/lib/auth";
 import { loginUseCase } from "@/lib/use-cases/login.use-case";
 import { changePasswordFirstAccessUseCase } from "@/lib/use-cases/change-password-first-access.use-case";
 import { getUserRepository } from "@/lib/repositories";
+import {
+  changePasswordFormSchema,
+  formDataToChangePasswordRaw,
+  formDataToLoginRaw,
+  loginFormSchema,
+} from "@/lib/validation/schemas/auth-forms";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
 
 export async function loginAction(formData: FormData) {
-  const email = (formData.get("email") as string)?.trim() ?? "";
-  const password = (formData.get("password") as string) ?? "";
-
-  if (!email || !password) {
+  const parsed = loginFormSchema.safeParse(formDataToLoginRaw(formData));
+  if (!parsed.success) {
     redirect("/login?error=empty");
   }
+
+  const { email, password } = parsed.data;
 
   const userRepository = getUserRepository();
   const user = await loginUseCase(email, password, { userRepository });
@@ -21,14 +29,19 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=invalid");
   }
 
-  await createSession({
-    userId: user.id,
-    email: user.email,
-    name: user.name ?? user.email,
-    role: user.role,
-    agenciaId: user.agenciaId,
-    mustChangePassword: user.mustChangePassword,
-  });
+  try {
+    await createSession({
+      userId: user.id,
+      email: user.email,
+      name: user.name ?? user.email,
+      role: user.role,
+      agenciaId: user.agenciaId,
+      mustChangePassword: user.mustChangePassword,
+    });
+  } catch (err) {
+    logServerActionError("loginAction", err, { email });
+    redirect("/login?error=invalid");
+  }
 
   if (user.mustChangePassword) {
     redirect("/primeiro-acesso");
@@ -49,8 +62,12 @@ export async function changePasswordFirstAccessAction(
     redirect("/");
   }
 
-  const newPassword = (formData.get("newPassword") as string) ?? "";
-  const confirmPassword = (formData.get("confirmPassword") as string) ?? "";
+  const parsed = changePasswordFormSchema.safeParse(formDataToChangePasswordRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) };
+  }
+
+  const { newPassword, confirmPassword } = parsed.data;
 
   const userRepository = getUserRepository();
   try {
@@ -59,6 +76,7 @@ export async function changePasswordFirstAccessAction(
       { userRepository }
     );
   } catch (err) {
+    logServerActionError("changePasswordFirstAccessAction", err, { userId: session.userId });
     return {
       error: err instanceof Error ? err.message : "Erro ao alterar senha.",
     };

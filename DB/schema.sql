@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS ordens_compra (
   caminhoArquivoAssinado TEXT,
   status TEXT NOT NULL CHECK (status IN ('em_aberto', 'assinada')),
   autor TEXT NOT NULL,
+  enviadoPorEmail TEXT,
   createdAt TEXT NOT NULL,
   updatedAt TEXT,
   FOREIGN KEY (demandaId) REFERENCES demandas(id) ON DELETE CASCADE
@@ -169,6 +170,7 @@ CREATE TABLE IF NOT EXISTS smtp_config (
   smtp_user TEXT NOT NULL DEFAULT '',
   smtp_password TEXT NOT NULL DEFAULT '',
   enabled INTEGER NOT NULL DEFAULT 0,
+  ordem_compra_notify_emails TEXT NOT NULL DEFAULT '[]',
   updated_at TEXT
 );
 

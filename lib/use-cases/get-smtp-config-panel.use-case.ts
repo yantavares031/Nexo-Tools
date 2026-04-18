@@ -11,14 +11,19 @@ export function smtpConfigToPanel(row: SmtpConfig | null): SmtpConfigPanel {
       smtpUser: "",
       enabled: false,
       hasPassword: false,
+      ordemCompraNotifyEmailsText: "",
     };
   }
+  const lines = row.ordemCompraNotifyEmails?.length
+    ? row.ordemCompraNotifyEmails.join("\n")
+    : "";
   return {
     smtpHost: row.smtpHost || "smtp.gmail.com",
     smtpPort: row.smtpPort,
     smtpUser: row.smtpUser,
     enabled: row.enabled,
     hasPassword: row.smtpPassword.length > 0,
+    ordemCompraNotifyEmailsText: lines,
   };
 }
 

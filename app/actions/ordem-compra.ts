@@ -14,12 +14,22 @@ import {
   getAgencyDemandaScope,
   demandaMatchesAgenciaScope,
 } from "@/lib/agency-demanda-scope";
-import { getOrdemCompraRepository, getDemandaRepository } from "@/lib/repositories";
+import {
+  getOrdemCompraRepository,
+  getDemandaRepository,
+  getAgenciaRepository,
+  getSmtpConfigRepository,
+} from "@/lib/repositories";
+import { getPublicAppBaseUrlForEmail } from "@/lib/public-app-url";
+import { notifyOrdemCompraAssinadaEmailsUseCase } from "@/lib/use-cases/notify-ordem-compra-assinada-emails.use-case";
+import { notifyOrdemCompraEnviadaEmailsUseCase } from "@/lib/use-cases/notify-ordem-compra-enviada-emails.use-case";
 import { createOrdemCompraUseCase } from "@/lib/use-cases/create-ordem-compra.use-case";
 import { registrarOrdemCompraAssinadaComArquivoUseCase } from "@/lib/use-cases/registrar-ordem-compra-assinada-com-arquivo.use-case";
 import { removeOrdemCompraEmAbertoUseCase } from "@/lib/use-cases/remove-ordem-compra-em-aberto.use-case";
 import type { OrdemCompra, OrdemCompraStatus } from "@/types/globals";
 import type { OrdemCompraPaginatedResult } from "@/lib/domain/ordem-compra.repository";
+import { parseEntityId, paginationLimitSchema, paginationPageSchema } from "@/lib/validation/schemas/common";
+import { logServerActionError } from "@/lib/server-action-log";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "ordens-compra");
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -39,10 +49,12 @@ export async function createOrdemCompraAction(
     return { error: "Apenas usuários de agência podem enviar pedidos de OC." };
   }
 
-  const demandaId = (formData.get("demandaId") as string)?.trim();
-  if (!demandaId) {
-    return { error: "Selecione uma demanda." };
+  const demandaIdRaw = String(formData.get("demandaId") ?? "").trim();
+  const demandaIdCheck = parseEntityId(demandaIdRaw);
+  if (!demandaIdCheck.ok) {
+    return { error: "Selecione uma demanda válida." };
   }
+  const demandaId = demandaIdCheck.id;
 
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) {
@@ -95,8 +107,30 @@ export async function createOrdemCompraAction(
         tamanho: file.size,
         caminhoArquivo: objectKey,
         autor: session.name ?? "",
+        enviadoPorEmail: session.email,
       },
       { ordemCompraRepository }
+    );
+
+    let agenciaNome = demanda.agencia?.trim() || "Agência";
+    if (scope.agenciaId) {
+      const ag = await getAgenciaRepository().findById(scope.agenciaId);
+      if (ag?.nomeFantasia?.trim()) {
+        agenciaNome = ag.nomeFantasia.trim();
+      }
+    }
+    const smtpRepo = getSmtpConfigRepository();
+    const smtpRow = await smtpRepo.get();
+    await notifyOrdemCompraEnviadaEmailsUseCase(
+      {
+        notifyEmails: smtpRow?.ordemCompraNotifyEmails ?? [],
+        agenciaUserEmail: session.email,
+        agenciaNome,
+        demanda,
+        pdfBuffer: buffer,
+        nomeArquivoPdf: file.name,
+      },
+      { smtpConfigRepository: smtpRepo }
     );
 
     revalidatePath("/ordens-compra");
@@ -106,6 +140,7 @@ export async function createOrdemCompraAction(
     if (err instanceof Error && err.message.includes("Body exceeded")) {
       return { error: "O arquivo é muito grande." };
     }
+    logServerActionError("createOrdemCompraAction", err, { demandaId });
     return {
       error: err instanceof Error ? err.message : "Erro ao enviar ordem de compra.",
     };
@@ -120,12 +155,17 @@ export async function getOrdensCompraPaginatedAction(
   const session = await getSession();
   const ordemCompraRepository = getOrdemCompraRepository();
 
+  const p = paginationPageSchema.safeParse(page);
+  const l = paginationLimitSchema.safeParse(limit);
+  const pageN = p.success ? p.data : 1;
+  const limitN = l.success ? l.data : 20;
+
   if (!session) {
     return {
       items: [],
       total: 0,
       page: 1,
-      limit,
+      limit: limitN,
       totalPages: 1,
     };
   }
@@ -141,7 +181,7 @@ export async function getOrdensCompraPaginatedAction(
       items: [],
       total: 0,
       page: 1,
-      limit,
+      limit: limitN,
       totalPages: 1,
     };
   }
@@ -151,7 +191,7 @@ export async function getOrdensCompraPaginatedAction(
       ? { agenciaId, agenciaNomeLegacy, q, status }
       : { q, status };
 
-  return ordemCompraRepository.findPaginated(filters, { page, limit });
+  return ordemCompraRepository.findPaginated(filters, { page: pageN, limit: limitN });
 }
 
 /** Lista pedidos de OC da demanda (detalhes da demanda), respeitando escopo de agência. */
@@ -161,8 +201,10 @@ export async function getOrdensCompraPorDemandaAction(
   const session = await getSession();
   if (!session) return [];
 
-  const trimmed = demandaId?.trim();
-  if (!trimmed) return [];
+  const idCheck = parseEntityId(demandaId);
+  if (!idCheck.ok) return [];
+
+  const trimmed = idCheck.id;
 
   const demandaRepository = getDemandaRepository();
   const demanda = await demandaRepository.findById(trimmed);
@@ -199,7 +241,11 @@ export async function downloadOrdemCompraAction(
   const versao = options?.versao === "assinada" ? "assinada" : "original";
   const ordemCompraRepository = getOrdemCompraRepository();
   const demandaRepository = getDemandaRepository();
-  const ordem = await ordemCompraRepository.findById(id);
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    return { error: idCheck.error };
+  }
+  const ordem = await ordemCompraRepository.findById(idCheck.id);
   if (!ordem) {
     return { error: "Ordem de compra não encontrada." };
   }
@@ -258,10 +304,12 @@ export async function uploadOrdemCompraAssinadaAction(
     return { error: "Apenas administradores podem registrar a OC assinada." };
   }
 
-  const ordemId = (formData.get("ordemCompraId") as string)?.trim();
-  if (!ordemId) {
+  const ordemIdRaw = String(formData.get("ordemCompraId") ?? "").trim();
+  const ordemIdCheck = parseEntityId(ordemIdRaw);
+  if (!ordemIdCheck.ok) {
     return { error: "Pedido inválido." };
   }
+  const ordemId = ordemIdCheck.id;
 
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) {
@@ -290,6 +338,7 @@ export async function uploadOrdemCompraAssinadaAction(
     });
 
     const ordemCompraRepository = getOrdemCompraRepository();
+    const demandaRepository = getDemandaRepository();
     await registrarOrdemCompraAssinadaComArquivoUseCase(
       ordemId,
       {
@@ -301,12 +350,42 @@ export async function uploadOrdemCompraAssinadaAction(
       { ordemCompraRepository }
     );
 
+    const ordemAtualizada = await ordemCompraRepository.findById(ordemId);
+    const demandaDaOc = ordemAtualizada
+      ? await demandaRepository.findById(ordemAtualizada.demandaId)
+      : null;
+    if (demandaDaOc) {
+      let agenciaNome = demandaDaOc.agencia?.trim() || "Agência";
+      if (demandaDaOc.agenciaId?.trim()) {
+        const ag = await getAgenciaRepository().findById(demandaDaOc.agenciaId.trim());
+        if (ag?.nomeFantasia?.trim()) {
+          agenciaNome = ag.nomeFantasia.trim();
+        }
+      }
+      const smtpRepo = getSmtpConfigRepository();
+      const smtpRow = await smtpRepo.get();
+      const ordensCompraUrl = `${getPublicAppBaseUrlForEmail()}/ordens-compra`;
+      await notifyOrdemCompraAssinadaEmailsUseCase(
+        {
+          notifyEmails: smtpRow?.ordemCompraNotifyEmails ?? [],
+          agenciaNome,
+          demanda: demandaDaOc,
+          enviadoPorEmail: ordemAtualizada?.enviadoPorEmail,
+          ordensCompraUrl,
+          signedPdfBuffer: buffer,
+          nomeArquivoPdfAssinado: file.name,
+        },
+        { smtpConfigRepository: smtpRepo }
+      );
+    }
+
     revalidatePath("/ordens-compra");
     return {};
   } catch (err) {
     if (err instanceof Error && err.message.includes("Body exceeded")) {
       return { error: "O arquivo é muito grande." };
     }
+    logServerActionError("uploadOrdemCompraAssinadaAction", err, { ordemId });
     return {
       error: err instanceof Error ? err.message : "Erro ao registrar OC assinada.",
     };
@@ -324,10 +403,11 @@ export async function removeOrdemCompraEmAbertoAction(
     return { error: "Sem permissão para remover pedidos de OC." };
   }
 
-  const ordemId = id?.trim();
-  if (!ordemId) {
-    return { error: "Pedido inválido." };
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    return { error: idCheck.error };
   }
+  const ordemId = idCheck.id;
 
   try {
     const ordemCompraRepository = getOrdemCompraRepository();
@@ -352,6 +432,7 @@ export async function removeOrdemCompraEmAbertoAction(
     revalidatePath("/ordens-compra/adicionar");
     return {};
   } catch (err) {
+    logServerActionError("removeOrdemCompraEmAbertoAction", err, { ordemId });
     return {
       error: err instanceof Error ? err.message : "Erro ao remover pedido de OC.",
     };

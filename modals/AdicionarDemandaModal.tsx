@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useRef, useCallback, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { Workflow } from "lucide-react";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { createDemandaAction } from "@/app/actions/demanda";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { CurrencyInputControlled } from "@/components/CurrencyInputControlled";
@@ -18,34 +18,12 @@ interface AdicionarDemandaModalProps {
   options: DemandaFilterOptions;
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      form="adicionar-demanda-form"
-      disabled={pending}
-      className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
-    >
-      {pending ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Adicionando...
-        </>
-      ) : (
-        "Adicionar"
-      )}
-    </button>
-  );
-}
-
 export function AdicionarDemandaModal({
   open,
   onClose,
   options,
 }: AdicionarDemandaModalProps) {
-  const [state, formAction] = useActionState(createDemandaAction, null);
+  const [state, formAction, isPending] = useActionState(createDemandaAction, null);
   useToastOnActionError(state);
   const unResponsavelRef = useRef<HTMLInputElement>(null);
   const [centrosCusto, setCentrosCusto] = useState<DemandaCentroCusto[]>([]);
@@ -65,8 +43,15 @@ export function AdicionarDemandaModal({
   );
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="3xl" ariaLabelledby="modal-title">
-      <Modal.Header onClose={onClose}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      maxWidth="3xl"
+      ariaLabelledby="modal-title"
+      escapeEnabled={!isPending}
+      closeOnOverlayClick={!isPending}
+    >
+      <Modal.Header onClose={onClose} closeDisabled={isPending}>
         <h2 id="modal-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
           <Workflow className="size-5 shrink-0" />
           Nova demanda
@@ -93,7 +78,10 @@ export function AdicionarDemandaModal({
         }}
         className="max-h-[70vh] p-6"
       >
-        <div className="space-y-3">
+        <div
+          className={`space-y-3 ${isPending ? "pointer-events-none opacity-60" : ""}`}
+          aria-busy={isPending}
+        >
           <div>
             <label
               htmlFor="demanda"
@@ -281,11 +269,18 @@ export function AdicionarDemandaModal({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          disabled={isPending}
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
         >
           Cancelar
         </button>
-        <SubmitButton />
+        <FormActionSubmitButton
+          form="adicionar-demanda-form"
+          pending={isPending}
+          pendingLabel="Adicionando..."
+        >
+          Adicionar
+        </FormActionSubmitButton>
       </Modal.Footer>
     </Modal>
   );

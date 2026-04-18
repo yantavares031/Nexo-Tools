@@ -95,9 +95,16 @@ export function ConfiguracoesBoardsSection({
         <button
           type="submit"
           disabled={isAdding || !novoBoard.trim()}
-          className="shrink-0 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
+          className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:pointer-events-none disabled:opacity-50"
         >
-          {isAdding ? "Adicionando…" : "Adicionar"}
+          {isAdding ? (
+            <>
+              <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Adicionando…
+            </>
+          ) : (
+            "Adicionar"
+          )}
         </button>
       </form>
 

@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { Megaphone } from "lucide-react";
 import { createAgenciaAction } from "@/app/actions/agencia";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { Modal } from "@/components/Modal";
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 
 interface BoardOption {
@@ -19,39 +19,24 @@ interface AdicionarAgenciaModalProps {
   boards?: BoardOption[];
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      form="adicionar-agencia-form"
-      disabled={pending}
-      className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50"
-    >
-      {pending ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          Adicionando...
-        </>
-      ) : (
-        "Adicionar"
-      )}
-    </button>
-  );
-}
-
 export function AdicionarAgenciaModal({
   open,
   onClose,
   boards = [],
 }: AdicionarAgenciaModalProps) {
-  const [state, formAction] = useActionState(createAgenciaAction, null);
+  const [state, formAction, isPending] = useActionState(createAgenciaAction, null);
   useToastOnActionError(state);
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="md" ariaLabelledby="modal-agencia-title">
-      <Modal.Header onClose={onClose}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      ariaLabelledby="modal-agencia-title"
+      escapeEnabled={!isPending}
+      closeOnOverlayClick={!isPending}
+    >
+      <Modal.Header onClose={onClose} closeDisabled={isPending}>
         <h2 id="modal-agencia-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
           <Megaphone className="size-5 shrink-0" />
           Nova agência
@@ -71,7 +56,8 @@ export function AdicionarAgenciaModal({
               name="nomeFantasia"
               type="text"
               required
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              disabled={isPending}
+              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
               placeholder="Ex: La Marka"
             />
           </div>
@@ -88,7 +74,8 @@ export function AdicionarAgenciaModal({
               name="cnpj"
               type="text"
               required
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              disabled={isPending}
+              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
               placeholder="00.000.000/0001-00"
             />
           </div>
@@ -104,6 +91,7 @@ export function AdicionarAgenciaModal({
               id="orcamentoAnual"
               name="orcamentoAnual"
               defaultValue={0}
+              disabled={isPending}
             />
           </div>
 
@@ -118,7 +106,8 @@ export function AdicionarAgenciaModal({
               <select
                 id="boardId"
                 name="boardId"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                disabled={isPending}
+                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
               >
                 <option value="">Nenhum</option>
                 {boards.map((b) => (
@@ -135,11 +124,18 @@ export function AdicionarAgenciaModal({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          disabled={isPending}
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
         >
           Cancelar
         </button>
-        <SubmitButton />
+        <FormActionSubmitButton
+          form="adicionar-agencia-form"
+          pending={isPending}
+          pendingLabel="Adicionando..."
+        >
+          Adicionar
+        </FormActionSubmitButton>
       </Modal.Footer>
     </Modal>
   );

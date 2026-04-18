@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS smtp_config (
   smtp_user TEXT NOT NULL DEFAULT '',
   smtp_password TEXT NOT NULL DEFAULT '',
   enabled INTEGER NOT NULL DEFAULT 0,
+  ordem_compra_notify_emails TEXT NOT NULL DEFAULT '[]',
   updated_at TEXT
 );
 

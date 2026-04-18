@@ -23,10 +23,19 @@ import {
   putAppObjectToR2,
 } from "@/lib/r2-upload";
 import { readStoredUploadFile } from "@/lib/stored-upload";
+import { z } from "zod";
+import { entityIdSchema, paginationLimitSchema, paginationPageSchema } from "@/lib/validation/schemas/common";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "comprovacoes");
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".pdf", ".xml", ".txt", ".docx", ".doc", ".xlsx", ".xls", ".jpg", ".jpeg", ".png"];
+
+const comprovacaoDemandaIdsSchema = z
+  .array(entityIdSchema)
+  .min(1, "Selecione pelo menos uma demanda.")
+  .max(100, "Número máximo de demandas por envio excedido.");
 
 function contentTypeForComprovacaoExt(ext: string): string {
   const map: Record<string, string> = {
@@ -61,10 +70,15 @@ export async function createComprovacaoAction(
     return { error: "Não autenticado." } as const;
   }
 
-  const demandaIds = (formData.getAll("demandaId") as string[]).filter(Boolean);
-  if (demandaIds.length === 0) {
-    return { error: "Selecione pelo menos uma demanda." } as const;
+  const demandaIdsRaw = formData
+    .getAll("demandaId")
+    .map((v) => (typeof v === "string" ? v : "").trim())
+    .filter(Boolean);
+  const idsParsed = comprovacaoDemandaIdsSchema.safeParse(demandaIdsRaw);
+  if (!idsParsed.success) {
+    return { error: zodErrorToActionMessage(idsParsed.error) } as const;
   }
+  const demandaIds = idsParsed.data;
 
   const filesRaw = formData.getAll("files") as File[];
   const singleFile = formData.get("file") as File | null;
@@ -162,6 +176,7 @@ export async function createComprovacaoAction(
         error: "O arquivo é muito grande. O tamanho máximo permitido é 10MB por arquivo.",
       } as const;
     }
+    logServerActionError("createComprovacaoAction", err, { demandaCount: demandaIds.length });
     return {
       error: err instanceof Error ? err.message : "Erro ao fazer upload do arquivo.",
     } as const;
@@ -169,8 +184,10 @@ export async function createComprovacaoAction(
 }
 
 export async function getComprovacoesAction(demandaId: string): Promise<Comprovacao[]> {
+  const idCheck = entityIdSchema.safeParse(demandaId);
+  if (!idCheck.success) return [];
   const comprovacaoRepository = getDemandaComprovacaoRepository();
-  return comprovacaoRepository.findByDemandaId(demandaId);
+  return comprovacaoRepository.findByDemandaId(idCheck.data);
 }
 
 export async function getComprovacoesListAction(filters?: {
@@ -196,13 +213,18 @@ export async function getComprovacaoDetalhesAction(
   const session = await getSession();
   if (!session) return { error: "Não autenticado." };
 
+  const idCheck = entityIdSchema.safeParse(id);
+  if (!idCheck.success) {
+    return { error: zodErrorToActionMessage(idCheck.error) };
+  }
+
   const comprovacaoRepository = getDemandaComprovacaoRepository();
   const demandaRepository = getDemandaRepository();
 
-  const comprovacao = await comprovacaoRepository.findById(id);
+  const comprovacao = await comprovacaoRepository.findById(idCheck.data);
   if (!comprovacao) return { error: "Comprovação não encontrada." };
 
-  const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(id);
+  const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(idCheck.data);
   const demandas: Demanda[] = [];
   for (const did of demandaIds) {
     const d = await demandaRepository.findById(did);
@@ -218,6 +240,10 @@ export async function getComprovacoesPaginatedAction(
   filters?: { q?: string }
 ): Promise<import("@/lib/domain/demanda-comprovacao.repository").ComprovacaoPaginatedResult> {
   const session = await getSession();
+  const pageParsed = paginationPageSchema.safeParse(page);
+  const limitParsed = paginationLimitSchema.safeParse(limit);
+  const safePage = pageParsed.success ? pageParsed.data : 1;
+  const safeLimit = limitParsed.success ? limitParsed.data : 20;
   const comprovacaoRepository = getDemandaComprovacaoRepository();
   const agencyScope = await getAgencyDemandaScope(session);
   const agenciaId = agencyScope?.agenciaId;
@@ -225,7 +251,7 @@ export async function getComprovacoesPaginatedAction(
   const q = filters?.q?.trim() || undefined;
   return comprovacaoRepository.findPaginated(
     { agenciaId, agenciaNomeLegacy, q },
-    { page, limit }
+    { page: safePage, limit: safeLimit }
   );
 }
 
@@ -233,8 +259,12 @@ export async function downloadComprovacaoAction(id: string): Promise<{
   error?: string;
   file?: { buffer: Buffer; nomeArquivo: string; tipoArquivo: string };
 }> {
+  const idCheck = entityIdSchema.safeParse(id);
+  if (!idCheck.success) {
+    return { error: zodErrorToActionMessage(idCheck.error) } as const;
+  }
   const comprovacaoRepository = getDemandaComprovacaoRepository();
-  const comprovacao = await comprovacaoRepository.findById(id);
+  const comprovacao = await comprovacaoRepository.findById(idCheck.data);
 
   if (!comprovacao) {
     return { error: "Comprovação não encontrada." } as const;
@@ -249,7 +279,8 @@ export async function downloadComprovacaoAction(id: string): Promise<{
         tipoArquivo: comprovacao.tipoArquivo,
       },
     };
-  } catch {
+  } catch (err) {
+    logServerActionError("downloadComprovacaoAction", err, { id: idCheck.data });
     return { error: "Arquivo não encontrado." } as const;
   }
 }
@@ -263,20 +294,25 @@ export async function removeComprovacaoAction(id: string): Promise<{ error?: str
     return { error: "Apenas administradores podem remover comprovações." } as const;
   }
 
+  const idCheck = entityIdSchema.safeParse(id);
+  if (!idCheck.success) {
+    return { error: zodErrorToActionMessage(idCheck.error) } as const;
+  }
+
   try {
     const comprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
-    const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(id);
+    const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(idCheck.data);
 
     const demandasParaReverter: string[] = [];
     for (const demandaId of demandaIds) {
       const comprovacoesDaDemanda = await comprovacaoRepository.findByDemandaId(demandaId);
-      if (comprovacoesDaDemanda.length === 1 && comprovacoesDaDemanda[0].id === id) {
+      if (comprovacoesDaDemanda.length === 1 && comprovacoesDaDemanda[0].id === idCheck.data) {
         demandasParaReverter.push(demandaId);
       }
     }
 
-    await comprovacaoRepository.remove(id);
+    await comprovacaoRepository.remove(idCheck.data);
 
     for (const demandaId of demandasParaReverter) {
       const demanda = await demandaRepository.findById(demandaId);
@@ -290,6 +326,7 @@ export async function removeComprovacaoAction(id: string): Promise<{ error?: str
     revalidatePath("/comprovacoes/adicionar");
     return {};
   } catch (err) {
+    logServerActionError("removeComprovacaoAction", err, { id: idCheck.data });
     return {
       error: err instanceof Error ? err.message : "Erro ao remover comprovação.",
     } as const;
@@ -308,12 +345,21 @@ export async function removeComprovacaoFromDemandaAction(
     return { error: "Apenas administradores podem remover comprovações." } as const;
   }
 
+  const demandaIdCheck = entityIdSchema.safeParse(demandaId);
+  if (!demandaIdCheck.success) {
+    return { error: zodErrorToActionMessage(demandaIdCheck.error) } as const;
+  }
+  const comprovacaoIdCheck = entityIdSchema.safeParse(comprovacaoId);
+  if (!comprovacaoIdCheck.success) {
+    return { error: zodErrorToActionMessage(comprovacaoIdCheck.error) } as const;
+  }
+
   try {
     const demandaComprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
 
     const result = await removeComprovacaoFromDemandaUseCase(
-      { demandaId, comprovacaoId },
+      { demandaId: demandaIdCheck.data, comprovacaoId: comprovacaoIdCheck.data },
       { demandaComprovacaoRepository, demandaRepository }
     );
 
@@ -321,6 +367,10 @@ export async function removeComprovacaoFromDemandaAction(
     revalidatePath("/comprovacoes");
     return { removedComprovacao: result.removedComprovacao };
   } catch (err) {
+    logServerActionError("removeComprovacaoFromDemandaAction", err, {
+      demandaId: demandaIdCheck.data,
+      comprovacaoId: comprovacaoIdCheck.data,
+    });
     return {
       error: err instanceof Error ? err.message : "Erro ao remover comprovação.",
     } as const;

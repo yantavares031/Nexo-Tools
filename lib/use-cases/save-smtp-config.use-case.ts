@@ -10,6 +10,7 @@ export type SaveSmtpConfigFormInput = {
   /** Do formulário: vazio mantém a senha já salva. */
   smtpPassword: string;
   enabled: boolean;
+  ordemCompraNotifyEmails: string[];
 };
 
 export async function saveSmtpConfigUseCase(
@@ -37,5 +38,6 @@ export async function saveSmtpConfigUseCase(
     smtpUser: input.smtpUser.trim(),
     smtpPassword: mergedPassword,
     enabled: input.enabled,
+    ordemCompraNotifyEmails: input.ordemCompraNotifyEmails,
   });
 }

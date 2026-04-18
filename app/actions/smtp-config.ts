@@ -7,12 +7,15 @@ import { getSmtpConfigPanelUseCase } from "@/lib/use-cases/get-smtp-config-panel
 import { saveSmtpConfigUseCase } from "@/lib/use-cases/save-smtp-config.use-case";
 import { sendSmtpTestEmailUseCase } from "@/lib/use-cases/send-smtp-test-email.use-case";
 import type { SmtpConfigPanel } from "@/types/globals";
-
-function parsePort(raw: string): number {
-  const n = parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 1 || n > 65535) return 587;
-  return n;
-}
+import {
+  formDataToSmtpRaw,
+  formDataToSmtpTestRaw,
+  parseOrdemCompraNotifyEmailsFromText,
+  smtpSaveFormSchema,
+  smtpTestEmailSchema,
+} from "@/lib/validation/schemas/smtp-form";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
 
 export async function getSmtpConfigPanelAction(): Promise<
   { panel: SmtpConfigPanel } | { error: string }
@@ -26,6 +29,7 @@ export async function getSmtpConfigPanelAction(): Promise<
     const panel = await getSmtpConfigPanelUseCase({ smtpConfigRepository: repo });
     return { panel };
   } catch (err) {
+    logServerActionError("getSmtpConfigPanelAction", err);
     return {
       error: err instanceof Error ? err.message : "Erro ao carregar SMTP.",
     };
@@ -40,21 +44,36 @@ export async function saveSmtpConfigAction(
   if (!session) return { error: "Não autenticado" };
   if (session.role !== "admin") return { error: "Sem permissão para editar integrações." };
 
-  const smtpHost = (formData.get("smtpHost") as string)?.trim() ?? "";
-  const smtpPort = parsePort((formData.get("smtpPort") as string) ?? "587");
-  const smtpUser = (formData.get("smtpUser") as string)?.trim() ?? "";
-  const smtpPassword = (formData.get("smtpPassword") as string) ?? "";
-  const enabled = formData.get("enabled") === "true";
+  const parsed = smtpSaveFormSchema.safeParse(formDataToSmtpRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) };
+  }
+
+  const { smtpHost, smtpPort, smtpUser, smtpPassword, enabled, ordemCompraNotifyEmails } =
+    parsed.data;
+
+  const emailsParsed = parseOrdemCompraNotifyEmailsFromText(ordemCompraNotifyEmails);
+  if (!emailsParsed.ok) {
+    return { error: emailsParsed.message };
+  }
 
   try {
     const repo = getSmtpConfigRepository();
     await saveSmtpConfigUseCase(
-      { smtpHost, smtpPort, smtpUser, smtpPassword, enabled },
+      {
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPassword,
+        enabled,
+        ordemCompraNotifyEmails: emailsParsed.emails,
+      },
       { smtpConfigRepository: repo }
     );
     revalidatePath("/integracoes");
     return {};
   } catch (err) {
+    logServerActionError("saveSmtpConfigAction", err, { smtpUser });
     return {
       error: err instanceof Error ? err.message : "Erro ao salvar SMTP.",
     };
@@ -66,13 +85,17 @@ export async function testSmtpEmailAction(formData: FormData): Promise<{ error?:
   if (!session) return { error: "Não autenticado" };
   if (session.role !== "admin") return { error: "Sem permissão." };
 
-  const to = (formData.get("testEmail") as string)?.trim() ?? "";
+  const parsed = smtpTestEmailSchema.safeParse(formDataToSmtpTestRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) };
+  }
 
   try {
     const repo = getSmtpConfigRepository();
-    await sendSmtpTestEmailUseCase(to, { smtpConfigRepository: repo });
+    await sendSmtpTestEmailUseCase(parsed.data.testEmail, { smtpConfigRepository: repo });
     return { ok: true };
   } catch (err) {
+    logServerActionError("testSmtpEmailAction", err, { to: parsed.data.testEmail });
     return {
       error: err instanceof Error ? err.message : "Falha ao enviar e-mail de teste.",
     };

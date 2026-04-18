@@ -1,25 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { changePasswordFirstAccessAction, logoutAction } from "@/app/actions/auth";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-2 w-full rounded-full bg-blue-500/90 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:opacity-50"
-    >
-      {pending ? "Salvando..." : "Definir senha e continuar"}
-    </button>
-  );
-}
+import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 
 export function PrimeiroAcessoForm() {
-  const [state, formAction] = useActionState(changePasswordFirstAccessAction, null);
+  const [state, formAction, isPending] = useActionState(changePasswordFirstAccessAction, null);
   useToastOnActionError(state);
 
   return (
@@ -42,7 +29,8 @@ export function PrimeiroAcessoForm() {
             required
             minLength={6}
             placeholder="Mínimo 6 caracteres"
-            className="w-full border-b border-slate-200 bg-transparent px-0 py-2.5 text-base text-slate-700 placeholder-slate-300 outline-none transition-colors focus:border-blue-400"
+            disabled={isPending}
+            className="w-full border-b border-slate-200 bg-transparent px-0 py-2.5 text-base text-slate-700 placeholder-slate-300 outline-none transition-colors focus:border-blue-400 disabled:opacity-50"
           />
         </div>
         <div>
@@ -57,16 +45,24 @@ export function PrimeiroAcessoForm() {
             required
             minLength={6}
             placeholder="Repita a senha"
-            className="w-full border-b border-slate-200 bg-transparent px-0 py-2.5 text-base text-slate-700 placeholder-slate-300 outline-none transition-colors focus:border-blue-400"
+            disabled={isPending}
+            className="w-full border-b border-slate-200 bg-transparent px-0 py-2.5 text-base text-slate-700 placeholder-slate-300 outline-none transition-colors focus:border-blue-400 disabled:opacity-50"
           />
         </div>
-        <SubmitButton />
+        <FormActionSubmitButton
+          pending={isPending}
+          pendingLabel="Salvando..."
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500/90 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:pointer-events-none disabled:opacity-50"
+        >
+          Definir senha e continuar
+        </FormActionSubmitButton>
       </form>
 
       <form action={logoutAction} className="mt-6">
         <button
           type="submit"
-          className="w-full text-center text-sm text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+          disabled={isPending}
+          className="w-full text-center text-sm text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline disabled:pointer-events-none disabled:opacity-40"
         >
           Sair e usar outra conta
         </button>

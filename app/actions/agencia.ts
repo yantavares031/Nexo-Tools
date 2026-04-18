@@ -8,28 +8,34 @@ import { removeAgenciaUseCase } from "@/lib/use-cases/remove-agencia.use-case";
 import { getAgenciaRepository } from "@/lib/repositories";
 import { parseBrazilianCurrency } from "@/lib/currency";
 import type { AgenciaInput } from "@/types/globals";
+import { agenciaFormSchema, formDataToAgenciaRaw } from "@/lib/validation/schemas/agencia-form";
+import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { logServerActionError } from "@/lib/server-action-log";
+import { parseEntityId } from "@/lib/validation/schemas/common";
 
 export async function createAgenciaAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const nomeFantasia = (formData.get("nomeFantasia") as string)?.trim() ?? "";
-  const cnpj = (formData.get("cnpj") as string)?.trim() ?? "";
-  const orcamentoAnual = parseBrazilianCurrency(
-    (formData.get("orcamentoAnual") as string) ?? ""
-  );
-  const boardId = (formData.get("boardId") as string)?.trim() || undefined;
-
-  if (!nomeFantasia || !cnpj) {
-    return {
-      error: "Nome fantasia e CNPJ são obrigatórios.",
-    } as const;
+  const parsed = agenciaFormSchema.safeParse(formDataToAgenciaRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) } as const;
   }
+
+  const { nomeFantasia, cnpj, boardId } = parsed.data;
+  const orcamentoAnual = parseBrazilianCurrency(parsed.data.orcamentoAnual);
 
   const input: AgenciaInput = { nomeFantasia, cnpj, orcamentoAnual, boardId };
 
   const agenciaRepository = getAgenciaRepository();
-  await createAgenciaUseCase(input, { agenciaRepository });
+  try {
+    await createAgenciaUseCase(input, { agenciaRepository });
+  } catch (err) {
+    logServerActionError("createAgenciaAction", err, { nomeFantasia });
+    return {
+      error: err instanceof Error ? err.message : "Erro ao criar agência.",
+    } as const;
+  }
 
   revalidatePath("/agencias");
   revalidatePath("/dashboard");
@@ -41,33 +47,50 @@ export async function updateAgenciaAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const nomeFantasia = (formData.get("nomeFantasia") as string)?.trim() ?? "";
-  const cnpj = (formData.get("cnpj") as string)?.trim() ?? "";
-  const orcamentoAnual = parseBrazilianCurrency(
-    (formData.get("orcamentoAnual") as string) ?? ""
-  );
-  const boardId = (formData.get("boardId") as string)?.trim() || undefined;
-
-  if (!nomeFantasia || !cnpj) {
-    return {
-      error: "Nome fantasia e CNPJ são obrigatórios.",
-    } as const;
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    return { error: idCheck.error } as const;
   }
+
+  const parsed = agenciaFormSchema.safeParse(formDataToAgenciaRaw(formData));
+  if (!parsed.success) {
+    return { error: zodErrorToActionMessage(parsed.error) } as const;
+  }
+
+  const { nomeFantasia, cnpj, boardId } = parsed.data;
+  const orcamentoAnual = parseBrazilianCurrency(parsed.data.orcamentoAnual);
 
   const input: AgenciaInput = { nomeFantasia, cnpj, orcamentoAnual, boardId };
 
   const agenciaRepository = getAgenciaRepository();
-  await updateAgenciaUseCase(id, input, { agenciaRepository });
+  try {
+    await updateAgenciaUseCase(idCheck.id, input, { agenciaRepository });
+  } catch (err) {
+    logServerActionError("updateAgenciaAction", err, { id: idCheck.id });
+    return {
+      error: err instanceof Error ? err.message : "Erro ao atualizar agência.",
+    } as const;
+  }
 
-  revalidatePath(`/agencias/${id}`);
+  revalidatePath(`/agencias/${idCheck.id}`);
   revalidatePath("/agencias");
   revalidatePath("/dashboard");
   redirect("/agencias?updated=1");
 }
 
 export async function removeAgenciaAction(id: string) {
+  const idCheck = parseEntityId(id);
+  if (!idCheck.ok) {
+    redirect("/agencias?error=" + encodeURIComponent(idCheck.error));
+  }
+
   const agenciaRepository = getAgenciaRepository();
-  await removeAgenciaUseCase(id, { agenciaRepository });
+  try {
+    await removeAgenciaUseCase(idCheck.id, { agenciaRepository });
+  } catch (err) {
+    logServerActionError("removeAgenciaAction", err, { id: idCheck.id });
+    redirect("/agencias?error=" + encodeURIComponent("Erro ao remover agência."));
+  }
 
   revalidatePath("/agencias");
   revalidatePath("/");

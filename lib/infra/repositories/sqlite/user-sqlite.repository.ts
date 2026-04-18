@@ -1,6 +1,7 @@
 import type { User, UserInput, UserUpdateInput } from "@/types/globals";
 import type { IUserRepository } from "@/lib/domain/user.repository";
 import { getDb } from "@/DB/db";
+import { randomUUID } from "crypto";
 
 function rowToUser(row: Record<string, unknown>): User {
   const acessoRaw = row.acesso;
@@ -40,7 +41,7 @@ export class UserSqliteRepository implements IUserRepository {
   }
 
   async create(input: UserInput): Promise<User> {
-    const id = String(Date.now());
+    const id = randomUUID();
     const db = getDb();
     const acesso = input.acesso !== false ? 1 : 0;
     db.prepare(
