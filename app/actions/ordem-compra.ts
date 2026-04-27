@@ -28,7 +28,12 @@ import { registrarOrdemCompraAssinadaComArquivoUseCase } from "@/lib/use-cases/r
 import { removeOrdemCompraEmAbertoUseCase } from "@/lib/use-cases/remove-ordem-compra-em-aberto.use-case";
 import type { OrdemCompra, OrdemCompraStatus } from "@/types/globals";
 import type { OrdemCompraPaginatedResult } from "@/lib/domain/ordem-compra.repository";
-import { parseEntityId, paginationLimitSchema, paginationPageSchema } from "@/lib/validation/schemas/common";
+import {
+  parseDemandaRecordId,
+  parseEntityId,
+  paginationLimitSchema,
+  paginationPageSchema,
+} from "@/lib/validation/schemas/common";
 import { logServerActionError } from "@/lib/server-action-log";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "ordens-compra");
@@ -49,14 +54,16 @@ export async function createOrdemCompraAction(
     return { error: "Apenas usuários de agência podem enviar pedidos de OC." };
   }
 
-  const demandaIdRaw = String(formData.get("demandaId") ?? "").trim();
-  const demandaIdCheck = parseEntityId(demandaIdRaw);
+  const demandaIdRaw =
+    String(formData.get("demandaId") ?? "").trim() ||
+    String(formData.get("1_demandaId") ?? "").trim();
+  const demandaIdCheck = parseDemandaRecordId(demandaIdRaw);
   if (!demandaIdCheck.ok) {
     return { error: "Selecione uma demanda válida." };
   }
   const demandaId = demandaIdCheck.id;
 
-  const file = formData.get("file") as File | null;
+  const file = (formData.get("file") ?? formData.get("1_file")) as File | null;
   if (!file || file.size === 0) {
     return { error: "Envie o documento PDF da OC." };
   }
@@ -201,7 +208,7 @@ export async function getOrdensCompraPorDemandaAction(
   const session = await getSession();
   if (!session) return [];
 
-  const idCheck = parseEntityId(demandaId);
+  const idCheck = parseDemandaRecordId(demandaId);
   if (!idCheck.ok) return [];
 
   const trimmed = idCheck.id;

@@ -24,7 +24,13 @@ import {
 } from "@/lib/r2-upload";
 import { readStoredUploadFile } from "@/lib/stored-upload";
 import { z } from "zod";
-import { entityIdSchema, paginationLimitSchema, paginationPageSchema } from "@/lib/validation/schemas/common";
+import {
+  demandaRecordIdSchema,
+  entityIdSchema,
+  parseDemandaRecordId,
+  paginationLimitSchema,
+  paginationPageSchema,
+} from "@/lib/validation/schemas/common";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
 
@@ -33,7 +39,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".pdf", ".xml", ".txt", ".docx", ".doc", ".xlsx", ".xls", ".jpg", ".jpeg", ".png"];
 
 const comprovacaoDemandaIdsSchema = z
-  .array(entityIdSchema)
+  .array(demandaRecordIdSchema)
   .min(1, "Selecione pelo menos uma demanda.")
   .max(100, "Número máximo de demandas por envio excedido.");
 
@@ -184,10 +190,10 @@ export async function createComprovacaoAction(
 }
 
 export async function getComprovacoesAction(demandaId: string): Promise<Comprovacao[]> {
-  const idCheck = entityIdSchema.safeParse(demandaId);
-  if (!idCheck.success) return [];
+  const idCheck = parseDemandaRecordId(demandaId);
+  if (!idCheck.ok) return [];
   const comprovacaoRepository = getDemandaComprovacaoRepository();
-  return comprovacaoRepository.findByDemandaId(idCheck.data);
+  return comprovacaoRepository.findByDemandaId(idCheck.id);
 }
 
 export async function getComprovacoesListAction(filters?: {
@@ -345,9 +351,9 @@ export async function removeComprovacaoFromDemandaAction(
     return { error: "Apenas administradores podem remover comprovações." } as const;
   }
 
-  const demandaIdCheck = entityIdSchema.safeParse(demandaId);
-  if (!demandaIdCheck.success) {
-    return { error: zodErrorToActionMessage(demandaIdCheck.error) } as const;
+  const demandaIdCheck = parseDemandaRecordId(demandaId);
+  if (!demandaIdCheck.ok) {
+    return { error: demandaIdCheck.error } as const;
   }
   const comprovacaoIdCheck = entityIdSchema.safeParse(comprovacaoId);
   if (!comprovacaoIdCheck.success) {
@@ -359,7 +365,7 @@ export async function removeComprovacaoFromDemandaAction(
     const demandaRepository = getDemandaRepository();
 
     const result = await removeComprovacaoFromDemandaUseCase(
-      { demandaId: demandaIdCheck.data, comprovacaoId: comprovacaoIdCheck.data },
+      { demandaId: demandaIdCheck.id, comprovacaoId: comprovacaoIdCheck.data },
       { demandaComprovacaoRepository, demandaRepository }
     );
 
@@ -368,7 +374,7 @@ export async function removeComprovacaoFromDemandaAction(
     return { removedComprovacao: result.removedComprovacao };
   } catch (err) {
     logServerActionError("removeComprovacaoFromDemandaAction", err, {
-      demandaId: demandaIdCheck.data,
+      demandaId: demandaIdCheck.id,
       comprovacaoId: comprovacaoIdCheck.data,
     });
     return {

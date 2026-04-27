@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS ordens_compra (
   "caminhoArquivo" TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('em_aberto', 'assinada')),
   autor TEXT NOT NULL,
+  "enviadoPorEmail" TEXT,
   "createdAt" TEXT NOT NULL,
   "updatedAt" TEXT
 );
