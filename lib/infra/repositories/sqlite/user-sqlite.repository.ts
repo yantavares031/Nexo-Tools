@@ -3,6 +3,12 @@ import type { IUserRepository } from "@/lib/domain/user.repository";
 import { getDb } from "@/DB/db";
 import { randomUUID } from "crypto";
 
+function pickAvatarKey(row: Record<string, unknown>): string | undefined {
+  const v = row.avatarKey;
+  if (v === undefined || v === null || String(v).length === 0) return undefined;
+  return String(v);
+}
+
 function rowToUser(row: Record<string, unknown>): User {
   const acessoRaw = row.acesso;
   const acesso = acessoRaw === undefined || acessoRaw === null ? true : Number(acessoRaw) === 1;
@@ -17,6 +23,7 @@ function rowToUser(row: Record<string, unknown>): User {
     acesso,
     temporaryPassword:
       tp !== undefined && tp !== null && String(tp).length > 0 ? String(tp) : undefined,
+    avatarKey: pickAvatarKey(row),
   };
 }
 
@@ -45,7 +52,7 @@ export class UserSqliteRepository implements IUserRepository {
     const db = getDb();
     const acesso = input.acesso !== false ? 1 : 0;
     db.prepare(
-      "INSERT INTO users (id, email, password, name, role, agenciaId, acesso, temporaryPassword) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users (id, email, password, name, role, agenciaId, acesso, temporaryPassword, avatarKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).run(
       id,
       input.email,
@@ -54,9 +61,15 @@ export class UserSqliteRepository implements IUserRepository {
       input.role,
       input.agenciaId ?? null,
       acesso,
-      input.temporaryPassword ?? null
+      input.temporaryPassword ?? null,
+      input.avatarKey ?? null
     );
-    return { ...input, id, acesso: input.acesso !== false };
+    return {
+      ...input,
+      id,
+      acesso: input.acesso !== false,
+      avatarKey: input.avatarKey ?? null,
+    };
   }
 
   async update(id: string, input: UserUpdateInput): Promise<User> {
@@ -73,8 +86,11 @@ export class UserSqliteRepository implements IUserRepository {
         : currentTp !== undefined && currentTp !== null && String(currentTp).length > 0
           ? String(currentTp)
           : null;
+    const currentAvatar = pickAvatarKey(current as Record<string, unknown>);
+    const nextAvatar =
+      input.avatarKey !== undefined ? input.avatarKey : currentAvatar ?? null;
     db.prepare(
-      "UPDATE users SET email = ?, name = ?, role = ?, agenciaId = ?, password = ?, acesso = ?, temporaryPassword = ? WHERE id = ?"
+      "UPDATE users SET email = ?, name = ?, role = ?, agenciaId = ?, password = ?, acesso = ?, temporaryPassword = ?, avatarKey = ? WHERE id = ?"
     ).run(
       input.email,
       input.name ?? null,
@@ -83,6 +99,7 @@ export class UserSqliteRepository implements IUserRepository {
       password,
       acesso,
       temporaryPassword,
+      nextAvatar,
       id
     );
     return {
@@ -92,6 +109,7 @@ export class UserSqliteRepository implements IUserRepository {
       password,
       acesso: acessoBool,
       temporaryPassword: temporaryPassword ?? undefined,
+      avatarKey: nextAvatar,
     };
   }
 

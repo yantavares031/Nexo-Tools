@@ -4,6 +4,7 @@ import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { IWebhookConfigRepository } from "@/lib/domain/webhook-config.repository";
 import type { IWebhookSender } from "@/lib/domain/webhook-sender";
 import { dispatchWebhookForEventUseCase } from "./dispatch-webhook-for-event.use-case";
+import { logUseCaseInfo } from "@/lib/server-action-log";
 
 type Dependencies = {
   demandaComprovacaoRepository: IDemandaComprovacaoRepository;
@@ -50,6 +51,16 @@ export async function addDemandaComprovacaoUseCase(
       }
     }
   }
+
+  await logUseCaseInfo(
+    "addDemandaComprovacaoUseCase",
+    "Comprovação vinculada a demandas",
+    {
+      comprovacaoId: comprovacao.id,
+      demandaIds,
+      nomeArquivo: comprovacao.nomeArquivo,
+    }
+  );
 
   return comprovacao;
 }

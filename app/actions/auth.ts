@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSession } from "@/lib/auth";
+import { createSession, sessionUserFromDbUser } from "@/lib/auth";
 import { loginUseCase } from "@/lib/use-cases/login.use-case";
 import { changePasswordFirstAccessUseCase } from "@/lib/use-cases/change-password-first-access.use-case";
 import { getUserRepository } from "@/lib/repositories";
@@ -12,6 +12,8 @@ import {
   loginFormSchema,
 } from "@/lib/validation/schemas/auth-forms";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
+import { appLogger } from "@/lib/logger";
+import { getClientIp, sessionUserToAuditFields } from "@/lib/logger/audit-context";
 import { logServerActionError } from "@/lib/server-action-log";
 
 export async function loginAction(formData: FormData) {
@@ -26,6 +28,16 @@ export async function loginAction(formData: FormData) {
   const user = await loginUseCase(email, password, { userRepository });
 
   if (!user) {
+    const ip = await getClientIp();
+    appLogger.warn(
+      {
+        event: "auth.login.failed",
+        action: "login",
+        email,
+        ...(ip ? { ip } : {}),
+      },
+      "Login recusado (credenciais ou acesso)"
+    );
     redirect("/login?error=invalid");
   }
 
@@ -37,11 +49,31 @@ export async function loginAction(formData: FormData) {
       role: user.role,
       agenciaId: user.agenciaId,
       mustChangePassword: user.mustChangePassword,
+      avatarKey: user.avatarKey,
     });
   } catch (err) {
-    logServerActionError("loginAction", err, { email });
+    await logServerActionError("loginAction", err, { email });
     redirect("/login?error=invalid");
   }
+
+  const ipLogin = await getClientIp();
+  appLogger.info(
+    {
+      event: "auth.login.success",
+      action: "login",
+      ...sessionUserToAuditFields({
+        userId: user.id,
+        email: user.email,
+        name: user.name ?? user.email,
+        role: user.role,
+        agenciaId: user.agenciaId,
+        mustChangePassword: user.mustChangePassword,
+      }),
+      mustChangePassword: user.mustChangePassword,
+      ...(ipLogin ? { ip: ipLogin } : {}),
+    },
+    "Login bem-sucedido"
+  );
 
   if (user.mustChangePassword) {
     redirect("/primeiro-acesso");
@@ -75,27 +107,35 @@ export async function changePasswordFirstAccessAction(
       { userId: session.userId, newPassword, confirmPassword },
       { userRepository }
     );
+    const fresh = await userRepository.findById(session.userId);
+    if (fresh) {
+      await createSession(sessionUserFromDbUser(fresh));
+    }
   } catch (err) {
-    logServerActionError("changePasswordFirstAccessAction", err, { userId: session.userId });
+    await logServerActionError("changePasswordFirstAccessAction", err, {
+      userId: session.userId,
+    });
     return {
       error: err instanceof Error ? err.message : "Erro ao alterar senha.",
     };
   }
 
-  await createSession({
-    userId: session.userId,
-    email: session.email,
-    name: session.name,
-    role: session.role,
-    agenciaId: session.agenciaId,
-    mustChangePassword: false,
-  });
-
   redirect("/splash");
 }
 
 export async function logoutAction() {
-  const { destroySession } = await import("@/lib/auth");
+  const { destroySession, getSession } = await import("@/lib/auth");
+  const session = await getSession();
+  const ip = await getClientIp();
   await destroySession();
+  appLogger.info(
+    {
+      event: "auth.logout",
+      action: "logout",
+      ...(session ? sessionUserToAuditFields(session) : {}),
+      ...(ip ? { ip } : {}),
+    },
+    "Logout"
+  );
   redirect("/login");
 }

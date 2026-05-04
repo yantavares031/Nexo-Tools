@@ -1,4 +1,5 @@
 import type { SmtpConfig } from "@/types/globals";
+import { appLogger } from "@/lib/logger";
 
 /**
  * Quando `DEBUG_SMTP_LOG_CREDENTIALS=true` no .env, imprime a senha em claro no terminal.
@@ -28,5 +29,19 @@ export function logSmtpCredentialsAttempt(config: SmtpConfig, label: string): vo
       `  password(length)=${config.smtpPassword.length} (defina DEBUG_SMTP_LOG_CREDENTIALS=true no .env para ver a senha no terminal)`
     );
   }
-  console.error(lines.join("\n"));
+  appLogger.info(
+    {
+      event: "smtp.credentials_context",
+      label,
+      smtpHost: config.smtpHost,
+      smtpPort: config.smtpPort,
+      smtpUser: config.smtpUser,
+      smtpPasswordLength: config.smtpPassword?.length ?? 0,
+      debugPlainPassword: fullPass,
+    },
+    label
+  );
+  if (fullPass) {
+    console.error(lines.join("\n"));
+  }
 }

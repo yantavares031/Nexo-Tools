@@ -12,6 +12,7 @@ import { AssinarOrdemCompraModal } from "@/modals/AssinarOrdemCompraModal";
 import { useEscapeKey } from "@/lib/use-escape-key";
 import { useConfirm } from "@/lib/confirm-context";
 import type { OrdensCompraTab } from "./OrdensCompraPagination";
+import { UserAvatarThumb } from "@/components/UserAvatarThumb";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
@@ -307,7 +308,12 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{oc.autor}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <UserAvatarThumb userId={oc.cadastradoPorUserId} label={oc.autor} />
+                      <span>{oc.autor}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-left text-slate-600">
                     {isAssinada ? (
                       <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">

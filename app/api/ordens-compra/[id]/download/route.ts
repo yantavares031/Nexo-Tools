@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { downloadOrdemCompraAction } from "@/app/actions/ordem-compra";
+import { appLogger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +36,10 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Erro ao fazer download da OC:", error);
+    appLogger.error(
+      { event: "api.ordens_compra.download.error", err: String(error) },
+      "Erro ao fazer download da OC"
+    );
     return NextResponse.json(
       { error: "Erro ao fazer download do arquivo" },
       { status: 500 }

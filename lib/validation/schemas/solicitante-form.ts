@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { userRecordIdSchema } from "@/lib/validation/schemas/common";
 
 export function formDataToCreateSolicitanteRaw(formData: FormData) {
   return {
@@ -24,7 +25,7 @@ export function formDataToUpdateSolicitanteRaw(formData: FormData) {
 }
 
 export const updateSolicitanteFormSchema = z.object({
-  id: z.string().trim().uuid("Identificador inválido."),
+  id: userRecordIdSchema,
   nome: z.string().trim().min(1, "Nome é obrigatório.").max(500),
   unResponsavel: z
     .string()

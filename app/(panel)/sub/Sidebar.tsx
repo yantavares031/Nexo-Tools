@@ -7,12 +7,14 @@ import {
   Workflow,
   Users,
   UserPlus,
+  UserCircle,
   Megaphone,
   Lock,
   Tag,
   Plug,
   FileCheck,
   FileSignature,
+  ScrollText,
 } from "lucide-react";
 import type { UserRole } from "@/types/globals";
 import { canAccessRoute } from "@/lib/roles";
@@ -29,6 +31,17 @@ const ALL_MENU_ITEMS = [
   { href: "/integracoes", label: "Integrações", icon: Plug },
 ] as const;
 
+const ADMIN_MENU_ITEMS = [
+  { href: "/admin/logs", label: "Logs do sistema", icon: ScrollText },
+] as const;
+
+/** Perfil fica antes de “Logs do sistema” (admin); nos demais perfis, no final do menu. */
+const PERFIL_MENU_ITEM = {
+  href: "/perfil",
+  label: "Perfil",
+  icon: UserCircle,
+} as const;
+
 interface SidebarProps {
   role?: UserRole | null;
 }
@@ -36,19 +49,26 @@ interface SidebarProps {
 export function Sidebar({ role = "operator" }: SidebarProps) {
   const pathname = usePathname();
 
+  const navItems =
+    role === "admin"
+      ? [...ALL_MENU_ITEMS, PERFIL_MENU_ITEM, ...ADMIN_MENU_ITEMS]
+      : [...ALL_MENU_ITEMS, PERFIL_MENU_ITEM];
+
   return (
     <aside className="flex w-56 flex-col border-r border-slate-200 bg-white">
       <nav className="flex flex-col gap-0.5 p-3">
-        {ALL_MENU_ITEMS.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon }) => {
           const hasAccess = canAccessRoute(role ?? "operator", href);
           const isActive =
             href === "/"
               ? pathname === "/"
               : href === "/dashboard"
                 ? pathname === "/dashboard"
-                : href === "/integracoes"
-                  ? pathname === "/integracoes"
-                  : pathname.startsWith(href);
+                : href === "/perfil"
+                  ? pathname === "/perfil"
+                  : href === "/integracoes"
+                    ? pathname === "/integracoes"
+                    : pathname.startsWith(href);
           return (
             <Link
               key={href}

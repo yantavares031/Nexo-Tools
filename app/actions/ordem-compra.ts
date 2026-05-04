@@ -114,6 +114,7 @@ export async function createOrdemCompraAction(
         tamanho: file.size,
         caminhoArquivo: objectKey,
         autor: session.name ?? "",
+        cadastradoPorUserId: session.userId?.trim() || undefined,
         enviadoPorEmail: session.email,
       },
       { ordemCompraRepository }
@@ -147,7 +148,7 @@ export async function createOrdemCompraAction(
     if (err instanceof Error && err.message.includes("Body exceeded")) {
       return { error: "O arquivo é muito grande." };
     }
-    logServerActionError("createOrdemCompraAction", err, { demandaId });
+    await logServerActionError("createOrdemCompraAction", err, { demandaId });
     return {
       error: err instanceof Error ? err.message : "Erro ao enviar ordem de compra.",
     };
@@ -392,7 +393,7 @@ export async function uploadOrdemCompraAssinadaAction(
     if (err instanceof Error && err.message.includes("Body exceeded")) {
       return { error: "O arquivo é muito grande." };
     }
-    logServerActionError("uploadOrdemCompraAssinadaAction", err, { ordemId });
+    await logServerActionError("uploadOrdemCompraAssinadaAction", err, { ordemId });
     return {
       error: err instanceof Error ? err.message : "Erro ao registrar OC assinada.",
     };
@@ -439,7 +440,7 @@ export async function removeOrdemCompraEmAbertoAction(
     revalidatePath("/ordens-compra/adicionar");
     return {};
   } catch (err) {
-    logServerActionError("removeOrdemCompraEmAbertoAction", err, { ordemId });
+    await logServerActionError("removeOrdemCompraEmAbertoAction", err, { ordemId });
     return {
       error: err instanceof Error ? err.message : "Erro ao remover pedido de OC.",
     };

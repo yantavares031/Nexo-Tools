@@ -39,6 +39,12 @@ function optionalStringPg(row: Record<string, unknown>, key: string): string | u
   return String(v);
 }
 
+function optionalCadastradoPorUserId(row: Record<string, unknown>): string | undefined {
+  const v = row.cadastradoPorUserId ?? row.cadastroporuserid;
+  if (v == null || String(v).trim() === "") return undefined;
+  return String(v);
+}
+
 function rowToOrdemCompra(row: Record<string, unknown>): OrdemCompra {
   const tAss = row.tamanhoAssinado;
   return {
@@ -55,6 +61,7 @@ function rowToOrdemCompra(row: Record<string, unknown>): OrdemCompra {
     caminhoArquivoAssinado: optionalStringPg(row, "caminhoArquivoAssinado"),
     status: row.status as OrdemCompraStatus,
     autor: String(row.autor),
+    cadastradoPorUserId: optionalCadastradoPorUserId(row),
     enviadoPorEmail: optionalStringPg(row, "enviadoPorEmail"),
     createdAt: String(row.createdAt),
     updatedAt: row.updatedAt ? String(row.updatedAt) : undefined,
@@ -70,8 +77,8 @@ export class OrdemCompraPostgresRepository implements IOrdemCompraRepository {
 
     const enviadoPor = input.enviadoPorEmail?.trim() || null;
     await pool.query(
-      `INSERT INTO ordens_compra (id, "demandaId", "nomeArquivo", "tipoArquivo", tamanho, "caminhoArquivo", status, autor, "enviadoPorEmail", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO ordens_compra (id, "demandaId", "nomeArquivo", "tipoArquivo", tamanho, "caminhoArquivo", status, autor, "cadastradoPorUserId", "enviadoPorEmail", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         id,
         input.demandaId,
@@ -81,6 +88,7 @@ export class OrdemCompraPostgresRepository implements IOrdemCompraRepository {
         input.caminhoArquivo,
         status,
         input.autor,
+        input.cadastradoPorUserId?.trim() || null,
         enviadoPor,
         createdAt,
       ]
@@ -95,6 +103,7 @@ export class OrdemCompraPostgresRepository implements IOrdemCompraRepository {
       caminhoArquivo: input.caminhoArquivo,
       status,
       autor: input.autor,
+      cadastradoPorUserId: input.cadastradoPorUserId?.trim() || undefined,
       enviadoPorEmail: enviadoPor ?? undefined,
       createdAt,
     };

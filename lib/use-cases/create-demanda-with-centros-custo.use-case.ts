@@ -9,6 +9,7 @@ import { applyAgenciaIdToDemandaInputUseCase } from "./apply-agencia-id-to-deman
 import { saveDemandaCentrosCustoUseCase } from "./save-demanda-centros-custo.use-case";
 import { dispatchWebhookForEventUseCase } from "./dispatch-webhook-for-event.use-case";
 import type { DemandaCentroCustoInput } from "@/types/globals";
+import { logUseCaseInfo } from "@/lib/server-action-log";
 
 type Dependencies = {
   demandaRepository: IDemandaRepository;
@@ -61,6 +62,16 @@ export async function createDemandaWithCentrosCustoUseCase(
       }
     );
   }
+
+  await logUseCaseInfo(
+    "createDemandaWithCentrosCustoUseCase",
+    "Demanda criada",
+    {
+      demandaId: demandaCriada.id,
+      centrosCustoCount: centrosCusto?.length ?? 0,
+      actorRole: userRole ?? undefined,
+    }
+  );
 
   return demandaCriada;
 }

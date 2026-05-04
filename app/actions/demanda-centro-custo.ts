@@ -7,10 +7,10 @@ import type { DemandaCentroCusto, DemandaCentroCustoInput } from "@/types/global
 import { saveCentrosCustoPayloadSchema } from "@/lib/validation/schemas/demanda-centro-custo-payload";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
-import { parseEntityId } from "@/lib/validation/schemas/common";
+import { parseDemandaRecordId } from "@/lib/validation/schemas/common";
 
 export async function getCentrosCustoAction(demandaId: string): Promise<DemandaCentroCusto[]> {
-  const idCheck = parseEntityId(demandaId);
+  const idCheck = parseDemandaRecordId(demandaId);
   if (!idCheck.ok) {
     return [];
   }
@@ -55,7 +55,7 @@ export async function saveCentrosCustoAction(
 
     return {};
   } catch (err) {
-    logServerActionError("saveCentrosCustoAction", err, { demandaId: did });
+    await logServerActionError("saveCentrosCustoAction", err, { demandaId: did });
     return {
       error: err instanceof Error ? err.message : "Erro ao salvar centros de custo.",
     };

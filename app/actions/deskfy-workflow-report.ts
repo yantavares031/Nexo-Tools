@@ -42,7 +42,7 @@ export async function fetchDeskfyWorkflowReportAction(
 
     return { items };
   } catch (err) {
-    logServerActionError("fetchDeskfyWorkflowReportAction", err, {
+    await logServerActionError("fetchDeskfyWorkflowReportAction", err, {
       hasBriefingId: briefingId != null,
     });
     return {

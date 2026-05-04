@@ -11,7 +11,7 @@ import type { AgenciaInput } from "@/types/globals";
 import { agenciaFormSchema, formDataToAgenciaRaw } from "@/lib/validation/schemas/agencia-form";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
-import { parseEntityId } from "@/lib/validation/schemas/common";
+import { parseUserRecordId } from "@/lib/validation/schemas/common";
 
 export async function createAgenciaAction(
   _prevState: { error?: string } | null,
@@ -31,7 +31,7 @@ export async function createAgenciaAction(
   try {
     await createAgenciaUseCase(input, { agenciaRepository });
   } catch (err) {
-    logServerActionError("createAgenciaAction", err, { nomeFantasia });
+    await logServerActionError("createAgenciaAction", err, { nomeFantasia });
     return {
       error: err instanceof Error ? err.message : "Erro ao criar agência.",
     } as const;
@@ -47,7 +47,7 @@ export async function updateAgenciaAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const idCheck = parseEntityId(id);
+  const idCheck = parseUserRecordId(id);
   if (!idCheck.ok) {
     return { error: idCheck.error } as const;
   }
@@ -66,7 +66,7 @@ export async function updateAgenciaAction(
   try {
     await updateAgenciaUseCase(idCheck.id, input, { agenciaRepository });
   } catch (err) {
-    logServerActionError("updateAgenciaAction", err, { id: idCheck.id });
+    await logServerActionError("updateAgenciaAction", err, { id: idCheck.id });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar agência.",
     } as const;
@@ -79,7 +79,7 @@ export async function updateAgenciaAction(
 }
 
 export async function removeAgenciaAction(id: string) {
-  const idCheck = parseEntityId(id);
+  const idCheck = parseUserRecordId(id);
   if (!idCheck.ok) {
     redirect("/agencias?error=" + encodeURIComponent(idCheck.error));
   }
@@ -88,7 +88,7 @@ export async function removeAgenciaAction(id: string) {
   try {
     await removeAgenciaUseCase(idCheck.id, { agenciaRepository });
   } catch (err) {
-    logServerActionError("removeAgenciaAction", err, { id: idCheck.id });
+    await logServerActionError("removeAgenciaAction", err, { id: idCheck.id });
     redirect("/agencias?error=" + encodeURIComponent("Erro ao remover agência."));
   }
 

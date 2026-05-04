@@ -202,7 +202,8 @@ export function VerDetalhesUsuarioModal({
                 />
               ) : (
                 <>
-                  <input type="hidden" name="password" value="" />
+                  {/* Precisa espelhar values.password: ao sair do campo (blur), só existe este hidden no DOM — "" apagava a senha no submit. */}
+                  <input type="hidden" name="password" value={values.password} />
                   <div
                     onClick={() => setEditingField("password")}
                     className={textClass}

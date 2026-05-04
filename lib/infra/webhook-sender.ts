@@ -1,4 +1,5 @@
 import type { IWebhookSender } from "@/lib/domain/webhook-sender";
+import { appLogger } from "@/lib/logger";
 
 let hasWarned404 = false;
 
@@ -15,7 +16,10 @@ export class FetchWebhookSender implements IWebhookSender {
       if (res.status === 404) {
         if (!hasWarned404) {
           hasWarned404 = true;
-          console.warn("[Webhook] URL retornou 404. Verifique a URL em Integrações.");
+          appLogger.warn(
+            { event: "webhook.http404", url },
+            "Webhook retornou 404 — verifique a URL em Integrações"
+          );
         }
         return;
       }

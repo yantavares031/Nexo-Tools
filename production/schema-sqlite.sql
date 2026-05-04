@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL CHECK (role IN ('admin', 'operator', 'agency')),
   agenciaId TEXT,
   acesso INTEGER NOT NULL DEFAULT 1,
-  temporaryPassword TEXT
+  temporaryPassword TEXT,
+  avatarKey TEXT
 );
 
 CREATE TABLE IF NOT EXISTS agencias (

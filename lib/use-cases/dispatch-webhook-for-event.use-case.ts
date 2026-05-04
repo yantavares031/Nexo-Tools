@@ -1,6 +1,7 @@
 import type { WebhookEventCode } from "@/types/globals";
 import type { IWebhookConfigRepository } from "@/lib/domain/webhook-config.repository";
 import type { IWebhookSender } from "@/lib/domain/webhook-sender";
+import { logUseCaseError } from "@/lib/server-action-log";
 import { getWebhookConfigUseCase } from "./get-webhook-config.use-case";
 
 type Dependencies = {
@@ -35,7 +36,9 @@ export async function dispatchWebhookForEventUseCase(
   try {
     await deps.webhookSender.send(config.url.trim(), body);
   } catch (err) {
-    // Fire-and-forget: não falha o fluxo principal (ex.: criação de demanda)
-    console.error("[Webhook] Falha ao disparar", eventCode, err);
+    await logUseCaseError("dispatchWebhookForEventUseCase", err, {
+      eventCode,
+      webhookUrl: config.url.trim(),
+    });
   }
 }

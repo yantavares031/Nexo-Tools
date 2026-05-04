@@ -1,3 +1,5 @@
+import { appLogger } from "@/lib/logger";
+
 /** Erros comuns do Nodemailer / SMTP. */
 export type SmtpSendError = Error & {
   code?: string;
@@ -46,5 +48,19 @@ export function logSmtpFailureToConsole(
     const rsp = String(e.response).trim().replace(/\s+/g, " ");
     lines.push(`  response=${rsp.slice(0, 500)}${rsp.length > 500 ? "…" : ""}`);
   }
-  console.error(lines.join("\n"));
+  appLogger.error(
+    {
+      event: "smtp.failure",
+      phase: context.phase,
+      ...(context.to ? { to: context.to } : {}),
+      message: e?.message ?? String(err),
+      code: e?.code,
+      command: e?.command,
+      responseCode: e?.responseCode,
+      response: e?.response
+        ? String(e.response).trim().replace(/\s+/g, " ").slice(0, 500)
+        : undefined,
+    },
+    lines.join("\n")
+  );
 }

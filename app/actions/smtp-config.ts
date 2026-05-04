@@ -29,7 +29,7 @@ export async function getSmtpConfigPanelAction(): Promise<
     const panel = await getSmtpConfigPanelUseCase({ smtpConfigRepository: repo });
     return { panel };
   } catch (err) {
-    logServerActionError("getSmtpConfigPanelAction", err);
+    await logServerActionError("getSmtpConfigPanelAction", err);
     return {
       error: err instanceof Error ? err.message : "Erro ao carregar SMTP.",
     };
@@ -73,7 +73,7 @@ export async function saveSmtpConfigAction(
     revalidatePath("/integracoes");
     return {};
   } catch (err) {
-    logServerActionError("saveSmtpConfigAction", err, { smtpUser });
+    await logServerActionError("saveSmtpConfigAction", err, { smtpUser });
     return {
       error: err instanceof Error ? err.message : "Erro ao salvar SMTP.",
     };
@@ -95,7 +95,7 @@ export async function testSmtpEmailAction(formData: FormData): Promise<{ error?:
     await sendSmtpTestEmailUseCase(parsed.data.testEmail, { smtpConfigRepository: repo });
     return { ok: true };
   } catch (err) {
-    logServerActionError("testSmtpEmailAction", err, { to: parsed.data.testEmail });
+    await logServerActionError("testSmtpEmailAction", err, { to: parsed.data.testEmail });
     return {
       error: err instanceof Error ? err.message : "Falha ao enviar e-mail de teste.",
     };

@@ -1,4 +1,5 @@
 import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
+import { logUseCaseInfo } from "@/lib/server-action-log";
 
 type Dependencies = {
   demandaRepository: IDemandaRepository;
@@ -12,4 +13,5 @@ export async function removeDemandaUseCase(
   const demanda = await deps.demandaRepository.findById(id);
   if (!demanda) throw new Error("Demanda não encontrada");
   await deps.demandaRepository.remove(id);
+  await logUseCaseInfo("removeDemandaUseCase", "Demanda removida", { demandaId: id });
 }

@@ -2,14 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  getAgenciaRepository,
   getDemandaComprovacaoRepository,
   getDemandaRepository,
+  getSmtpConfigRepository,
   getWebhookConfigRepository,
   getWebhookSender,
 } from "@/lib/repositories";
 import type { Comprovacao } from "@/types/globals";
 import type { Demanda } from "@/types/globals";
 import { addDemandaComprovacaoUseCase } from "@/lib/use-cases/add-demanda-comprovacao.use-case";
+import { notifyComprovacaoEnviadaEmailsUseCase } from "@/lib/use-cases/notify-comprovacao-enviada-emails.use-case";
 import { removeComprovacaoFromDemandaUseCase } from "@/lib/use-cases/remove-comprovacao-from-demanda.use-case";
 import { getSession } from "@/lib/auth";
 import {
@@ -119,6 +122,8 @@ export async function createComprovacaoAction(
     const comprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
 
+    let notificacaoAgencia: { agenciaNome: string; demandas: Demanda[] } | null = null;
+
     if (session.role === "agency") {
       const scope = await getAgencyDemandaScope(session);
       if (!scope) {
@@ -133,10 +138,34 @@ export async function createComprovacaoAction(
           return { error: "Você não tem permissão para vincular comprovação a esta demanda." } as const;
         }
       }
+
+      let agenciaNome = "Agência";
+      if (scope.agenciaId) {
+        const ag = await getAgenciaRepository().findById(scope.agenciaId);
+        if (ag?.nomeFantasia?.trim()) {
+          agenciaNome = ag.nomeFantasia.trim();
+        }
+      }
+      const demandasNotif: Demanda[] = [];
+      for (const id of demandaIds) {
+        const d = await demandaRepository.findById(id);
+        if (d) demandasNotif.push(d);
+      }
+      if (!scope.agenciaId && demandasNotif[0]?.agencia?.trim()) {
+        agenciaNome = demandasNotif[0].agencia.trim();
+      }
+      notificacaoAgencia = { agenciaNome, demandas: demandasNotif };
     }
 
     const webhookConfigRepository = getWebhookConfigRepository();
     const webhookSender = getWebhookSender();
+
+    const smtpRepoComprovacao =
+      notificacaoAgencia && notificacaoAgencia.demandas.length > 0
+        ? getSmtpConfigRepository()
+        : null;
+    const smtpRowComprovacao = smtpRepoComprovacao ? await smtpRepoComprovacao.get() : null;
+
     const comprovacoes: Comprovacao[] = [];
 
     for (const file of validFiles) {
@@ -160,6 +189,7 @@ export async function createComprovacaoAction(
           caminhoArquivo: objectKey,
           descricao,
           autor: session.name ?? "",
+          cadastradoPorUserId: session.userId?.trim() || undefined,
         },
         demandaIds,
         {
@@ -170,6 +200,26 @@ export async function createComprovacaoAction(
         }
       );
       comprovacoes.push(comprovacao);
+
+      if (
+        notificacaoAgencia &&
+        notificacaoAgencia.demandas.length > 0 &&
+        smtpRepoComprovacao
+      ) {
+        await notifyComprovacaoEnviadaEmailsUseCase(
+          {
+            notifyEmails: smtpRowComprovacao?.ordemCompraNotifyEmails ?? [],
+            agenciaUserEmail: session.email,
+            agenciaNome: notificacaoAgencia.agenciaNome,
+            demandas: notificacaoAgencia.demandas,
+            nomeArquivo: file.name,
+            fileBuffer: buffer,
+            contentType: contentTypeForComprovacaoExt(ext),
+            descricao,
+          },
+          { smtpConfigRepository: smtpRepoComprovacao }
+        );
+      }
     }
 
     revalidatePath("/");
@@ -182,7 +232,7 @@ export async function createComprovacaoAction(
         error: "O arquivo é muito grande. O tamanho máximo permitido é 10MB por arquivo.",
       } as const;
     }
-    logServerActionError("createComprovacaoAction", err, { demandaCount: demandaIds.length });
+    await logServerActionError("createComprovacaoAction", err, { demandaCount: demandaIds.length });
     return {
       error: err instanceof Error ? err.message : "Erro ao fazer upload do arquivo.",
     } as const;
@@ -286,7 +336,7 @@ export async function downloadComprovacaoAction(id: string): Promise<{
       },
     };
   } catch (err) {
-    logServerActionError("downloadComprovacaoAction", err, { id: idCheck.data });
+    await logServerActionError("downloadComprovacaoAction", err, { id: idCheck.data });
     return { error: "Arquivo não encontrado." } as const;
   }
 }
@@ -332,7 +382,7 @@ export async function removeComprovacaoAction(id: string): Promise<{ error?: str
     revalidatePath("/comprovacoes/adicionar");
     return {};
   } catch (err) {
-    logServerActionError("removeComprovacaoAction", err, { id: idCheck.data });
+    await logServerActionError("removeComprovacaoAction", err, { id: idCheck.data });
     return {
       error: err instanceof Error ? err.message : "Erro ao remover comprovação.",
     } as const;
@@ -373,7 +423,7 @@ export async function removeComprovacaoFromDemandaAction(
     revalidatePath("/comprovacoes");
     return { removedComprovacao: result.removedComprovacao };
   } catch (err) {
-    logServerActionError("removeComprovacaoFromDemandaAction", err, {
+    await logServerActionError("removeComprovacaoFromDemandaAction", err, {
       demandaId: demandaIdCheck.id,
       comprovacaoId: comprovacaoIdCheck.data,
     });

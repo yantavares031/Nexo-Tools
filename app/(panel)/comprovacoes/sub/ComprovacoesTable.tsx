@@ -9,6 +9,7 @@ import { Download, Trash2, Eye } from "lucide-react";
 import { useConfirm } from "@/lib/confirm-context";
 import { ComprovacaoPreviewModal } from "@/modals/sub/ComprovacaoPreviewModal";
 import { VerDetalhesComprovacaoModal } from "@/modals/VerDetalhesComprovacaoModal";
+import { UserAvatarThumb } from "@/components/UserAvatarThumb";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
@@ -170,7 +171,12 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
                     {comp.descricao || "—"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{comp.autor}</td>
+                <td className="px-4 py-3 text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <UserAvatarThumb userId={comp.cadastradoPorUserId} label={comp.autor} />
+                    <span>{comp.autor}</span>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-slate-600">
                   {comp.demandaCount} {comp.demandaCount === 1 ? "demanda" : "demandas"}
                 </td>

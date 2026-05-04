@@ -4,6 +4,7 @@ import {
 } from "@/lib/email/ordem-compra-emails";
 import type { ISmtpConfigRepository } from "@/lib/domain/smtp-config.repository";
 import { sendSmtpMail } from "@/lib/infra/smtp-send-mail";
+import { logUseCaseError } from "@/lib/server-action-log";
 import type { Demanda } from "@/types/globals";
 
 type Dependencies = { smtpConfigRepository: ISmtpConfigRepository };
@@ -48,16 +49,25 @@ export async function notifyOrdemCompraEnviadaEmailsUseCase(
     contentType: "application/pdf" as const,
   };
 
-  for (const to of lista) {
+  if (lista.length > 0) {
     try {
       const { subject, html, text } = buildOcEnviadaNotificacaoListaEmail({
         agenciaNome: params.agenciaNome,
         demanda: params.demanda,
         nomeArquivoPdf: params.nomeArquivoPdf,
       });
-      await sendSmtpMail(cfg, { to, subject, text, html, attachments: [pdf] });
+      await sendSmtpMail(cfg, {
+        to: lista.join(", "),
+        subject,
+        text,
+        html,
+        attachments: [pdf],
+      });
     } catch (err) {
-      console.error("[OC e-mail] Falha ao notificar lista (OC enviada):", to, err);
+      await logUseCaseError("notifyOrdemCompraEnviadaEmailsUseCase", err, {
+        phase: "notify_list",
+        recipients: lista.join(", "),
+      });
     }
   }
 
@@ -76,7 +86,10 @@ export async function notifyOrdemCompraEnviadaEmailsUseCase(
         attachments: [pdf],
       });
     } catch (err) {
-      console.error("[OC e-mail] Falha ao enviar backup à agência:", params.agenciaUserEmail, err);
+      await logUseCaseError("notifyOrdemCompraEnviadaEmailsUseCase", err, {
+        phase: "backup_agencia",
+        agenciaUserEmail: params.agenciaUserEmail,
+      });
     }
   }
 }

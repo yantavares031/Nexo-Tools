@@ -27,7 +27,7 @@ export async function getDeskfyTaskDetailsAction(
     });
     return { data };
   } catch (err) {
-    logServerActionError("getDeskfyTaskDetailsAction", err, { taskId });
+    await logServerActionError("getDeskfyTaskDetailsAction", err, { taskId });
     return {
       error: err instanceof Error ? err.message : "Erro ao carregar detalhes da demanda na Deskfy.",
     };

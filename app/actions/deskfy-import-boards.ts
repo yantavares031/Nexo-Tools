@@ -22,7 +22,7 @@ export async function listDeskfyImportBoardsAction(): Promise<
     const boards = await repo.findAll();
     return { boards };
   } catch (err) {
-    logServerActionError("listDeskfyImportBoardsAction", err);
+    await logServerActionError("listDeskfyImportBoardsAction", err);
     return {
       error: err instanceof Error ? err.message : "Erro ao listar boards.",
     };
@@ -50,7 +50,7 @@ export async function addDeskfyImportBoardAction(nome: string): Promise<
     revalidatePath("/demandas/importar");
     return { board };
   } catch (err) {
-    logServerActionError("addDeskfyImportBoardAction", err, { nome: parsed.data });
+    await logServerActionError("addDeskfyImportBoardAction", err, { nome: parsed.data });
     return {
       error: err instanceof Error ? err.message : "Erro ao adicionar board.",
     };
@@ -78,7 +78,7 @@ export async function removeDeskfyImportBoardAction(id: string): Promise<
     revalidatePath("/demandas/importar");
     return { ok: true };
   } catch (err) {
-    logServerActionError("removeDeskfyImportBoardAction", err, { id: idCheck.id });
+    await logServerActionError("removeDeskfyImportBoardAction", err, { id: idCheck.id });
     return {
       error: err instanceof Error ? err.message : "Erro ao remover board.",
     };

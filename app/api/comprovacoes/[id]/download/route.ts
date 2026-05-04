@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { downloadComprovacaoAction } from "@/app/actions/demanda-comprovacao";
+import { appLogger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -42,7 +43,10 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Erro ao fazer download:", error);
+    appLogger.error(
+      { event: "api.comprovacoes.download.error", err: String(error) },
+      "Erro ao fazer download da comprovação"
+    );
     return NextResponse.json(
       { error: "Erro ao fazer download do arquivo" },
       { status: 500 }

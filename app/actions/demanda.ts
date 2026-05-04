@@ -23,7 +23,7 @@ import {
 } from "@/lib/validation/schemas/demanda-form";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
-import { parseEntityId } from "@/lib/validation/schemas/common";
+import { parseDemandaRecordId } from "@/lib/validation/schemas/common";
 
 export async function createDemandaAction(
   _prevState: { error?: string } | null,
@@ -97,7 +97,7 @@ export async function createDemandaAction(
       }
     );
   } catch (err) {
-    logServerActionError("createDemandaAction", err, { demanda: input.demanda });
+    await logServerActionError("createDemandaAction", err, { demanda: input.demanda });
     return {
       error: err instanceof Error ? err.message : "Erro ao criar demanda.",
     } as const;
@@ -117,7 +117,7 @@ export async function updateDemandaAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const idCheck = parseEntityId(id);
+  const idCheck = parseDemandaRecordId(id);
   if (!idCheck.ok) {
     return { error: idCheck.error } as const;
   }
@@ -148,7 +148,7 @@ export async function updateDemandaAction(
   try {
     await updateDemandaUseCase(idCheck.id, input, { demandaRepository, agenciaRepository });
   } catch (err) {
-    logServerActionError("updateDemandaAction", err, { id: idCheck.id });
+    await logServerActionError("updateDemandaAction", err, { id: idCheck.id });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar demanda.",
     } as const;
@@ -159,7 +159,7 @@ export async function updateDemandaAction(
 }
 
 export async function removeDemandaAction(id: string) {
-  const idCheck = parseEntityId(id);
+  const idCheck = parseDemandaRecordId(id);
   if (!idCheck.ok) {
     redirect("/?error=" + encodeURIComponent(idCheck.error));
   }
@@ -168,7 +168,7 @@ export async function removeDemandaAction(id: string) {
   try {
     await removeDemandaUseCase(idCheck.id, { demandaRepository });
   } catch (err) {
-    logServerActionError("removeDemandaAction", err, { id: idCheck.id });
+    await logServerActionError("removeDemandaAction", err, { id: idCheck.id });
     redirect("/?error=" + encodeURIComponent("Erro ao remover demanda."));
   }
   revalidatePath("/");

@@ -4,6 +4,7 @@ import {
 } from "@/lib/email/ordem-compra-emails";
 import type { ISmtpConfigRepository } from "@/lib/domain/smtp-config.repository";
 import { sendSmtpMail } from "@/lib/infra/smtp-send-mail";
+import { logUseCaseError } from "@/lib/server-action-log";
 import type { Demanda } from "@/types/globals";
 
 type Dependencies = { smtpConfigRepository: ISmtpConfigRepository };
@@ -21,7 +22,8 @@ function uniqueEmails(emails: string[]): string[] {
 }
 
 /**
- * Após registrar a OC assinada: avisa a agência (link no painel) e a lista SMTP (PDF assinado anexo).
+ * Após registrar a OC assinada: um único e-mail com PDF anexo — destinatários To =
+ * quem enviou a OC + lista "notificações OC" (sem duplicar). Sem remetente: só a lista, um único envio.
  */
 export async function notifyOrdemCompraAssinadaEmailsUseCase(
   params: {
@@ -40,22 +42,6 @@ export async function notifyOrdemCompraAssinadaEmailsUseCase(
     return;
   }
 
-  const enviadoPor = params.enviadoPorEmail?.trim() ?? "";
-  const agenciaNotificada = Boolean(enviadoPor);
-
-  if (enviadoPor) {
-    try {
-      const { subject, html, text } = buildOcAssinadaAgenciaEmail({
-        agenciaNome: params.agenciaNome,
-        demanda: params.demanda,
-        ordensCompraUrl: params.ordensCompraUrl,
-      });
-      await sendSmtpMail(cfg, { to: enviadoPor, subject, text, html });
-    } catch (err) {
-      console.error("[OC e-mail] Falha ao notificar agência (OC assinada):", enviadoPor, err);
-    }
-  }
-
   const lista = uniqueEmails(params.notifyEmails);
   const pdf = {
     filename: params.nomeArquivoPdfAssinado || "oc-assinada.pdf",
@@ -63,17 +49,55 @@ export async function notifyOrdemCompraAssinadaEmailsUseCase(
     contentType: "application/pdf" as const,
   };
 
-  for (const to of lista) {
+  const enviadoPor = params.enviadoPorEmail?.trim() ?? "";
+
+  if (enviadoPor) {
+    const todosDestinatarios = uniqueEmails([enviadoPor, ...lista]);
     try {
-      const { subject, html, text } = buildOcAssinadaNotificacaoListaEmail({
+      const { subject, html, text } = buildOcAssinadaAgenciaEmail({
         agenciaNome: params.agenciaNome,
         demanda: params.demanda,
+        ordensCompraUrl: params.ordensCompraUrl,
         nomeArquivoPdfAssinado: params.nomeArquivoPdfAssinado,
-        agenciaNotificada,
       });
-      await sendSmtpMail(cfg, { to, subject, text, html, attachments: [pdf] });
+      await sendSmtpMail(cfg, {
+        to: todosDestinatarios.join(", "),
+        subject,
+        text,
+        html,
+        attachments: [pdf],
+      });
     } catch (err) {
-      console.error("[OC e-mail] Falha ao notificar lista (OC assinada):", to, err);
+      await logUseCaseError("notifyOrdemCompraAssinadaEmailsUseCase", err, {
+        phase: "assinada_enviado_por",
+        recipients: todosDestinatarios.join(", "),
+      });
     }
+    return;
+  }
+
+  const agenciaNotificada = false;
+  if (lista.length === 0) {
+    return;
+  }
+  try {
+    const { subject, html, text } = buildOcAssinadaNotificacaoListaEmail({
+      agenciaNome: params.agenciaNome,
+      demanda: params.demanda,
+      nomeArquivoPdfAssinado: params.nomeArquivoPdfAssinado,
+      agenciaNotificada,
+    });
+    await sendSmtpMail(cfg, {
+      to: lista.join(", "),
+      subject,
+      text,
+      html,
+      attachments: [pdf],
+    });
+  } catch (err) {
+    await logUseCaseError("notifyOrdemCompraAssinadaEmailsUseCase", err, {
+      phase: "assinada_lista_only",
+      recipients: lista.join(", "),
+    });
   }
 }

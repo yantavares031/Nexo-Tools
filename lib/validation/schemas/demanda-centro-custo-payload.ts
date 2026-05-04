@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { demandaRecordIdSchema } from "@/lib/validation/schemas/common";
 
 const rowSchema = z.object({
   centroDeCusto: z.string().trim().min(1).max(500),
@@ -7,6 +8,6 @@ const rowSchema = z.object({
 });
 
 export const saveCentrosCustoPayloadSchema = z.object({
-  demandaId: z.string().trim().uuid("Identificador da demanda inválido."),
+  demandaId: demandaRecordIdSchema,
   centrosCusto: z.array(rowSchema).max(500),
 });

@@ -18,6 +18,7 @@ export async function loginUseCase(
   role: UserRole;
   agenciaId?: string;
   mustChangePassword: boolean;
+  avatarKey?: string | null;
 } | null> {
   const user = await deps.userRepository.findByEmail(email);
   if (!user || !verifyPassword(password, user.password)) return null;
@@ -32,5 +33,6 @@ export async function loginUseCase(
     role: user.role,
     agenciaId: user.agenciaId,
     mustChangePassword,
+    avatarKey: user.avatarKey ?? undefined,
   };
 }

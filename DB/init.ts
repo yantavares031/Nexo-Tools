@@ -28,7 +28,8 @@ export function initDb(database: Database.Database): void {
         role TEXT NOT NULL CHECK (role IN ('admin', 'operator', 'agency')),
         agenciaId TEXT,
         acesso INTEGER NOT NULL DEFAULT 1,
-        temporaryPassword TEXT
+        temporaryPassword TEXT,
+        avatarKey TEXT
       );
 
       CREATE TABLE IF NOT EXISTS agencias (
@@ -146,6 +147,17 @@ export function initDb(database: Database.Database): void {
     const hasTemp = tableInfo.some((col) => col.name === "temporaryPassword");
     if (!hasTemp) {
       database.exec("ALTER TABLE users ADD COLUMN temporaryPassword TEXT");
+    }
+  } catch {
+    // ignora
+  }
+
+  // Migração: foto de perfil (chave R2)
+  try {
+    const tableInfo = database.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+    const hasAvatar = tableInfo.some((col) => col.name === "avatarKey");
+    if (!hasAvatar) {
+      database.exec("ALTER TABLE users ADD COLUMN avatarKey TEXT");
     }
   } catch {
     // ignora

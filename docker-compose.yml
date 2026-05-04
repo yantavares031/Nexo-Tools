@@ -29,6 +29,8 @@ services:
       NODE_ENV: production
       ACTIVE_DRIVER_DB: POSTGRE
       DATABASE_URL: postgresql://${POSTGRES_USER:-nexo}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-nexo_tools}
+      # Mesmo padrão do podogest: volume nomeado → /app/logs (persistência entre restarts)
+      LOG_PATH: /app/logs/app.log
     ports:
       - "127.0.0.1:4421:3000"
     volumes:
@@ -47,6 +49,7 @@ services:
       NODE_ENV: production
       ACTIVE_DRIVER_DB: POSTGRE
       DATABASE_URL: postgresql://${POSTGRES_USER:-nexo}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-nexo_tools}
+      LOG_PATH: /app/logs/app.log
     command: ["pm2-runtime", "start", "ecosystem.backup-only.cjs"]
     volumes:
       - app_logs:/app/logs

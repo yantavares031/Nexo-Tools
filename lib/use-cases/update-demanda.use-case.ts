@@ -3,6 +3,7 @@ import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { IAgenciaRepository } from "@/lib/domain/agencia.repository";
 import { capitalizeFirst } from "@/lib/capitalize-first";
 import { applyAgenciaIdToDemandaInputUseCase } from "./apply-agencia-id-to-demanda-input.use-case";
+import { logUseCaseInfo } from "@/lib/server-action-log";
 
 type Dependencies = {
   demandaRepository: IDemandaRepository;
@@ -23,5 +24,9 @@ export async function updateDemandaUseCase(
     demanda: capitalizeFirst(comAgenciaId.demanda),
     solicitante: capitalizeFirst(comAgenciaId.solicitante),
   };
-  return deps.demandaRepository.update(id, normalizado);
+  const atualizada = await deps.demandaRepository.update(id, normalizado);
+  await logUseCaseInfo("updateDemandaUseCase", "Demanda atualizada", {
+    demandaId: id,
+  });
+  return atualizada;
 }

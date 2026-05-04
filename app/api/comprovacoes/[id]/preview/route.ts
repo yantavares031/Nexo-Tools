@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { downloadComprovacaoAction } from "@/app/actions/demanda-comprovacao";
+import { appLogger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -45,7 +46,10 @@ export async function GET(
       { status: 400 }
     );
   } catch (error) {
-    console.error("Erro ao fazer preview:", error);
+    appLogger.error(
+      { event: "api.comprovacoes.preview.error", err: String(error) },
+      "Erro ao fazer preview da comprovação"
+    );
     return NextResponse.json(
       { error: "Erro ao fazer preview do arquivo" },
       { status: 500 }

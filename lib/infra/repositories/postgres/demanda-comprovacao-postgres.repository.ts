@@ -32,6 +32,12 @@ function buildDemandaAgenciaWhere(
   };
 }
 
+function optionalCadastradoPorUserId(row: Record<string, unknown>): string | undefined {
+  const v = row.cadastradoPorUserId ?? row.cadastroporuserid;
+  if (v == null || String(v).trim() === "") return undefined;
+  return String(v);
+}
+
 function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
   return {
     id: String(row.id),
@@ -41,6 +47,7 @@ function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
     caminhoArquivo: String(row.caminhoArquivo),
     descricao: row.descricao ? String(row.descricao) : undefined,
     autor: String(row.autor),
+    cadastradoPorUserId: optionalCadastradoPorUserId(row),
     createdAt: String(row.createdAt),
   };
 }
@@ -198,8 +205,8 @@ export class DemandaComprovacaoPostgresRepository
     const createdAt = new Date().toISOString();
 
     await pool.query(
-      `INSERT INTO comprovacoes (id, "nomeArquivo", "tipoArquivo", tamanho, "caminhoArquivo", descricao, autor, "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO comprovacoes (id, "nomeArquivo", "tipoArquivo", tamanho, "caminhoArquivo", descricao, autor, "cadastradoPorUserId", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         id,
         input.nomeArquivo,
@@ -208,6 +215,7 @@ export class DemandaComprovacaoPostgresRepository
         input.caminhoArquivo,
         input.descricao || null,
         input.autor,
+        input.cadastradoPorUserId?.trim() || null,
         createdAt,
       ]
     );
@@ -227,6 +235,7 @@ export class DemandaComprovacaoPostgresRepository
       caminhoArquivo: input.caminhoArquivo,
       descricao: input.descricao,
       autor: input.autor,
+      cadastradoPorUserId: input.cadastradoPorUserId?.trim() || undefined,
       createdAt,
     };
   }

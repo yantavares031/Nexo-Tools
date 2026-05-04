@@ -27,6 +27,12 @@ function demandaAgenciaWhereSql(
   return { clause: "d.agenciaId = ?", params: [filters.agenciaId] };
 }
 
+function optionalCadastradoPorUserId(row: Record<string, unknown>): string | undefined {
+  const v = row.cadastradoPorUserId;
+  if (v == null || String(v).trim() === "") return undefined;
+  return String(v);
+}
+
 function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
   return {
     id: String(row.id),
@@ -36,6 +42,7 @@ function rowToComprovacao(row: Record<string, unknown>): Comprovacao {
     caminhoArquivo: String(row.caminhoArquivo),
     descricao: row.descricao ? String(row.descricao) : undefined,
     autor: String(row.autor),
+    cadastradoPorUserId: optionalCadastradoPorUserId(row),
     createdAt: String(row.createdAt),
   };
 }
@@ -166,7 +173,7 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
     const createdAt = new Date().toISOString();
 
     db.prepare(
-      "INSERT INTO comprovacoes (id, nomeArquivo, tipoArquivo, tamanho, caminhoArquivo, descricao, autor, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO comprovacoes (id, nomeArquivo, tipoArquivo, tamanho, caminhoArquivo, descricao, autor, cadastradoPorUserId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).run(
       id,
       input.nomeArquivo,
@@ -175,6 +182,7 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
       input.caminhoArquivo,
       input.descricao || null,
       input.autor,
+      input.cadastradoPorUserId?.trim() || null,
       createdAt
     );
 
@@ -191,6 +199,7 @@ export class DemandaComprovacaoSqliteRepository implements IDemandaComprovacaoRe
       caminhoArquivo: input.caminhoArquivo,
       descricao: input.descricao,
       autor: input.autor,
+      cadastradoPorUserId: input.cadastradoPorUserId?.trim() || undefined,
       createdAt,
     };
   }

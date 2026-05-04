@@ -16,6 +16,7 @@ import Database from "better-sqlite3";
 import { closeDb, getDb, getSqliteDbFilePath } from "@/DB/db";
 import { getActiveDbDriver, isPostgres } from "@/lib/infra/db-driver";
 import { closePool, getPool } from "@/lib/infra/db-pg";
+import { appLogger } from "@/lib/logger";
 import { getBackupStorageProvider } from "@/services/backup-storage";
 
 function timestampForFilename(): string {
@@ -125,9 +126,20 @@ async function main(): Promise<void> {
       sizeBytes: buffer.length,
     });
 
+    appLogger.info(
+      {
+        event: "backup.success",
+        storageKey,
+        filename,
+        driverDb,
+        sizeBytes: buffer.length,
+      },
+      "Backup concluído"
+    );
     console.log(`Backup concluído: ${storageKey} (${buffer.length} bytes)`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    appLogger.error({ event: "backup.failure", err: message }, "Falha no backup");
     console.error("Falha no backup:", message);
     process.exitCode = 1;
   } finally {

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import type { SmtpConfig } from "@/types/globals";
+import { appLogger } from "@/lib/logger";
 import { logSmtpCredentialsAttempt } from "@/lib/infra/smtp-debug-log";
 import { formatSmtpErrorForUser, logSmtpFailureToConsole } from "@/lib/infra/smtp-error-format";
 
@@ -38,6 +39,8 @@ export type SmtpMailAttachment = {
 
 export type SendSmtpMailOptions = {
   to: string;
+  /** Destinatários em cópia (ex.: lista de notificações OC). */
+  cc?: string | string[];
   subject: string;
   text: string;
   html?: string;
@@ -54,9 +57,18 @@ export async function sendSmtpMail(config: SmtpConfig, options: SendSmtpMailOpti
   const transporter = createSmtpTransporter(cfg);
 
   try {
+    const ccRaw = options.cc;
+    const ccJoined =
+      ccRaw === undefined
+        ? undefined
+        : Array.isArray(ccRaw)
+          ? ccRaw.map((c) => c.trim()).filter(Boolean).join(", ")
+          : ccRaw.trim();
+
     await transporter.sendMail({
       from: cfg.smtpUser,
       to: options.to.trim(),
+      ...(ccJoined ? { cc: ccJoined } : {}),
       subject: options.subject,
       text: options.text,
       ...(options.html ? { html: options.html } : {}),
@@ -70,7 +82,14 @@ export async function sendSmtpMail(config: SmtpConfig, options: SendSmtpMailOpti
           }
         : {}),
     });
-    console.error(`[SMTP] ✓ E-mail aceito pelo servidor e enfileirado para ${options.to.trim()}`);
+    appLogger.info(
+      {
+        event: "smtp.mail.accepted",
+        to: options.to.trim(),
+        ...(ccJoined ? { cc: ccJoined } : {}),
+      },
+      "SMTP: mensagem aceita pelo servidor"
+    );
   } catch (err) {
     logSmtpFailureToConsole(err, { phase: "sendMail", to: options.to.trim() });
     logSmtpCredentialsAttempt(cfg, "Contexto após falha (mesmas credenciais da tentativa)");

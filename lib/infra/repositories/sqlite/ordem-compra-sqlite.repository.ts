@@ -34,6 +34,12 @@ function optionalString(row: Record<string, unknown>, key: string): string | und
   return String(v);
 }
 
+function optionalCadastradoPorUserId(row: Record<string, unknown>): string | undefined {
+  const v = row.cadastradoPorUserId;
+  if (v == null || String(v).trim() === "") return undefined;
+  return String(v);
+}
+
 function rowToOrdemCompra(row: Record<string, unknown>): OrdemCompra {
   const tAss = row.tamanhoAssinado;
   return {
@@ -50,6 +56,7 @@ function rowToOrdemCompra(row: Record<string, unknown>): OrdemCompra {
     caminhoArquivoAssinado: optionalString(row, "caminhoArquivoAssinado"),
     status: row.status as OrdemCompraStatus,
     autor: String(row.autor),
+    cadastradoPorUserId: optionalCadastradoPorUserId(row),
     enviadoPorEmail: optionalString(row, "enviadoPorEmail"),
     createdAt: String(row.createdAt),
     updatedAt: row.updatedAt ? String(row.updatedAt) : undefined,
@@ -65,8 +72,8 @@ export class OrdemCompraSqliteRepository implements IOrdemCompraRepository {
 
     const enviadoPor = input.enviadoPorEmail?.trim() || null;
     db.prepare(
-      `INSERT INTO ordens_compra (id, demandaId, nomeArquivo, tipoArquivo, tamanho, caminhoArquivo, status, autor, enviadoPorEmail, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO ordens_compra (id, demandaId, nomeArquivo, tipoArquivo, tamanho, caminhoArquivo, status, autor, cadastradoPorUserId, enviadoPorEmail, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       input.demandaId,
@@ -76,6 +83,7 @@ export class OrdemCompraSqliteRepository implements IOrdemCompraRepository {
       input.caminhoArquivo,
       status,
       input.autor,
+      input.cadastradoPorUserId?.trim() || null,
       enviadoPor,
       createdAt
     );
@@ -89,6 +97,7 @@ export class OrdemCompraSqliteRepository implements IOrdemCompraRepository {
       caminhoArquivo: input.caminhoArquivo,
       status,
       autor: input.autor,
+      cadastradoPorUserId: input.cadastradoPorUserId?.trim() || undefined,
       enviadoPorEmail: enviadoPor ?? undefined,
       createdAt,
     };

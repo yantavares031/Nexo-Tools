@@ -8,8 +8,10 @@ export const SYSTEM_EMAIL_LOGO_URL =
 export type SystemEmailTemplateParams = {
   /** Texto curto para pré-visualização na caixa de entrada (opcional). */
   preheader?: string;
-  /** Título principal do bloco de conteúdo. */
+  /** Título em texto puro (usado em &lt;title&gt; do HTML e fallback do &lt;h1&gt;). */
   title: string;
+  /** Se definido, substitui o título simples no &lt;h1&gt; (ex.: check verde + texto). */
+  titleHtml?: string;
   /** Corpo em HTML (já seguro ou proveniente de trechos escapados). */
   innerHtml: string;
 };
@@ -18,9 +20,10 @@ export type SystemEmailTemplateParams = {
  * Layout HTML reutilizável para e-mails transacionais (cores e tipografia alinhadas ao painel).
  */
 export function buildSystemEmailHtml(params: SystemEmailTemplateParams): string {
-  const { preheader, title, innerHtml } = params;
+  const { preheader, title, titleHtml, innerHtml } = params;
   const logoUrl = SYSTEM_EMAIL_LOGO_URL;
   const safeTitle = escapeHtml(title);
+  const headingInner = titleHtml ?? escapeHtml(title);
   const preheaderBlock = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${escapeHtml(preheader)}</div>`
     : "";
@@ -59,7 +62,7 @@ export function buildSystemEmailHtml(params: SystemEmailTemplateParams): string 
           </tr>
           <tr>
             <td style="padding:28px 28px 8px 28px;">
-              <h1 style="margin:0 0 16px 0;font-size:18px;font-weight:600;color:#1e293b;">${safeTitle}</h1>
+              <h1 style="margin:0 0 16px 0;font-size:${titleHtml ? "inherit" : "18px"};font-weight:600;color:#1e293b;">${headingInner}</h1>
               <div style="font-size:15px;line-height:1.55;color:#334155;">${innerHtml}</div>
             </td>
           </tr>

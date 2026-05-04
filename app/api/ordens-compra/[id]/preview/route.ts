@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { appLogger } from "@/lib/logger";
 import { downloadOrdemCompraAction } from "@/app/actions/ordem-compra";
 
 export async function GET(
@@ -36,7 +37,10 @@ export async function GET(
       { status: 400 }
     );
   } catch (error) {
-    console.error("Erro ao fazer preview da OC:", error);
+    appLogger.error(
+      { event: "api.ordens_compra.preview.error", err: String(error) },
+      "Erro ao fazer preview da OC"
+    );
     return NextResponse.json(
       { error: "Erro ao fazer preview do arquivo" },
       { status: 500 }

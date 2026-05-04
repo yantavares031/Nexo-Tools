@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createCentroCustoUseCase } from "@/lib/use-cases/create-centro-custo.use-case";
 import { updateCentroCustoUseCase } from "@/lib/use-cases/update-centro-custo.use-case";
@@ -23,7 +23,7 @@ export async function listCentrosCustoAction() {
     const centrosCusto = await repository.findAll();
     return { centrosCusto };
   } catch (error) {
-    logServerActionError("listCentrosCustoAction", error);
+    await logServerActionError("listCentrosCustoAction", error);
     return { error: "Erro ao listar centros de custo" };
   }
 }
@@ -51,7 +51,7 @@ export async function createCentroCustoAction(input: CentroCustoInput) {
     revalidatePath("/centros-custo");
     return { centroCusto };
   } catch (error) {
-    logServerActionError("createCentroCustoAction", error, { nome: parsed.data.nome });
+    await logServerActionError("createCentroCustoAction", error, { nome: parsed.data.nome });
     return {
       error: error instanceof Error ? error.message : "Erro ao criar centro de custo",
     };
@@ -86,7 +86,7 @@ export async function updateCentroCustoAction(id: string, input: Partial<CentroC
     revalidatePath("/centros-custo");
     return { centroCusto };
   } catch (error) {
-    logServerActionError("updateCentroCustoAction", error, { id: idCheck.id });
+    await logServerActionError("updateCentroCustoAction", error, { id: idCheck.id });
     return {
       error: error instanceof Error ? error.message : "Erro ao atualizar centro de custo",
     };
@@ -114,11 +114,12 @@ export async function removeCentroCustoAction(id: string) {
     if (!success) {
       redirect("/centros-custo?error=" + encodeURIComponent("Centro de custo não encontrado"));
     }
-
     revalidatePath("/centros-custo");
-    redirect("/centros-custo?removed=1");
   } catch (error) {
-    logServerActionError("removeCentroCustoAction", error, { id: idCheck.id });
+    unstable_rethrow(error);
+    await logServerActionError("removeCentroCustoAction", error, { id: idCheck.id });
     redirect("/centros-custo?error=" + encodeURIComponent("Erro ao remover centro de custo"));
   }
+
+  redirect("/centros-custo?removed=1");
 }

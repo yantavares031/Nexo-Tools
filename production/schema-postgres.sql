@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL CHECK (role IN ('admin', 'operator', 'agency')),
   "agenciaId" TEXT,
   acesso INTEGER NOT NULL DEFAULT 1,
-  "temporaryPassword" TEXT
+  "temporaryPassword" TEXT,
+  "avatarKey" TEXT
 );
 
 CREATE TABLE IF NOT EXISTS agencias (
@@ -61,6 +62,7 @@ CREATE TABLE IF NOT EXISTS comprovacoes (
   "caminhoArquivo" TEXT NOT NULL,
   descricao TEXT,
   autor TEXT NOT NULL,
+  "cadastradoPorUserId" TEXT REFERENCES users(id) ON DELETE SET NULL,
   "createdAt" TEXT NOT NULL
 );
 
@@ -146,6 +148,7 @@ CREATE TABLE IF NOT EXISTS ordens_compra (
   "caminhoArquivoAssinado" TEXT,
   status TEXT NOT NULL CHECK (status IN ('em_aberto', 'assinada')),
   autor TEXT NOT NULL,
+  "cadastradoPorUserId" TEXT REFERENCES users(id) ON DELETE SET NULL,
   "enviadoPorEmail" TEXT,
   "createdAt" TEXT NOT NULL,
   "updatedAt" TEXT

@@ -15,7 +15,11 @@ import {
 } from "@/lib/validation/schemas/solicitante-form";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
-import { parseEntityId, paginationLimitSchema, paginationPageSchema } from "@/lib/validation/schemas/common";
+import {
+  parseUserRecordId,
+  paginationLimitSchema,
+  paginationPageSchema,
+} from "@/lib/validation/schemas/common";
 
 export async function createSolicitanteAction(
   _prevState: { error?: string } | null,
@@ -36,7 +40,7 @@ export async function createSolicitanteAction(
   try {
     await createSolicitanteUseCase(input, { solicitanteRepository });
   } catch (err) {
-    logServerActionError("createSolicitanteAction", err, { nome: input.nome });
+    await logServerActionError("createSolicitanteAction", err, { nome: input.nome });
     return {
       error: err instanceof Error ? err.message : "Erro ao cadastrar solicitante.",
     } as const;
@@ -81,7 +85,7 @@ export async function updateSolicitanteAction(
       { solicitanteRepository }
     );
   } catch (err) {
-    logServerActionError("updateSolicitanteAction", err, { id });
+    await logServerActionError("updateSolicitanteAction", err, { id });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar solicitante.",
     } as const;
@@ -94,7 +98,7 @@ export async function updateSolicitanteAction(
 }
 
 export async function removeSolicitanteAction(id: string) {
-  const idCheck = parseEntityId(id);
+  const idCheck = parseUserRecordId(id);
   if (!idCheck.ok) {
     redirect("/solicitantes?error=" + encodeURIComponent(idCheck.error));
   }
@@ -103,7 +107,7 @@ export async function removeSolicitanteAction(id: string) {
   try {
     await removeSolicitanteUseCase(idCheck.id, { solicitanteRepository });
   } catch (err) {
-    logServerActionError("removeSolicitanteAction", err, { id: idCheck.id });
+    await logServerActionError("removeSolicitanteAction", err, { id: idCheck.id });
     redirect("/solicitantes?error=" + encodeURIComponent("Erro ao remover solicitante."));
   }
   revalidatePath("/solicitantes");

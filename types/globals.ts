@@ -20,6 +20,8 @@ export interface User {
    * Não expor em props de componentes client.
    */
   temporaryPassword?: string | null;
+  /** Chave do objeto no R2 (prefixo `avatars/`). Opcional — foto de perfil. */
+  avatarKey?: string | null;
 }
 
 /** Usuário sem campos sensíveis (listagens e modais no client). */
@@ -107,6 +109,8 @@ export interface Comprovacao {
   caminhoArquivo: string;
   descricao?: string;
   autor: string;
+  /** Usuário que cadastrou a comprovação (foto de perfil na listagem). */
+  cadastradoPorUserId?: string | null;
   createdAt: string;
 }
 
@@ -139,6 +143,8 @@ export interface OrdemCompra {
   caminhoArquivoAssinado?: string;
   status: OrdemCompraStatus;
   autor: string;
+  /** Usuário que cadastrou o pedido de OC (foto de perfil na listagem). */
+  cadastradoPorUserId?: string | null;
   /** E-mail do usuário da agência que enviou a OC (notificação quando assinada). */
   enviadoPorEmail?: string;
   createdAt: string;
@@ -155,6 +161,7 @@ export type OrdemCompraCreateInput = Pick<
   | "caminhoArquivo"
   | "autor"
   | "enviadoPorEmail"
+  | "cadastradoPorUserId"
 > & {
   /** Se informado, o repositório usa este id (ex.: mesmo UUID do path no R2). */
   id?: string;

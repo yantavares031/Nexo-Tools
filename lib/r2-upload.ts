@@ -11,8 +11,18 @@ const BACKUPS_PREFIX = "backups/";
 /** Prefixos no bucket nexo-tools (pastas no painel R2). */
 export const R2_KEY_PREFIX_COMPROVACOES = "comprovacoes/";
 export const R2_KEY_PREFIX_ORDENS_COMPRA = "ordens-compra/";
+export const R2_KEY_PREFIX_AVATARS = "avatars/";
 
-const APP_OBJECT_PREFIXES = [R2_KEY_PREFIX_COMPROVACOES, R2_KEY_PREFIX_ORDENS_COMPRA] as const;
+const APP_OBJECT_PREFIXES = [
+  R2_KEY_PREFIX_COMPROVACOES,
+  R2_KEY_PREFIX_ORDENS_COMPRA,
+  R2_KEY_PREFIX_AVATARS,
+] as const;
+
+/** avatars/{userId}/{fileId}.ext — mesmo bucket/credenciais R2 (ex.: ACTIVE_PROVIDER_BACKUP=R2). */
+export function buildAvatarObjectKey(userId: string, fileId: string, ext: string): string {
+  return `${R2_KEY_PREFIX_AVATARS}${userId}/${fileId}${ext}`;
+}
 
 export function isR2AppObjectKey(key: string): boolean {
   return APP_OBJECT_PREFIXES.some((p) => key.startsWith(p));
@@ -99,6 +109,16 @@ function getMaxBackupsRetained(): number {
   const raw = process.env.BACKUP_R2_MAX_RETAINED?.trim();
   const n = raw ? Number.parseInt(raw, 10) : 3;
   return Number.isFinite(n) && n >= 1 ? n : 3;
+}
+
+/** Mesmas variáveis do backup (`ACTIVE_PROVIDER_BACKUP=R2`) e anexos do painel. */
+export function isR2StorageConfigured(): boolean {
+  return Boolean(
+    process.env.R2_BUCKET_NAME?.trim() &&
+      process.env.R2_ACCOUNT_ID?.trim() &&
+      process.env.R2_ACCESS_KEY_ID?.trim() &&
+      process.env.R2_SECRET_ACCESS_KEY?.trim()
+  );
 }
 
 export function getR2S3Client(): S3Client {

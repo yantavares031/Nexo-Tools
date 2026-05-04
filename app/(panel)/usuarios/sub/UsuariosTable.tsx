@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { UserPublic } from "@/types/globals";
 import type { Agencia } from "@/types/globals";
 import { VerDetalhesUsuarioModal } from "@/modals/VerDetalhesUsuarioModal";
+import { UserAvatarThumb } from "@/components/UserAvatarThumb";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -91,7 +92,15 @@ export function UsuariosTable({
                   }
                 }}
               >
-                <td className="px-4 py-3 text-slate-800">{u.name ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-800">
+                  <div className="flex items-center gap-2">
+                    <UserAvatarThumb
+                      userId={u.id}
+                      label={u.name?.trim() ? u.name : u.email}
+                    />
+                    <span>{u.name ?? "—"}</span>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-slate-600">{u.email}</td>
                 <td className="px-4 py-3 text-left">
                   <span className={getRoleBadgeClass(u.role)}>

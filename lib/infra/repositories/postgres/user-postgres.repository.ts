@@ -3,6 +3,12 @@ import type { IUserRepository } from "@/lib/domain/user.repository";
 import { getPool } from "@/lib/infra/db-pg";
 import { randomUUID } from "crypto";
 
+function pickAvatarKey(row: Record<string, unknown>): string | undefined {
+  const v = row.avatarKey ?? row.avatarkey;
+  if (v === undefined || v === null || String(v).length === 0) return undefined;
+  return String(v);
+}
+
 function rowToUser(row: Record<string, unknown>): User {
   const acessoRaw = row.acesso;
   const acesso = acessoRaw === undefined || acessoRaw === null ? true : Number(acessoRaw) === 1;
@@ -17,6 +23,7 @@ function rowToUser(row: Record<string, unknown>): User {
     acesso,
     temporaryPassword:
       tp !== undefined && tp !== null && String(tp).length > 0 ? String(tp) : undefined,
+    avatarKey: pickAvatarKey(row),
   };
 }
 
@@ -50,7 +57,7 @@ export class UserPostgresRepository implements IUserRepository {
     const pool = getPool();
     const acesso = input.acesso !== false ? 1 : 0;
     await pool.query(
-      `INSERT INTO users (id, email, password, name, role, "agenciaId", acesso, "temporaryPassword") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO users (id, email, password, name, role, "agenciaId", acesso, "temporaryPassword", "avatarKey") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         id,
         input.email,
@@ -60,9 +67,15 @@ export class UserPostgresRepository implements IUserRepository {
         input.agenciaId ?? null,
         acesso,
         input.temporaryPassword ?? null,
+        input.avatarKey ?? null,
       ]
     );
-    return { ...input, id, acesso: input.acesso !== false };
+    return {
+      ...input,
+      id,
+      acesso: input.acesso !== false,
+      avatarKey: input.avatarKey ?? null,
+    };
   }
 
   async update(id: string, input: UserUpdateInput): Promise<User> {
@@ -81,8 +94,11 @@ export class UserPostgresRepository implements IUserRepository {
         : currentTp !== undefined && currentTp !== null && String(currentTp).length > 0
           ? String(currentTp)
           : null;
+    const currentAvatar = pickAvatarKey(current as Record<string, unknown>);
+    const nextAvatar =
+      input.avatarKey !== undefined ? input.avatarKey : currentAvatar ?? null;
     await pool.query(
-      `UPDATE users SET email = $1, name = $2, role = $3, "agenciaId" = $4, password = $5, acesso = $6, "temporaryPassword" = $7 WHERE id = $8`,
+      `UPDATE users SET email = $1, name = $2, role = $3, "agenciaId" = $4, password = $5, acesso = $6, "temporaryPassword" = $7, "avatarKey" = $8 WHERE id = $9`,
       [
         input.email,
         input.name ?? null,
@@ -91,6 +107,7 @@ export class UserPostgresRepository implements IUserRepository {
         password,
         acesso,
         temporaryPassword,
+        nextAvatar,
         id,
       ]
     );
@@ -101,6 +118,7 @@ export class UserPostgresRepository implements IUserRepository {
       password,
       acesso: acessoBool,
       temporaryPassword: temporaryPassword ?? undefined,
+      avatarKey: nextAvatar,
     };
   }
 

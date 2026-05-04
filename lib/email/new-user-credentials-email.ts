@@ -1,3 +1,7 @@
+import {
+  buildEmailTitleWithSuccessCheck,
+  emailKeywordHighlight,
+} from "@/lib/email/email-text-styles";
 import { buildSystemEmailHtml } from "@/lib/email/system-email-template";
 import { escapeHtml } from "@/lib/email/html-escape";
 
@@ -27,7 +31,7 @@ export function buildNewUserCredentialsEmail(
 
   const innerHtml = `
     <p style="margin:0 0 16px 0;">${greeting(recipientName)},</p>
-    <p style="margin:0 0 16px 0;">Sua conta no <strong>NEXO Tools</strong> foi criada. Use os dados abaixo para o primeiro acesso:</p>
+    <p style="margin:0 0 16px 0;">Sua conta no ${emailKeywordHighlight("NEXO Tools")} foi ${emailKeywordHighlight("criada")}. Use os dados abaixo para o ${emailKeywordHighlight("primeiro acesso")}:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;margin:0 0 20px 0;background-color:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
       <tr>
         <td style="padding:16px 18px;">
@@ -39,7 +43,7 @@ export function buildNewUserCredentialsEmail(
       </tr>
     </table>
     <p style="margin:0 0 20px 0;padding:12px 14px;background-color:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:14px;color:#92400e;">
-      <strong>Importante:</strong> no primeiro acesso será solicitada a <strong>alteração da senha</strong> por uma senha definida por você.
+      <strong>Importante:</strong> no primeiro acesso será solicitada a ${emailKeywordHighlight("alteração da senha")} por uma senha definida por você.
     </p>
     <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 8px 0;">
       <tr>
@@ -70,6 +74,7 @@ NEXO Tools · e-mail automático`;
   const html = buildSystemEmailHtml({
     preheader: `Seu login e senha temporária para o NEXO Tools`,
     title: "Bem-vindo ao NEXO Tools",
+    titleHtml: buildEmailTitleWithSuccessCheck("Bem-vindo ao NEXO Tools"),
     innerHtml,
   });
 

@@ -62,7 +62,7 @@ export async function createUserAction(
   try {
     await createUserUseCase(input, { userRepository });
   } catch (err) {
-    logServerActionError("createUserAction", err, { email });
+    await logServerActionError("createUserAction", err, { email });
     return {
       error: err instanceof Error ? err.message : "Erro ao cadastrar usuário.",
     };
@@ -134,7 +134,7 @@ export async function updateUserAction(
       { userRepository }
     );
   } catch (err) {
-    logServerActionError("updateUserAction", err, { id: idCheck.id, email });
+    await logServerActionError("updateUserAction", err, { id: idCheck.id, email });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar usuário.",
     } as const;
@@ -154,7 +154,7 @@ export async function removeUserAction(id: string) {
   try {
     await removeUserUseCase(idCheck.id, { userRepository });
   } catch (err) {
-    logServerActionError("removeUserAction", err, { id: idCheck.id });
+    await logServerActionError("removeUserAction", err, { id: idCheck.id });
     redirect("/usuarios?error=" + encodeURIComponent("Erro ao remover usuário."));
   }
   revalidatePath("/usuarios");

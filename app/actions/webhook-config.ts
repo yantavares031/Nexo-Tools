@@ -28,7 +28,7 @@ export async function getWebhookConfigAction(): Promise<
     const config = await getWebhookConfigUseCase({ webhookConfigRepository: repo });
     return { config };
   } catch (err) {
-    logServerActionError("getWebhookConfigAction", err);
+    await logServerActionError("getWebhookConfigAction", err);
     return {
       error: err instanceof Error ? err.message : "Erro ao carregar configuração de webhook.",
     };
@@ -62,7 +62,7 @@ export async function updateWebhookConfigAction(
     revalidatePath("/integracoes");
     return {};
   } catch (err) {
-    logServerActionError("updateWebhookConfigAction", err, { enabled });
+    await logServerActionError("updateWebhookConfigAction", err, { enabled });
     return { error: err instanceof Error ? err.message : "Erro ao salvar webhook." };
   }
 }
@@ -97,7 +97,7 @@ export async function testWebhookAction(
     }
     return { success: true };
   } catch (err) {
-    logServerActionError("testWebhookAction", err, { url: trimmed });
+    await logServerActionError("testWebhookAction", err, { url: trimmed });
     const message = err instanceof Error ? err.message : "Erro ao enviar teste";
     return { error: message };
   }

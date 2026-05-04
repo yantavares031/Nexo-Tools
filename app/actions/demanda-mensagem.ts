@@ -8,7 +8,7 @@ import type { DemandaMensagem } from "@/types/globals";
 import { addDemandaMensagemPayloadSchema } from "@/lib/validation/schemas/demanda-mensagem-payload";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
-import { parseEntityId } from "@/lib/validation/schemas/common";
+import { parseDemandaRecordId } from "@/lib/validation/schemas/common";
 
 export async function addDemandaMensagemAction(
   demandaId: string,
@@ -39,7 +39,7 @@ export async function addDemandaMensagemAction(
     revalidatePath("/");
     return { mensagem: novaMensagem };
   } catch (err) {
-    logServerActionError("addDemandaMensagemAction", err, { demandaId: parsed.data.demandaId });
+    await logServerActionError("addDemandaMensagemAction", err, { demandaId: parsed.data.demandaId });
     return {
       error: err instanceof Error ? err.message : "Erro ao adicionar mensagem.",
     } as const;
@@ -49,7 +49,7 @@ export async function addDemandaMensagemAction(
 export async function getDemandaMensagensAction(
   demandaId: string
 ): Promise<DemandaMensagem[]> {
-  const idCheck = parseEntityId(demandaId);
+  const idCheck = parseDemandaRecordId(demandaId);
   if (!idCheck.ok) {
     return [];
   }
