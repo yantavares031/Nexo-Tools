@@ -122,7 +122,8 @@ export async function createComprovacaoAction(
     const comprovacaoRepository = getDemandaComprovacaoRepository();
     const demandaRepository = getDemandaRepository();
 
-    let notificacaoAgencia: { agenciaNome: string; demandas: Demanda[] } | null = null;
+    /** Dados para e-mail à lista SMTP (Integrações): agência ou Admin/Operador. */
+    let notificacaoEmail: { origemNome: string; demandas: Demanda[] } | null = null;
 
     if (session.role === "agency") {
       const scope = await getAgencyDemandaScope(session);
@@ -154,14 +155,23 @@ export async function createComprovacaoAction(
       if (!scope.agenciaId && demandasNotif[0]?.agencia?.trim()) {
         agenciaNome = demandasNotif[0].agencia.trim();
       }
-      notificacaoAgencia = { agenciaNome, demandas: demandasNotif };
+      notificacaoEmail = { origemNome: agenciaNome, demandas: demandasNotif };
+    } else if (session.role === "admin" || session.role === "operator") {
+      const demandasNotif: Demanda[] = [];
+      for (const id of demandaIds) {
+        const d = await demandaRepository.findById(id);
+        if (d) demandasNotif.push(d);
+      }
+      const roleSuffix = session.role === "admin" ? "Admin" : "Operador";
+      const nome = session.name?.trim() || session.email || "Usuário";
+      notificacaoEmail = { origemNome: `${nome} (${roleSuffix})`, demandas: demandasNotif };
     }
 
     const webhookConfigRepository = getWebhookConfigRepository();
     const webhookSender = getWebhookSender();
 
     const smtpRepoComprovacao =
-      notificacaoAgencia && notificacaoAgencia.demandas.length > 0
+      notificacaoEmail && notificacaoEmail.demandas.length > 0
         ? getSmtpConfigRepository()
         : null;
     const smtpRowComprovacao = smtpRepoComprovacao ? await smtpRepoComprovacao.get() : null;
@@ -202,16 +212,16 @@ export async function createComprovacaoAction(
       comprovacoes.push(comprovacao);
 
       if (
-        notificacaoAgencia &&
-        notificacaoAgencia.demandas.length > 0 &&
+        notificacaoEmail &&
+        notificacaoEmail.demandas.length > 0 &&
         smtpRepoComprovacao
       ) {
         await notifyComprovacaoEnviadaEmailsUseCase(
           {
             notifyEmails: smtpRowComprovacao?.ordemCompraNotifyEmails ?? [],
-            agenciaUserEmail: session.email,
-            agenciaNome: notificacaoAgencia.agenciaNome,
-            demandas: notificacaoAgencia.demandas,
+            agenciaUserEmail: session.role === "agency" ? session.email : undefined,
+            origemNome: notificacaoEmail.origemNome,
+            demandas: notificacaoEmail.demandas,
             nomeArquivo: file.name,
             fileBuffer: buffer,
             contentType: contentTypeForComprovacaoExt(ext),

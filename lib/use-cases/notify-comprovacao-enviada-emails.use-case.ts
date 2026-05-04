@@ -19,15 +19,16 @@ function uniqueEmails(emails: string[]): string[] {
 }
 
 /**
- * Notifica os endereços em "E-mails — notificações de ordem de compra" quando uma agência envia comprovação.
+ * Notifica os endereços em "E-mails — notificações de ordem de compra" ao cadastrar comprovação.
  * Um único envio com todos na lista em To; o usuário da agência entra em Cc se não estiver na lista.
  */
 export async function notifyComprovacaoEnviadaEmailsUseCase(
   params: {
     notifyEmails: string[];
-    /** E-mail do usuário da agência — Cc no mesmo envio se não estiver na lista. */
+    /** E-mail do usuário da agência — Cc no mesmo envio se não estiver na lista (só envio por perfil agência). */
     agenciaUserEmail?: string;
-    agenciaNome: string;
+    /** Nome da agência ou "Nome (Admin|Operador)" para interno. */
+    origemNome: string;
     demandas: Demanda[];
     nomeArquivo: string;
     fileBuffer: Buffer;
@@ -60,7 +61,7 @@ export async function notifyComprovacaoEnviadaEmailsUseCase(
 
   try {
     const { subject, html, text } = buildComprovacaoNotificacaoListaEmail({
-      agenciaNome: params.agenciaNome,
+      origemNome: params.origemNome,
       demandas: params.demandas,
       nomeArquivo: params.nomeArquivo,
       descricao: params.descricao,

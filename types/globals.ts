@@ -236,7 +236,7 @@ export interface SmtpConfig {
   smtpPassword: string;
   enabled: boolean;
   /**
-   * E-mails que recebem cópia das notificações de ordem de compra (envio pela agência e OC assinada).
+   * E-mails que recebem notificações de ordem de compra (envio pela agência, OC assinada) e de comprovação cadastrada.
    * Persistido como JSON no banco.
    */
   ordemCompraNotifyEmails: string[];
