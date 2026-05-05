@@ -29,9 +29,34 @@ function resolveLogLevel(): string {
   return "info";
 }
 
+/** IANA usado no campo `time` dos logs (alinha ao servidor BR). */
+const LOG_TIMEZONE = "America/Sao_Paulo";
+
+/** Converte "GMT-03:00" / "GMT+05:30" do Intl em sufixo ISO (-03:00 / +05:30). */
+function offsetSuffixForZone(date: Date, timeZone: string): string {
+  try {
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "longOffset",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const parts = dtf.formatToParts(date);
+    const raw = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+    const m = raw.match(/^GMT([+-])(\d{1,2})(?::(\d{2}))?$/i);
+    if (!m) return "-03:00";
+    const sign = m[1];
+    const h = Number(m[2]);
+    const min = m[3] != null ? Number(m[3]) : 0;
+    return `${sign}${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  } catch {
+    return "-03:00";
+  }
+}
+
 function formatIsoInSaoPaulo(date: Date): string {
   const fmt = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "America/Sao_Paulo",
+    timeZone: LOG_TIMEZONE,
     hour12: false,
     year: "numeric",
     month: "2-digit",
@@ -49,7 +74,8 @@ function formatIsoInSaoPaulo(date: Date): string {
   const hh = get("hour");
   const mm = get("minute");
   const ss = get("second");
-  return `${y}-${m}-${d}T${hh}:${mm}:${ss}-03:00`;
+  const off = offsetSuffixForZone(date, LOG_TIMEZONE);
+  return `${y}-${m}-${d}T${hh}:${mm}:${ss}${off}`;
 }
 
 function saoPauloTimestamp(): string {

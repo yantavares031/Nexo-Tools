@@ -27,6 +27,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      TZ: America/Sao_Paulo
       ACTIVE_DRIVER_DB: POSTGRE
       DATABASE_URL: postgresql://${POSTGRES_USER:-nexo}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-nexo_tools}
       # Mesmo padrão do podogest: volume nomeado → /app/logs (persistência entre restarts)
@@ -47,6 +48,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      TZ: America/Sao_Paulo
       ACTIVE_DRIVER_DB: POSTGRE
       DATABASE_URL: postgresql://${POSTGRES_USER:-nexo}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-nexo_tools}
       LOG_PATH: /app/logs/app.log

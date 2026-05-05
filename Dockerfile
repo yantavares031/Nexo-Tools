@@ -5,8 +5,9 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Necessário para deps nativas (better-sqlite3)
-RUN apk add --no-cache python3 make g++
+# Necessário para deps nativas (better-sqlite3) + fuso America/Sao_Paulo (Intl / logs)
+RUN apk add --no-cache python3 make g++ tzdata
+ENV TZ=America/Sao_Paulo
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -14,6 +15,9 @@ RUN npm ci
 # ---------- STAGE 2: build ----------
 FROM node:22-alpine AS builder
 WORKDIR /app
+
+RUN apk add --no-cache tzdata
+ENV TZ=America/Sao_Paulo
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
@@ -31,8 +35,9 @@ WORKDIR /app
 LABEL org.opencontainers.image.title="nexo-tools" \
       org.opencontainers.image.url="https://hub.docker.com/r/yantavares021/nexo-tools"
 
-RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache postgresql-client tzdata
 
+ENV TZ=America/Sao_Paulo
 ENV NODE_ENV=production
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
