@@ -29,6 +29,33 @@ function resolveLogLevel(): string {
   return "info";
 }
 
+function formatIsoInSaoPaulo(date: Date): string {
+  const fmt = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const parts = fmt.formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((p) => p.type === type)?.value ?? "";
+  const y = get("year");
+  const m = get("month");
+  const d = get("day");
+  const hh = get("hour");
+  const mm = get("minute");
+  const ss = get("second");
+  return `${y}-${m}-${d}T${hh}:${mm}:${ss}-03:00`;
+}
+
+function saoPauloTimestamp(): string {
+  return `,"time":"${formatIsoInSaoPaulo(new Date())}"`;
+}
+
 function createAppLogger(): pino.Logger {
   const level = resolveLogLevel();
   const logPath = resolveAppLogFilePath();
@@ -50,7 +77,7 @@ function createAppLogger(): pino.Logger {
   return pino(
     {
       level: level as pino.Level,
-      timestamp: pino.stdTimeFunctions.isoTime,
+      timestamp: saoPauloTimestamp,
     },
     pino.multistream(streams)
   );

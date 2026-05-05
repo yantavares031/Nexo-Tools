@@ -22,8 +22,9 @@ export async function getDeskfyTaskDetailsAction(
   const taskId = taskIdParsed.data;
 
   try {
+    const deskfyWorkflowReportsService = await getDeskfyWorkflowReportsService();
     const data = await getDeskfyTaskDetailsUseCase(taskId, {
-      deskfyWorkflowReportsService: getDeskfyWorkflowReportsService(),
+      deskfyWorkflowReportsService,
     });
     return { data };
   } catch (err) {

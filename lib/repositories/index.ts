@@ -16,5 +16,6 @@ export {
   getWebhookConfigRepository,
   getDeskfyImportBoardRepository,
   getSmtpConfigRepository,
+  getDeskfyConfigRepository,
 } from "@/lib/infra/repositories";
 export { getWebhookSender } from "@/lib/infra/webhook-sender";

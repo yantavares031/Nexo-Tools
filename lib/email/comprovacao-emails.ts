@@ -11,10 +11,10 @@ import {
 import { buildSystemEmailHtml } from "@/lib/email/system-email-template";
 import type { Demanda } from "@/types/globals";
 
-const attachmentNote =
-  "O arquivo da comprovação está anexado a este e-mail.";
+const fileNote =
+  "Arquivo registrado no NEXO Tools. Consulte a plataforma para visualização e download.";
 
-/** Notificação para a lista SMTP — comprovação cadastrada (arquivo anexo + demandas). Origem = agência ou usuário interno. */
+/** Notificação para a lista SMTP — comprovação cadastrada (sem anexos). Origem = agência ou usuário interno. */
 export function buildComprovacaoNotificacaoListaEmail(params: {
   /** Nome fantasia da agência ou "Nome (Admin|Operador)" para usuário interno. */
   origemNome: string;
@@ -46,7 +46,7 @@ export function buildComprovacaoNotificacaoListaEmail(params: {
     <p style="margin:0 0 16px 0;"><strong>${safeOrigem}</strong> cadastrou uma ${emailKeywordHighlight("comprovação")} no ${emailKeywordHighlight("NEXO Tools")} e ${emailKeywordHighlight("vinculou")} à(s) demanda(s) abaixo.</p>
     ${descBlock}
     <p style="margin:0 0 12px 0;font-size:14px;color:#334155;"><strong>Arquivo:</strong> ${safeFile}</p>
-    <p style="margin:0 0 20px 0;font-size:13px;color:#64748b;">O arquivo da comprovação está ${emailKeywordHighlight("anexado")} a este e-mail.</p>
+    <p style="margin:0 0 20px 0;font-size:13px;color:#64748b;">${escapeHtml(fileNote)}</p>
     ${demandasHtml}
   `.trim();
 
@@ -59,10 +59,10 @@ export function buildComprovacaoNotificacaoListaEmail(params: {
         `\n--- Demanda ${i + 1} ---\n${d.demanda}\nSolicitante: ${d.solicitante}\nValor: R$ ${formatBrazilianCurrency(d.valor)}\n`
     )
     .join("\n");
-  const text = `${origemNome} cadastrou uma comprovação.\nArquivo: ${nomeArquivo}\n${descricao?.trim() ? `Descrição: ${descricao.trim()}\n` : ""}\n${attachmentNote}\nDemandas vinculadas:${linhasDemandas || "\n(nenhuma)"}\n`;
+  const text = `${origemNome} cadastrou uma comprovação.\nArquivo: ${nomeArquivo}\n${descricao?.trim() ? `Descrição: ${descricao.trim()}\n` : ""}\n${fileNote}\nDemandas vinculadas:${linhasDemandas || "\n(nenhuma)"}\n`;
 
   const html = buildSystemEmailHtml({
-    preheader: `${origemNome} enviou uma comprovação com arquivo anexo.`,
+    preheader: `${origemNome} enviou uma comprovação.`,
     title: "Nova comprovação",
     titleHtml: buildEmailTitleWithSuccessCheck("Nova comprovação"),
     innerHtml,

@@ -31,8 +31,6 @@ export async function notifyComprovacaoEnviadaEmailsUseCase(
     origemNome: string;
     demandas: Demanda[];
     nomeArquivo: string;
-    fileBuffer: Buffer;
-    contentType: string;
     descricao?: string;
   },
   deps: Dependencies
@@ -48,12 +46,6 @@ export async function notifyComprovacaoEnviadaEmailsUseCase(
   }
 
   const agenciaMail = params.agenciaUserEmail?.trim() ?? "";
-
-  const attachment = {
-    filename: params.nomeArquivo || "comprovacao",
-    content: params.fileBuffer,
-    contentType: params.contentType || "application/octet-stream",
-  };
 
   const listaLower = new Set(lista.map((e) => e.toLowerCase()));
   const ccAgencia =
@@ -72,7 +64,6 @@ export async function notifyComprovacaoEnviadaEmailsUseCase(
       subject,
       text,
       html,
-      attachments: [attachment],
     });
   } catch (err) {
     await logUseCaseError("notifyComprovacaoEnviadaEmailsUseCase", err, {

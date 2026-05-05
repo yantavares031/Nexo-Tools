@@ -4,7 +4,8 @@ import { Tab } from "@/components/Tab";
 import { WebhooksForm } from "./WebhooksForm";
 import { ConfiguracoesBoardsSection } from "./ConfiguracoesBoardsSection";
 import { SmtpServidorSection } from "./SmtpServidorSection";
-import type { WebhookConfig, SmtpConfigPanel } from "@/types/globals";
+import { DeskfyIntegracaoSection } from "./DeskfyIntegracaoSection";
+import type { WebhookConfig, SmtpConfigPanel, DeskfyIntegrationPanel } from "@/types/globals";
 
 interface DeskfyImportBoard {
   id: string;
@@ -15,18 +16,21 @@ interface IntegracoesTabsProps {
   initialWebhookConfig?: WebhookConfig | null;
   initialBoards?: DeskfyImportBoard[];
   initialSmtpPanel: SmtpConfigPanel;
+  initialDeskfyPanel: DeskfyIntegrationPanel;
 }
 
 export function IntegracoesTabs({
   initialWebhookConfig = null,
   initialBoards = [],
   initialSmtpPanel,
+  initialDeskfyPanel,
 }: IntegracoesTabsProps) {
   return (
     <Tab defaultTab="webhooks">
       <Tab.List>
         <Tab.Item id="webhooks">Webhooks</Tab.Item>
         <Tab.Item id="filtro-boards">Filtro de Boards</Tab.Item>
+        <Tab.Item id="deskfy">Deskfy</Tab.Item>
         <Tab.Item id="smtp">Servidor SMTP</Tab.Item>
       </Tab.List>
       <Tab.Panels>
@@ -35,6 +39,9 @@ export function IntegracoesTabs({
         </Tab.Panel>
         <Tab.Panel id="filtro-boards">
           <ConfiguracoesBoardsSection initialBoards={initialBoards} />
+        </Tab.Panel>
+        <Tab.Panel id="deskfy">
+          <DeskfyIntegracaoSection initialPanel={initialDeskfyPanel} />
         </Tab.Panel>
         <Tab.Panel id="smtp">
           <SmtpServidorSection initialPanel={initialSmtpPanel} />

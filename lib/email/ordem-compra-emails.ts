@@ -61,10 +61,10 @@ export function buildDemandaResumoInnerHtml(demanda: Demanda): string {
   `.trim();
 }
 
-const pdfAttachmentNote =
-  "O arquivo PDF da ordem de compra está anexado a este e-mail.";
+const filePlatformNote =
+  "Arquivo registrado no NEXO Tools. Consulte a plataforma para visualização e download.";
 
-/** Notificação para a lista configurada em SMTP — OC enviada pela agência (PDF original anexo). */
+/** Notificação para a lista configurada em SMTP — OC enviada pela agência (sem anexos). */
 export function buildOcEnviadaNotificacaoListaEmail(params: {
   agenciaNome: string;
   demanda: Demanda;
@@ -78,10 +78,10 @@ export function buildOcEnviadaNotificacaoListaEmail(params: {
     <p style="margin:0 0 16px 0;">O documento aguarda ${emailKeywordHighlight("assinatura do administrador")}.</p>
     ${buildDemandaResumoInnerHtml(demanda)}
     <p style="margin:0 0 12px 0;font-size:14px;color:#334155;"><strong>Arquivo:</strong> ${safeFile}</p>
-    <p style="margin:0;font-size:13px;color:#64748b;">${escapeHtml(pdfAttachmentNote)}</p>
+    <p style="margin:0;font-size:13px;color:#64748b;">${escapeHtml(filePlatformNote)}</p>
   `.trim();
   const subject = `NEXO Tools — ${agenciaNome} enviou OC · ${truncateForSubject(demanda.demanda)}`;
-  const text = `A agência ${agenciaNome} anexou uma ordem de compra referente à demanda: ${demanda.demanda}\n\nArquivo: ${nomeArquivoPdf}\n\n${pdfAttachmentNote}\n`;
+  const text = `A agência ${agenciaNome} anexou uma ordem de compra referente à demanda: ${demanda.demanda}\n\nArquivo: ${nomeArquivoPdf}\n\n${filePlatformNote}\n`;
   const html = buildSystemEmailHtml({
     preheader: `${agenciaNome} anexou uma ordem de compra.`,
     title: "Nova ordem de compra enviada",
@@ -91,7 +91,7 @@ export function buildOcEnviadaNotificacaoListaEmail(params: {
   return { subject, html, text };
 }
 
-/** Cópia para o usuário da agência — backup com PDF anexo. */
+/** Cópia para o usuário da agência — backup das informações (sem anexos). */
 export function buildOcEnviadaBackupAgenciaEmail(params: {
   agenciaNome: string;
   demanda: Demanda;
@@ -108,10 +108,10 @@ export function buildOcEnviadaBackupAgenciaEmail(params: {
     <p style="margin:0 0 16px 0;padding:12px 14px;background-color:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:13px;color:#1e3a8a;line-height:1.5;">
       <strong>Atenção:</strong> este e-mail é apenas para <strong>backup das informações</strong>. O fluxo oficial continua no NEXO Tools.
     </p>
-    <p style="margin:0;font-size:13px;color:#64748b;">${escapeHtml(pdfAttachmentNote)}</p>
+    <p style="margin:0;font-size:13px;color:#64748b;">${escapeHtml(filePlatformNote)}</p>
   `.trim();
   const subject = `NEXO Tools — OC enviada (aguardando assinatura) · ${truncateForSubject(demanda.demanda)}`;
-  const text = `Agência: ${agenciaNome}\n\nOC enviada com sucesso para a demanda: ${demanda.demanda}\nArquivo: ${nomeArquivoPdf}\n\nEste e-mail é apenas backup das informações.\n\n${pdfAttachmentNote}\n`;
+  const text = `Agência: ${agenciaNome}\n\nOC enviada com sucesso para a demanda: ${demanda.demanda}\nArquivo: ${nomeArquivoPdf}\n\nEste e-mail é apenas backup das informações.\n\n${filePlatformNote}\n`;
   const html = buildSystemEmailHtml({
     preheader: "Confirmação de envio da sua ordem de compra.",
     title: "OC enviada — aguardando assinatura",
@@ -121,10 +121,10 @@ export function buildOcEnviadaBackupAgenciaEmail(params: {
   return { subject, html, text };
 }
 
-const pdfAssinadoAttachmentNote =
-  "O arquivo PDF da ordem de compra assinada está anexado a este e-mail.";
+const signedFilePlatformNote =
+  "O PDF assinado está disponível no NEXO Tools para visualização e download.";
 
-/** Agência: OC foi assinada; PDF assinado anexo + link para o painel. */
+/** Agência: OC foi assinada; aviso + link para o painel (sem anexos). */
 export function buildOcAssinadaAgenciaEmail(params: {
   agenciaNome: string;
   demanda: Demanda;
@@ -146,14 +146,14 @@ export function buildOcAssinadaAgenciaEmail(params: {
     </table>
     <p style="margin:0 0 12px 0;font-size:14px;color:#334155;"><strong>Arquivo assinado:</strong> ${safeFile}</p>
     <p style="margin:0 0 12px 0;font-size:13px;color:#64748b;">Use o link acima após entrar no sistema para baixar a ${emailKeywordHighlight("versão assinada")} quando precisar.</p>
-    <p style="margin:0 0 16px 0;font-size:13px;color:#64748b;">${escapeHtml(pdfAssinadoAttachmentNote)}</p>
+    <p style="margin:0 0 16px 0;font-size:13px;color:#64748b;">${escapeHtml(signedFilePlatformNote)}</p>
     <p style="margin:0;padding:12px 14px;background-color:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;line-height:1.5;">
       <strong>Backup:</strong> guarde este e-mail como referência. O arquivo oficial permanece no NEXO Tools.<br />
       <span style="word-break:break-all;color:#2563eb;">${safeUrl}</span>
     </p>
   `.trim();
   const subject = `NEXO Tools — OC assinada · ${truncateForSubject(demanda.demanda)}`;
-  const text = `A ordem de compra da demanda "${demanda.demanda}" foi assinada e está disponível na plataforma.\n\nAgência: ${agenciaNome}\nArquivo assinado: ${nomeArquivoPdfAssinado}\n\n${pdfAssinadoAttachmentNote}\n\nAcesse: ${ordensCompraUrl}\n`;
+  const text = `A ordem de compra da demanda "${demanda.demanda}" foi assinada e está disponível na plataforma.\n\nAgência: ${agenciaNome}\nArquivo assinado: ${nomeArquivoPdfAssinado}\n\n${signedFilePlatformNote}\n\nAcesse: ${ordensCompraUrl}\n`;
   const html = buildSystemEmailHtml({
     preheader: "Sua ordem de compra foi assinada.",
     title: "Ordem de compra assinada",
@@ -163,7 +163,7 @@ export function buildOcAssinadaAgenciaEmail(params: {
   return { subject, html, text };
 }
 
-/** Lista SMTP: cópia do PDF assinado + confirmação de que a agência foi avisada. */
+/** Lista SMTP: confirmação de assinatura + status de aviso da agência (sem anexos). */
 export function buildOcAssinadaNotificacaoListaEmail(params: {
   agenciaNome: string;
   demanda: Demanda;
@@ -181,10 +181,10 @@ export function buildOcAssinadaNotificacaoListaEmail(params: {
     ${buildDemandaResumoInnerHtml(demanda)}
     <p style="margin:0 0 12px 0;font-size:14px;color:#334155;"><strong>Arquivo assinado:</strong> ${safeFile}</p>
     <p style="margin:0 0 16px 0;padding:12px 14px;background-color:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;font-size:14px;color:#065f46;line-height:1.5;">${aviso}</p>
-    <p style="margin:0;font-size:13px;color:#64748b;">O ${emailKeywordHighlight("PDF assinado")} está anexado a este e-mail para arquivo.</p>
+    <p style="margin:0;font-size:13px;color:#64748b;">${emailKeywordHighlight("PDF assinado")} disponível no NEXO Tools para arquivo e consulta.</p>
   `.trim();
   const subject = `NEXO Tools — OC assinada registrada · ${truncateForSubject(demanda.demanda)}`;
-  const text = `OC assinada registrada.\nDemanda: ${demanda.demanda}\nAgência: ${agenciaNome}\nArquivo: ${nomeArquivoPdfAssinado}\n\n${agenciaNotificada ? `A agência ${agenciaNome} foi notificada por e-mail.` : "Verifique se a agência precisa ser avisada manualmente."}\n\nPDF assinado anexo.\n`;
+  const text = `OC assinada registrada.\nDemanda: ${demanda.demanda}\nAgência: ${agenciaNome}\nArquivo: ${nomeArquivoPdfAssinado}\n\n${agenciaNotificada ? `A agência ${agenciaNome} foi notificada por e-mail.` : "Verifique se a agência precisa ser avisada manualmente."}\n\nPDF assinado disponível no NEXO Tools.\n`;
   const html = buildSystemEmailHtml({
     preheader: "OC assinada registrada no NEXO Tools.",
     title: "OC assinada — cópia para arquivo",

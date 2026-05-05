@@ -31,7 +31,6 @@ export async function notifyOrdemCompraEnviadaEmailsUseCase(
     agenciaUserEmail: string;
     agenciaNome: string;
     demanda: Demanda;
-    pdfBuffer: Buffer;
     nomeArquivoPdf: string;
   },
   deps: Dependencies
@@ -43,12 +42,6 @@ export async function notifyOrdemCompraEnviadaEmailsUseCase(
 
   const lista = uniqueEmails(params.notifyEmails);
   const agenciaMail = params.agenciaUserEmail.trim().toLowerCase();
-  const pdf = {
-    filename: params.nomeArquivoPdf || "ordem-compra.pdf",
-    content: params.pdfBuffer,
-    contentType: "application/pdf" as const,
-  };
-
   if (lista.length > 0) {
     try {
       const { subject, html, text } = buildOcEnviadaNotificacaoListaEmail({
@@ -61,7 +54,6 @@ export async function notifyOrdemCompraEnviadaEmailsUseCase(
         subject,
         text,
         html,
-        attachments: [pdf],
       });
     } catch (err) {
       await logUseCaseError("notifyOrdemCompraEnviadaEmailsUseCase", err, {
@@ -83,7 +75,6 @@ export async function notifyOrdemCompraEnviadaEmailsUseCase(
         subject,
         text,
         html,
-        attachments: [pdf],
       });
     } catch (err) {
       await logUseCaseError("notifyOrdemCompraEnviadaEmailsUseCase", err, {

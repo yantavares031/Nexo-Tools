@@ -223,8 +223,6 @@ export async function createComprovacaoAction(
             origemNome: notificacaoEmail.origemNome,
             demandas: notificacaoEmail.demandas,
             nomeArquivo: file.name,
-            fileBuffer: buffer,
-            contentType: contentTypeForComprovacaoExt(ext),
             descricao,
           },
           { smtpConfigRepository: smtpRepoComprovacao }

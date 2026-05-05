@@ -1,10 +1,15 @@
 import { getSession } from "@/lib/auth";
-import { getDefaultDeskfyWorkflowDateRange } from "@/lib/deskfy/deskfy-workflow-date";
 import { getDeskfyWorkflowReportsService } from "@/lib/infra/deskfy-workflow-reports.service";
 import { getDemandasFilterOptionsUseCase } from "@/lib/use-cases/get-demandas-filter-options.use-case";
-import { getDemandaRepository, getSolicitanteRepository, getAgenciaRepository } from "@/lib/repositories";
+import {
+  getDemandaRepository,
+  getSolicitanteRepository,
+  getAgenciaRepository,
+  getDeskfyImportBoardRepository,
+  getDeskfyConfigRepository,
+} from "@/lib/repositories";
 import { getDeskfyWorkflowImportPreviewUseCase } from "@/lib/use-cases/get-deskfy-workflow-import-preview.use-case";
-import { getDeskfyImportBoardRepository } from "@/lib/repositories";
+import { getDeskfyWorkflowImportDateRangeUseCase } from "@/lib/use-cases/get-deskfy-workflow-import-date-range.use-case";
 import { SemPermissao } from "@/components/SemPermissao";
 import type { DemandaImportadaPreview } from "@/lib/deskfy/deskfy-workflow-import-preview.types";
 import Link from "next/link";
@@ -15,7 +20,11 @@ import { ImportacaoSearchParamsToaster } from "./sub/ImportacaoSearchParamsToast
 export const dynamic = "force-dynamic";
 
 async function fetchDeskfyImportPreview(): Promise<DemandaImportadaPreview[]> {
-  const { initialDate, endDate } = getDefaultDeskfyWorkflowDateRange();
+  const deskfyConfigRepository = getDeskfyConfigRepository();
+  const { initialDate, endDate } = await getDeskfyWorkflowImportDateRangeUseCase({
+    deskfyConfigRepository,
+  });
+  const deskfyWorkflowReportsService = await getDeskfyWorkflowReportsService();
   return getDeskfyWorkflowImportPreviewUseCase(
     {
       initialDate,
@@ -23,7 +32,7 @@ async function fetchDeskfyImportPreview(): Promise<DemandaImportadaPreview[]> {
       generateAttachmentPublicUrl: false,
     },
     {
-      deskfyWorkflowReportsService: getDeskfyWorkflowReportsService(),
+      deskfyWorkflowReportsService,
       deskfyImportBoardRepository: getDeskfyImportBoardRepository(),
     }
   );

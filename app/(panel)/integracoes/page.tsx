@@ -1,5 +1,6 @@
 import { getWebhookConfigAction } from "@/app/actions/webhook-config";
 import { listDeskfyImportBoardsAction } from "@/app/actions/deskfy-import-boards";
+import { getDeskfyIntegrationPanelAction } from "@/app/actions/deskfy-config";
 import { getSmtpConfigPanelAction } from "@/app/actions/smtp-config";
 import { SemPermissao } from "@/components/SemPermissao";
 import { IntegracoesTabs } from "./sub/IntegracoesTabs";
@@ -7,10 +8,11 @@ import { IntegracoesTabs } from "./sub/IntegracoesTabs";
 export const dynamic = "force-dynamic";
 
 export default async function IntegracoesPage() {
-  const [webhookResult, boardsResult, smtpResult] = await Promise.all([
+  const [webhookResult, boardsResult, smtpResult, deskfyResult] = await Promise.all([
     getWebhookConfigAction(),
     listDeskfyImportBoardsAction(),
     getSmtpConfigPanelAction(),
+    getDeskfyIntegrationPanelAction(),
   ]);
 
   if ("error" in webhookResult) {
@@ -36,6 +38,15 @@ export default async function IntegracoesPage() {
           ordemCompraNotifyEmailsText: "",
         };
 
+  const initialDeskfyPanel =
+    "panel" in deskfyResult
+      ? deskfyResult.panel
+      : {
+          baseUrl: "https://service-api.deskfy.io",
+          lookbackDays: 30,
+          hasApiKey: false,
+        };
+
   return (
     <div className="p-6">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -44,6 +55,7 @@ export default async function IntegracoesPage() {
           initialWebhookConfig={initialWebhookConfig}
           initialBoards={initialBoards}
           initialSmtpPanel={initialSmtpPanel}
+          initialDeskfyPanel={initialDeskfyPanel}
         />
       </div>
     </div>

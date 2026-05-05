@@ -2,7 +2,7 @@
 # (Não misture com "docker buildx ..." na mesma linha; o script já inclui contexto "." e --push.)
 # Build local carregando a imagem (sem push): npm run docker:build
 # ---------- STAGE 1: deps ----------
-FROM node:24-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 
 # Necessário para deps nativas (better-sqlite3)
@@ -12,7 +12,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # ---------- STAGE 2: build ----------
-FROM node:24-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -25,7 +25,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ---------- STAGE 3: runtime ----------
-FROM keymetrics/pm2:24-alpine
+FROM keymetrics/pm2:22-alpine
 WORKDIR /app
 
 LABEL org.opencontainers.image.title="nexo-tools" \

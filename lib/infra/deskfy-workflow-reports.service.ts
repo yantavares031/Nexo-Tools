@@ -3,7 +3,10 @@ import type {
   DeskfyWorkflowReportQuery,
   IDeskfyWorkflowReportsService,
 } from "@/lib/domain/deskfy-workflow-reports.service";
+import { getDeskfyConfigRepository } from "@/lib/repositories";
 import type { DeskfyTaskDetailsResponse, DeskfyWorkflowReportItem } from "@/types/globals";
+
+const DEFAULT_BASE_URL = "https://service-api.deskfy.io";
 
 export class FetchDeskfyWorkflowReportsService implements IDeskfyWorkflowReportsService {
   private readonly baseUrl: string;
@@ -97,19 +100,26 @@ export class FetchDeskfyWorkflowReportsService implements IDeskfyWorkflowReports
   }
 }
 
-let instance: IDeskfyWorkflowReportsService | null = null;
+/**
+ * Credenciais da Deskfy: preferência para valores salvos em Integrações;
+ * fallback para DESKFY_BASE_URL / DESKFY_API_KEY no ambiente (migração).
+ */
+export async function getDeskfyWorkflowReportsService(): Promise<IDeskfyWorkflowReportsService> {
+  const repo = getDeskfyConfigRepository();
+  const row = await repo.get();
 
-export function getDeskfyWorkflowReportsService(): IDeskfyWorkflowReportsService {
-  if (instance) return instance;
+  const baseUrlRaw =
+    row?.baseUrl?.trim() || process.env.DESKFY_BASE_URL?.trim() || DEFAULT_BASE_URL;
+  const baseUrl = baseUrlRaw.replace(/\/$/, "");
 
-  const baseUrl = process.env.DESKFY_BASE_URL ?? "https://service-api.deskfy.io";
-  const apiKey = process.env.DESKFY_API_KEY ?? "";
+  const apiKey = row?.apiKey?.trim() || process.env.DESKFY_API_KEY?.trim() || "";
 
-  if (!apiKey.trim()) {
-    throw new Error("DESKFY_API_KEY não configurado. Preencha no arquivo .env.");
+  if (!apiKey) {
+    throw new Error(
+      "Chave API Deskfy não configurada. Cadastre em Integrações → Deskfy ou defina DESKFY_API_KEY no ambiente."
+    );
   }
 
-  instance = new FetchDeskfyWorkflowReportsService({ baseUrl, apiKey });
-  return instance;
+  return new FetchDeskfyWorkflowReportsService({ baseUrl, apiKey });
 }
 

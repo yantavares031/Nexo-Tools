@@ -32,7 +32,6 @@ export async function notifyOrdemCompraAssinadaEmailsUseCase(
     demanda: Demanda;
     enviadoPorEmail?: string;
     ordensCompraUrl: string;
-    signedPdfBuffer: Buffer;
     nomeArquivoPdfAssinado: string;
   },
   deps: Dependencies
@@ -43,12 +42,6 @@ export async function notifyOrdemCompraAssinadaEmailsUseCase(
   }
 
   const lista = uniqueEmails(params.notifyEmails);
-  const pdf = {
-    filename: params.nomeArquivoPdfAssinado || "oc-assinada.pdf",
-    content: params.signedPdfBuffer,
-    contentType: "application/pdf" as const,
-  };
-
   const enviadoPor = params.enviadoPorEmail?.trim() ?? "";
 
   if (enviadoPor) {
@@ -65,7 +58,6 @@ export async function notifyOrdemCompraAssinadaEmailsUseCase(
         subject,
         text,
         html,
-        attachments: [pdf],
       });
     } catch (err) {
       await logUseCaseError("notifyOrdemCompraAssinadaEmailsUseCase", err, {
@@ -92,7 +84,6 @@ export async function notifyOrdemCompraAssinadaEmailsUseCase(
       subject,
       text,
       html,
-      attachments: [pdf],
     });
   } catch (err) {
     await logUseCaseError("notifyOrdemCompraAssinadaEmailsUseCase", err, {

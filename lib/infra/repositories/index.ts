@@ -16,6 +16,7 @@ import type { IDemandaMensagemRepository } from "@/lib/domain/demanda-mensagem.r
 import type { IWebhookConfigRepository } from "@/lib/domain/webhook-config.repository";
 import type { IDeskfyImportBoardRepository } from "@/lib/domain/deskfy-import-board.repository";
 import type { ISmtpConfigRepository } from "@/lib/domain/smtp-config.repository";
+import type { IDeskfyConfigRepository } from "@/lib/domain/deskfy-config.repository";
 import type { IOrdemCompraRepository } from "@/lib/domain/ordem-compra.repository";
 
 import { UserSqliteRepository } from "./sqlite/user-sqlite.repository";
@@ -29,6 +30,7 @@ import { DemandaMensagemSqliteRepository } from "./sqlite/demanda-mensagem-sqlit
 import { WebhookConfigSqliteRepository } from "./sqlite/webhook-config-sqlite.repository";
 import { DeskfyImportBoardSqliteRepository } from "./sqlite/deskfy-import-board-sqlite.repository";
 import { SmtpConfigSqliteRepository } from "./sqlite/smtp-config-sqlite.repository";
+import { DeskfyConfigSqliteRepository } from "./sqlite/deskfy-config-sqlite.repository";
 import { OrdemCompraSqliteRepository } from "./sqlite/ordem-compra-sqlite.repository";
 
 import { UserPostgresRepository } from "./postgres/user-postgres.repository";
@@ -42,6 +44,7 @@ import { DemandaMensagemPostgresRepository } from "./postgres/demanda-mensagem-p
 import { WebhookConfigPostgresRepository } from "./postgres/webhook-config-postgres.repository";
 import { DeskfyImportBoardPostgresRepository } from "./postgres/deskfy-import-board-postgres.repository";
 import { SmtpConfigPostgresRepository } from "./postgres/smtp-config-postgres.repository";
+import { DeskfyConfigPostgresRepository } from "./postgres/deskfy-config-postgres.repository";
 import { OrdemCompraPostgresRepository } from "./postgres/ordem-compra-postgres.repository";
 
 export { PrepareRepository } from "./prepare.repository";
@@ -100,6 +103,10 @@ export function getDeskfyImportBoardRepository(): IDeskfyImportBoardRepository {
 
 export function getSmtpConfigRepository(): ISmtpConfigRepository {
   return pg ? new SmtpConfigPostgresRepository() : new SmtpConfigSqliteRepository();
+}
+
+export function getDeskfyConfigRepository(): IDeskfyConfigRepository {
+  return pg ? new DeskfyConfigPostgresRepository() : new DeskfyConfigSqliteRepository();
 }
 
 export function getOrdemCompraRepository(): IOrdemCompraRepository {

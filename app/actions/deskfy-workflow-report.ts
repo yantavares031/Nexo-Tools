@@ -28,6 +28,7 @@ export async function fetchDeskfyWorkflowReportAction(
     parsed.data;
 
   try {
+    const deskfyWorkflowReportsService = await getDeskfyWorkflowReportsService();
     const items = await getDeskfyWorkflowReportUseCase(
       {
         initialDate,
@@ -37,7 +38,7 @@ export async function fetchDeskfyWorkflowReportAction(
         columnName,
         generateAttachmentPublicUrl,
       },
-      { deskfyWorkflowReportsService: getDeskfyWorkflowReportsService() }
+      { deskfyWorkflowReportsService }
     );
 
     return { items };

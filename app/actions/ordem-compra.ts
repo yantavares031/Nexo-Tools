@@ -135,7 +135,6 @@ export async function createOrdemCompraAction(
         agenciaUserEmail: session.email,
         agenciaNome,
         demanda,
-        pdfBuffer: buffer,
         nomeArquivoPdf: file.name,
       },
       { smtpConfigRepository: smtpRepo }
@@ -380,7 +379,6 @@ export async function uploadOrdemCompraAssinadaAction(
           demanda: demandaDaOc,
           enviadoPorEmail: ordemAtualizada?.enviadoPorEmail,
           ordensCompraUrl,
-          signedPdfBuffer: buffer,
           nomeArquivoPdfAssinado: file.name,
         },
         { smtpConfigRepository: smtpRepo }

@@ -254,6 +254,23 @@ export interface SmtpConfigPanel {
   ordemCompraNotifyEmailsText: string;
 }
 
+/** Configuração Deskfy persistida (uso interno / servidor — não enviar apiKey ao cliente). */
+export interface DeskfyIntegrationConfig {
+  id: string;
+  baseUrl: string;
+  apiKey: string;
+  lookbackDays: number;
+  updatedAt?: string;
+}
+
+/** Painel Integrações → Deskfy (sem segredo). */
+export interface DeskfyIntegrationPanel {
+  baseUrl: string;
+  lookbackDays: number;
+  /** True se existe chave salva no banco ou variável DESKFY_API_KEY no ambiente. */
+  hasApiKey: boolean;
+}
+
 /** Tipos Deskfy (relatórios de workflow). */
 export type DeskfyWorkflowPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type DeskfyWorkflowType = "REQUEST" | "TASK" | "SUBTASK" | "TEMPLATE";

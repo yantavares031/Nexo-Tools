@@ -126,6 +126,14 @@ CREATE TABLE IF NOT EXISTS smtp_config (
   updated_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS deskfy_config (
+  id TEXT PRIMARY KEY,
+  base_url TEXT NOT NULL DEFAULT 'https://service-api.deskfy.io',
+  api_key TEXT NOT NULL DEFAULT '',
+  lookback_days INTEGER NOT NULL DEFAULT 30,
+  updated_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS backup_runs (
   id TEXT PRIMARY KEY,
   executed_at TEXT NOT NULL,
