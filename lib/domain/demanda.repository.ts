@@ -61,4 +61,10 @@ export interface IDemandaRepository {
   create(input: DemandaInput): Promise<Demanda>;
   update(id: string, input: DemandaInput): Promise<Demanda>;
   remove(id: string): Promise<void>;
+
+  /**
+   * Entre candidatos já normalizados (ex.: `getNormalizedOcPiKeyFromDeskfyPreview`),
+   * retorna quais chaves já existem em `ocPi` (comparação trim + case-insensitive).
+   */
+  findExistingOcPiKeysAmong(candidatesNormalized: string[]): Promise<Set<string>>;
 }

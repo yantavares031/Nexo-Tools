@@ -79,7 +79,29 @@ function buildWhereAndParams(filters?: DemandaFilters): { where: string; params:
   return { where, params };
 }
 
+const OCPI_EXISTING_BATCH = 400;
+
 export class DemandaSqliteRepository implements IDemandaRepository {
+  async findExistingOcPiKeysAmong(candidatesNormalized: string[]): Promise<Set<string>> {
+    const unique = [...new Set(candidatesNormalized.map((s) => s.trim()).filter(Boolean))];
+    if (unique.length === 0) return new Set();
+
+    const db = getDb();
+    const out = new Set<string>();
+    for (let i = 0; i < unique.length; i += OCPI_EXISTING_BATCH) {
+      const batch = unique.slice(i, i + OCPI_EXISTING_BATCH);
+      const placeholders = batch.map(() => "?").join(",");
+      const rows = db
+        .prepare(
+          `SELECT DISTINCT UPPER(TRIM(ocPi)) AS k FROM demandas
+           WHERE TRIM(COALESCE(ocPi, '')) != '' AND UPPER(TRIM(ocPi)) IN (${placeholders})`
+        )
+        .all(...batch) as { k: string }[];
+      for (const r of rows) out.add(String(r.k));
+    }
+    return out;
+  }
+
   async findAll(filters?: DemandaFilters): Promise<Demanda[]> {
     const db = getDb();
     const { where, params } = buildWhereAndParams(filters);

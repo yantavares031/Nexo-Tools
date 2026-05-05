@@ -34,6 +34,7 @@ async function fetchDeskfyImportPreview(): Promise<DemandaImportadaPreview[]> {
     {
       deskfyWorkflowReportsService,
       deskfyImportBoardRepository: getDeskfyImportBoardRepository(),
+      demandaRepository: getDemandaRepository(),
     }
   );
 }
@@ -110,8 +111,9 @@ export default async function ImportacaoDemandasPage() {
         <div className="space-y-1 text-sm text-slate-600">
           <p>
             Mostrando solicitações na coluna{" "}
-            <span className="font-semibold">Entregue</span> dos boards permitidos. Configure
-            os boards em Integrações → Configurações.
+            <span className="font-semibold">Entregue</span> dos boards permitidos que ainda não
+            constam no cadastro (mesmo OC/PI / código SEB da Deskfy). Configure os boards em
+            Integrações → Configurações.
           </p>
         </div>
 

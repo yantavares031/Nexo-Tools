@@ -35,6 +35,7 @@ import type {
 } from "@/types/globals";
 import { formatBrazilianCurrency } from "@/lib/currency";
 import type { DemandaImportadaPreview } from "@/lib/deskfy/deskfy-workflow-import-preview.types";
+import { getOcPiFromDeskfyPreview } from "@/lib/deskfy/deskfy-preview-ocpi";
 import { formatDeskfyBriefingFieldLabel } from "@/lib/deskfy/format-deskfy-briefing-label";
 import { DeskfyAnexoPreviewModal } from "@/modals/DeskfyAnexoPreviewModal";
 
@@ -225,13 +226,6 @@ interface ImportarDemandaModalProps {
   initialData: DemandaImportadaPreview | null;
 }
 
-function getOcPiFromPreview(item: DemandaImportadaPreview): string {
-  if (item.codigo?.trim().toUpperCase().startsWith("SEB-")) {
-    return item.codigo.trim();
-  }
-  return `SEB-${item.id}`;
-}
-
 export function ImportarDemandaModal({
   open,
   onClose,
@@ -270,7 +264,7 @@ export function ImportarDemandaModal({
     options.solicitantesComUnidade.find(
       (s) => s.nome.toLowerCase() === solicitante.toLowerCase()
     )?.unResponsavel ?? "";
-  const ocPi = initialData ? getOcPiFromPreview(initialData) : "";
+  const ocPi = initialData ? getOcPiFromDeskfyPreview(initialData) : "";
   const mesYyyyMm = initialData?.mesYyyyMm ?? "";
 
   const handleCloseImportModal = useCallback(() => {
