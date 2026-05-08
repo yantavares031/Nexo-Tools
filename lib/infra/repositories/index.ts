@@ -18,6 +18,7 @@ import type { IDeskfyImportBoardRepository } from "@/lib/domain/deskfy-import-bo
 import type { ISmtpConfigRepository } from "@/lib/domain/smtp-config.repository";
 import type { IDeskfyConfigRepository } from "@/lib/domain/deskfy-config.repository";
 import type { IOrdemCompraRepository } from "@/lib/domain/ordem-compra.repository";
+import type { IWhatsAppIntegrationRepository } from "@/lib/domain/whatsapp-integration.repository";
 
 import { UserSqliteRepository } from "./sqlite/user-sqlite.repository";
 import { DemandaSqliteRepository } from "./sqlite/demanda-sqlite.repository";
@@ -32,6 +33,7 @@ import { DeskfyImportBoardSqliteRepository } from "./sqlite/deskfy-import-board-
 import { SmtpConfigSqliteRepository } from "./sqlite/smtp-config-sqlite.repository";
 import { DeskfyConfigSqliteRepository } from "./sqlite/deskfy-config-sqlite.repository";
 import { OrdemCompraSqliteRepository } from "./sqlite/ordem-compra-sqlite.repository";
+import { WhatsAppIntegrationSqliteRepository } from "./sqlite/whatsapp-integration-sqlite.repository";
 
 import { UserPostgresRepository } from "./postgres/user-postgres.repository";
 import { DemandaPostgresRepository } from "./postgres/demanda-postgres.repository";
@@ -46,6 +48,7 @@ import { DeskfyImportBoardPostgresRepository } from "./postgres/deskfy-import-bo
 import { SmtpConfigPostgresRepository } from "./postgres/smtp-config-postgres.repository";
 import { DeskfyConfigPostgresRepository } from "./postgres/deskfy-config-postgres.repository";
 import { OrdemCompraPostgresRepository } from "./postgres/ordem-compra-postgres.repository";
+import { WhatsAppIntegrationPostgresRepository } from "./postgres/whatsapp-integration-postgres.repository";
 
 export { PrepareRepository } from "./prepare.repository";
 
@@ -111,4 +114,10 @@ export function getDeskfyConfigRepository(): IDeskfyConfigRepository {
 
 export function getOrdemCompraRepository(): IOrdemCompraRepository {
   return pg ? new OrdemCompraPostgresRepository() : new OrdemCompraSqliteRepository();
+}
+
+export function getWhatsAppIntegrationRepository(): IWhatsAppIntegrationRepository {
+  return pg
+    ? new WhatsAppIntegrationPostgresRepository()
+    : new WhatsAppIntegrationSqliteRepository();
 }

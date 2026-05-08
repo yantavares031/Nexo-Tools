@@ -271,6 +271,92 @@ export interface DeskfyIntegrationPanel {
   hasApiKey: boolean;
 }
 
+/**
+ * Identificador da API WhatsApp ativa (ex.: `uazapi`, futuro `zapi`).
+ * Padrão operacional: **uazapi**.
+ */
+export type WhatsAppApiPlatformId = string;
+
+/** Configuração WhatsApp persistida (uso interno — contém tokens). */
+export interface WhatsAppIntegrationConfig {
+  id: string;
+  platform: WhatsAppApiPlatformId;
+  baseUrl: string;
+  adminToken: string;
+  /** Token opcional de API / servidor (alguns provedores exigem além do admin). */
+  apiToken: string;
+  /** Campos extras por plataforma (IDs, nome de instância Evolution, etc.). */
+  providerFieldsJson: string;
+  selectedInstanceId: string | null;
+  /** Token da instância — usado para enviar mensagens e consultar status. */
+  instanceToken: string;
+  instanceName: string | null;
+  instanceStatus: string | null;
+  profileName: string | null;
+  /** URL original retornada pela API (se houver). */
+  profilePicUrl: string | null;
+  /** Objeto no R2 (`whatsapp-integration/...`) quando a foto foi baixada. */
+  profilePicStorageKey: string | null;
+  /** JSON do perfil comercial (quando obtido). */
+  businessProfileJson: string | null;
+  /** Snapshot JSON da instância (campos extras por provedor). */
+  instancePayloadJson: string | null;
+  /** Números/JIDs que recebem notificações de OC (espelho do JSON no banco). */
+  notifyRecipients: string[];
+  /** Intervalo (segundos) entre mensagens na fila async — UAZAPI `updateDelaySettings`. */
+  asyncMsgDelayMin: number;
+  asyncMsgDelayMax: number;
+  updatedAt?: string;
+}
+
+/** Item público ao listar instâncias (sem token). */
+export interface WhatsAppInstanceListItem {
+  id: string;
+  name: string;
+  status: string;
+  profileName?: string | null;
+}
+
+/** Painel Integrações → WhatsApp (sem segredos). */
+export interface WhatsAppIntegrationPanel {
+  platform: WhatsAppApiPlatformId;
+  baseUrl: string;
+  /** ID da instância Z-API (persistido em JSON). */
+  zapiInstanceId: string;
+  /** Nome da instância Evolution (persistido em JSON). */
+  evolutionInstanceName: string;
+  hasAdminToken: boolean;
+  hasApiToken: boolean;
+  hasInstanceToken: boolean;
+  selectedInstanceId: string | null;
+  instanceName: string | null;
+  instanceStatus: string | null;
+  profileName: string | null;
+  /** Para `<img src>` — rota interna ou URL remota. */
+  profilePicSrc: string | null;
+  /** Prévia do perfil comercial (descrição ou tag), se existir. */
+  businessProfileSummary: string | null;
+  /** Contatos que recebem notificações de ordem de compra via WhatsApp. */
+  notifyRecipients: string[];
+  /** Delay mínimo (s) entre mensagens na fila async (`/send/text` com `async=true`). */
+  asyncMsgDelayMin: number;
+  /** Delay máximo (s) entre mensagens na fila async. */
+  asyncMsgDelayMax: number;
+}
+
+/** Resposta segura do polling de status (para exibir QR / estado). */
+export interface WhatsAppInstanceStatusPayload {
+  instanceId: string | null;
+  name: string | null;
+  status: string | null;
+  profileName: string | null;
+  paircode: string | null;
+  qrcode: string | null;
+  lastDisconnectReason: string | null;
+  apiConnected: boolean;
+  apiLoggedIn: boolean;
+}
+
 /** Tipos Deskfy (relatórios de workflow). */
 export type DeskfyWorkflowPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type DeskfyWorkflowType = "REQUEST" | "TASK" | "SUBTASK" | "TEMPLATE";

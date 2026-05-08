@@ -8,11 +8,14 @@ import {
   getSmtpConfigRepository,
   getWebhookConfigRepository,
   getWebhookSender,
+  getWhatsAppIntegrationRepository,
 } from "@/lib/repositories";
+import { getWhatsAppProvider } from "@/lib/infra/whatsapp/get-whatsapp-provider";
 import type { Comprovacao } from "@/types/globals";
 import type { Demanda } from "@/types/globals";
 import { addDemandaComprovacaoUseCase } from "@/lib/use-cases/add-demanda-comprovacao.use-case";
 import { notifyComprovacaoEnviadaEmailsUseCase } from "@/lib/use-cases/notify-comprovacao-enviada-emails.use-case";
+import { notifyComprovacaoEnviadaWhatsAppUseCase } from "@/lib/use-cases/notify-comprovacao-enviada-whatsapp.use-case";
 import { removeComprovacaoFromDemandaUseCase } from "@/lib/use-cases/remove-comprovacao-from-demanda.use-case";
 import { getSession } from "@/lib/auth";
 import {
@@ -167,16 +170,24 @@ export async function createComprovacaoAction(
       notificacaoEmail = { origemNome: `${nome} (${roleSuffix})`, demandas: demandasNotif };
     }
 
+    /** Lista única para e-mail/WhatsApp (evita ficar sem notify se `demandas` vier vazio por inconsistência de IDs). */
+    const demandasParaNotificar: Demanda[] = [];
+    for (const id of demandaIds) {
+      const d = await demandaRepository.findById(id);
+      if (d) demandasParaNotificar.push(d);
+    }
+
     const webhookConfigRepository = getWebhookConfigRepository();
     const webhookSender = getWebhookSender();
 
     const smtpRepoComprovacao =
-      notificacaoEmail && notificacaoEmail.demandas.length > 0
+      notificacaoEmail && demandasParaNotificar.length > 0
         ? getSmtpConfigRepository()
         : null;
     const smtpRowComprovacao = smtpRepoComprovacao ? await smtpRepoComprovacao.get() : null;
 
     const comprovacoes: Comprovacao[] = [];
+    let whatsappComprovacaoDisparado = false;
 
     for (const file of validFiles) {
       const fileId = randomUUID();
@@ -211,22 +222,33 @@ export async function createComprovacaoAction(
       );
       comprovacoes.push(comprovacao);
 
-      if (
-        notificacaoEmail &&
-        notificacaoEmail.demandas.length > 0 &&
-        smtpRepoComprovacao
-      ) {
+      if (notificacaoEmail && demandasParaNotificar.length > 0 && smtpRepoComprovacao) {
         await notifyComprovacaoEnviadaEmailsUseCase(
           {
             notifyEmails: smtpRowComprovacao?.ordemCompraNotifyEmails ?? [],
             agenciaUserEmail: session.role === "agency" ? session.email : undefined,
             origemNome: notificacaoEmail.origemNome,
-            demandas: notificacaoEmail.demandas,
+            demandas: demandasParaNotificar,
             nomeArquivo: file.name,
             descricao,
           },
           { smtpConfigRepository: smtpRepoComprovacao }
         );
+      }
+      if (demandasParaNotificar.length > 0 && !whatsappComprovacaoDisparado) {
+        await notifyComprovacaoEnviadaWhatsAppUseCase(
+          {
+            demandas: demandasParaNotificar,
+            enviadoPorUsuario:
+              session.name?.trim() || session.email?.trim() || "—",
+            descricao,
+          },
+          {
+            whatsAppIntegrationRepository: getWhatsAppIntegrationRepository(),
+            whatsAppProvider: getWhatsAppProvider("uazapi"),
+          }
+        );
+        whatsappComprovacaoDisparado = true;
       }
     }
 

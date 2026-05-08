@@ -1,6 +1,6 @@
 {
   "name": "nexo_tools",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,8 +17,10 @@
     "docker:push": "docker buildx build --platform linux/amd64 -t yantavares021/nexo-tools:latest --push .",
     "docker:build": "docker buildx build --platform linux/amd64 -t yantavares021/nexo-tools:latest --load .",
     "docker:push-only": "docker push yantavares021/nexo-tools:latest",
+    "version:bump": "npm version patch --no-git-tag-version",
     "github:push": "git add . && git commit -m \"update\" && git push origin main",
     "deploy:all": "tsx scripts/deploy-all.ts",
+    "deploy:ssh": "tsx scripts/deploy-all.ts --ssh-only",
     "tunnel:db": "ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=999 -o TCPKeepAlive=yes -L 127.0.0.1:4420:127.0.0.1:4420 yan@nexo.sebraelinks.com"
   },
   "dependencies": {

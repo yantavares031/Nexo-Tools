@@ -12,11 +12,13 @@ const BACKUPS_PREFIX = "backups/";
 export const R2_KEY_PREFIX_COMPROVACOES = "comprovacoes/";
 export const R2_KEY_PREFIX_ORDENS_COMPRA = "ordens-compra/";
 export const R2_KEY_PREFIX_AVATARS = "avatars/";
+export const R2_KEY_PREFIX_WHATSAPP_INTEGRATION = "whatsapp-integration/";
 
 const APP_OBJECT_PREFIXES = [
   R2_KEY_PREFIX_COMPROVACOES,
   R2_KEY_PREFIX_ORDENS_COMPRA,
   R2_KEY_PREFIX_AVATARS,
+  R2_KEY_PREFIX_WHATSAPP_INTEGRATION,
 ] as const;
 
 /** avatars/{userId}/{fileId}.ext — mesmo bucket/credenciais R2 (ex.: ACTIVE_PROVIDER_BACKUP=R2). */
@@ -48,6 +50,11 @@ export function buildOrdemCompraAssinadoObjectKey(
   ext: string
 ): string {
   return `${R2_KEY_PREFIX_ORDENS_COMPRA}${ordemCompraId}/assinado/${fileId}${ext}`;
+}
+
+/** Foto de perfil da instância WhatsApp salva no bucket do app. */
+export function buildWhatsAppInstanceProfilePicKey(instanceId: string, fileId: string): string {
+  return `${R2_KEY_PREFIX_WHATSAPP_INTEGRATION}${instanceId}/${fileId}.webp`;
 }
 
 function assertAppObjectKey(key: string): void {

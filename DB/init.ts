@@ -439,4 +439,76 @@ export function initDb(database: Database.Database): void {
   } catch {
     // ignora
   }
+
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whatsapp_integration (
+        id TEXT PRIMARY KEY,
+        platform TEXT NOT NULL DEFAULT 'uazapi',
+        base_url TEXT NOT NULL DEFAULT '',
+        admin_token TEXT NOT NULL DEFAULT '',
+        api_token TEXT NOT NULL DEFAULT '',
+        selected_instance_id TEXT,
+        instance_token TEXT NOT NULL DEFAULT '',
+        instance_name TEXT,
+        instance_status TEXT,
+        profile_name TEXT,
+        profile_pic_url TEXT,
+        profile_pic_storage_key TEXT,
+        business_profile_json TEXT,
+        instance_payload_json TEXT,
+        provider_fields_json TEXT NOT NULL DEFAULT '{}',
+        notify_recipients_json TEXT NOT NULL DEFAULT '[]',
+        async_msg_delay_min INTEGER NOT NULL DEFAULT 3,
+        async_msg_delay_max INTEGER NOT NULL DEFAULT 5,
+        updated_at TEXT
+      )
+    `);
+  } catch {
+    // ignora
+  }
+
+  try {
+    const wi = database.prepare("PRAGMA table_info(whatsapp_integration)").all() as { name: string }[];
+    if (wi.length > 0 && !wi.some((c) => c.name === "provider_fields_json")) {
+      database.exec(
+        "ALTER TABLE whatsapp_integration ADD COLUMN provider_fields_json TEXT NOT NULL DEFAULT '{}'"
+      );
+    }
+  } catch {
+    // ignora
+  }
+
+  try {
+    const wi = database.prepare("PRAGMA table_info(whatsapp_integration)").all() as { name: string }[];
+    if (wi.length > 0 && !wi.some((c) => c.name === "notify_recipients_json")) {
+      database.exec(
+        "ALTER TABLE whatsapp_integration ADD COLUMN notify_recipients_json TEXT NOT NULL DEFAULT '[]'"
+      );
+    }
+  } catch {
+    // ignora
+  }
+
+  try {
+    const wi = database.prepare("PRAGMA table_info(whatsapp_integration)").all() as { name: string }[];
+    if (wi.length > 0 && !wi.some((c) => c.name === "async_msg_delay_min")) {
+      database.exec(
+        "ALTER TABLE whatsapp_integration ADD COLUMN async_msg_delay_min INTEGER NOT NULL DEFAULT 3"
+      );
+    }
+  } catch {
+    // ignora
+  }
+
+  try {
+    const wi = database.prepare("PRAGMA table_info(whatsapp_integration)").all() as { name: string }[];
+    if (wi.length > 0 && !wi.some((c) => c.name === "async_msg_delay_max")) {
+      database.exec(
+        "ALTER TABLE whatsapp_integration ADD COLUMN async_msg_delay_max INTEGER NOT NULL DEFAULT 5"
+      );
+    }
+  } catch {
+    // ignora
+  }
 }

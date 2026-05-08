@@ -19,10 +19,15 @@ import {
   getDemandaRepository,
   getAgenciaRepository,
   getSmtpConfigRepository,
+  getWhatsAppIntegrationRepository,
 } from "@/lib/repositories";
+import { getWhatsAppProvider } from "@/lib/infra/whatsapp/get-whatsapp-provider";
+import { formatOrdemCompraOrigemAgencia } from "@/lib/whatsapp-oc-notify-messages";
 import { getPublicAppBaseUrlForEmail } from "@/lib/public-app-url";
 import { notifyOrdemCompraAssinadaEmailsUseCase } from "@/lib/use-cases/notify-ordem-compra-assinada-emails.use-case";
 import { notifyOrdemCompraEnviadaEmailsUseCase } from "@/lib/use-cases/notify-ordem-compra-enviada-emails.use-case";
+import { notifyOrdemCompraAssinadaWhatsAppUseCase } from "@/lib/use-cases/notify-ordem-compra-assinada-whatsapp.use-case";
+import { notifyOrdemCompraEnviadaWhatsAppUseCase } from "@/lib/use-cases/notify-ordem-compra-enviada-whatsapp.use-case";
 import { createOrdemCompraUseCase } from "@/lib/use-cases/create-ordem-compra.use-case";
 import { registrarOrdemCompraAssinadaComArquivoUseCase } from "@/lib/use-cases/registrar-ordem-compra-assinada-com-arquivo.use-case";
 import { removeOrdemCompraEmAbertoUseCase } from "@/lib/use-cases/remove-ordem-compra-em-aberto.use-case";
@@ -138,6 +143,22 @@ export async function createOrdemCompraAction(
         nomeArquivoPdf: file.name,
       },
       { smtpConfigRepository: smtpRepo }
+    );
+
+    const waRepo = getWhatsAppIntegrationRepository();
+    await notifyOrdemCompraEnviadaWhatsAppUseCase(
+      {
+        demanda,
+        enviadoPor:
+          session.name?.trim() ||
+          session.email?.trim() ||
+          ordemCompra.autor?.trim() ||
+          "—",
+      },
+      {
+        whatsAppIntegrationRepository: waRepo,
+        whatsAppProvider: getWhatsAppProvider("uazapi"),
+      }
     );
 
     revalidatePath("/ordens-compra");
@@ -382,6 +403,21 @@ export async function uploadOrdemCompraAssinadaAction(
           nomeArquivoPdfAssinado: file.name,
         },
         { smtpConfigRepository: smtpRepo }
+      );
+
+      const waRepo = getWhatsAppIntegrationRepository();
+      await notifyOrdemCompraAssinadaWhatsAppUseCase(
+        {
+          demanda: demandaDaOc,
+          assinadoPor: session.name?.trim() || session.email?.trim() || "Admin",
+          enviadoPorAgencia: ordemAtualizada
+            ? formatOrdemCompraOrigemAgencia(ordemAtualizada)
+            : undefined,
+        },
+        {
+          whatsAppIntegrationRepository: waRepo,
+          whatsAppProvider: getWhatsAppProvider("uazapi"),
+        }
       );
     }
 

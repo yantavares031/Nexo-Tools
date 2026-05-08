@@ -17,5 +17,6 @@ export {
   getDeskfyImportBoardRepository,
   getSmtpConfigRepository,
   getDeskfyConfigRepository,
+  getWhatsAppIntegrationRepository,
 } from "@/lib/infra/repositories";
 export { getWebhookSender } from "@/lib/infra/webhook-sender";

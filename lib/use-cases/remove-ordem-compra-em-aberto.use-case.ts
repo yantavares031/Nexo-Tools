@@ -21,10 +21,10 @@ export async function removeOrdemCompraEmAbertoUseCase(
   if (!oc) {
     throw new Error("Ordem de compra não encontrada.");
   }
-  if (oc.status !== "em_aberto") {
-    throw new Error("Pedidos já assinados não podem ser removidos.");
-  }
   if (ctx.actor === "agency") {
+    if (oc.status !== "em_aberto") {
+      throw new Error("Pedidos já assinados não podem ser removidos.");
+    }
     const scope = ctx.agencyScope;
     if (!scope) {
       throw new Error("Sem permissão para remover este pedido.");

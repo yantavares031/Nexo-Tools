@@ -5,7 +5,13 @@ import { WebhooksForm } from "./WebhooksForm";
 import { ConfiguracoesBoardsSection } from "./ConfiguracoesBoardsSection";
 import { SmtpServidorSection } from "./SmtpServidorSection";
 import { DeskfyIntegracaoSection } from "./DeskfyIntegracaoSection";
-import type { WebhookConfig, SmtpConfigPanel, DeskfyIntegrationPanel } from "@/types/globals";
+import { WhatsAppIntegracaoSection } from "./WhatsAppIntegracaoSection";
+import type {
+  WebhookConfig,
+  SmtpConfigPanel,
+  DeskfyIntegrationPanel,
+  WhatsAppIntegrationPanel,
+} from "@/types/globals";
 
 interface DeskfyImportBoard {
   id: string;
@@ -17,6 +23,7 @@ interface IntegracoesTabsProps {
   initialBoards?: DeskfyImportBoard[];
   initialSmtpPanel: SmtpConfigPanel;
   initialDeskfyPanel: DeskfyIntegrationPanel;
+  initialWhatsAppPanel: WhatsAppIntegrationPanel;
 }
 
 export function IntegracoesTabs({
@@ -24,6 +31,7 @@ export function IntegracoesTabs({
   initialBoards = [],
   initialSmtpPanel,
   initialDeskfyPanel,
+  initialWhatsAppPanel,
 }: IntegracoesTabsProps) {
   return (
     <Tab defaultTab="webhooks">
@@ -32,6 +40,7 @@ export function IntegracoesTabs({
         <Tab.Item id="filtro-boards">Filtro de Boards</Tab.Item>
         <Tab.Item id="deskfy">Deskfy</Tab.Item>
         <Tab.Item id="smtp">Servidor SMTP</Tab.Item>
+        <Tab.Item id="whatsapp">WhatsApp</Tab.Item>
       </Tab.List>
       <Tab.Panels>
         <Tab.Panel id="webhooks">
@@ -45,6 +54,9 @@ export function IntegracoesTabs({
         </Tab.Panel>
         <Tab.Panel id="smtp">
           <SmtpServidorSection initialPanel={initialSmtpPanel} />
+        </Tab.Panel>
+        <Tab.Panel id="whatsapp">
+          <WhatsAppIntegracaoSection initialPanel={initialWhatsAppPanel} />
         </Tab.Panel>
       </Tab.Panels>
     </Tab>

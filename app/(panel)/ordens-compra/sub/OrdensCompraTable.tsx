@@ -153,8 +153,8 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
   }
 
   function estimateMenuHeight(kind: OcRowMenuKind): number {
-    if (kind === "signed-full") return 248;
-    if (kind === "signed-simple") return 96;
+    if (kind === "signed-full") return isAdmin ? 300 : 248;
+    if (kind === "signed-simple") return isAdmin ? 148 : 96;
     return isAdmin ? 268 : 228;
   }
 
@@ -448,6 +448,23 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
                   <Download className="size-4 shrink-0 text-slate-500" aria-hidden />
                   Baixar documento enviado pela agência
                 </button>
+                {isAdmin && (
+                  <>
+                    <div className="my-1 border-t border-slate-100" role="separator" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={isPending}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                      onClick={() => {
+                        void handleRemovePedido(menuOc);
+                      }}
+                    >
+                      <Trash2 className="size-4 shrink-0" aria-hidden />
+                      Remover pedido
+                    </button>
+                  </>
+                )}
               </>
             )}
 
@@ -477,6 +494,23 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
                   <Download className="size-4 shrink-0 text-slate-600" aria-hidden />
                   Baixar documento
                 </button>
+                {isAdmin && (
+                  <>
+                    <div className="my-1 border-t border-slate-100" role="separator" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={isPending}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                      onClick={() => {
+                        void handleRemovePedido(menuOc);
+                      }}
+                    >
+                      <Trash2 className="size-4 shrink-0" aria-hidden />
+                      Remover pedido
+                    </button>
+                  </>
+                )}
               </>
             )}
 
