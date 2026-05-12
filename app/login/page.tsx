@@ -51,7 +51,11 @@ export default async function LoginPage({
               </p>
             </div>
 
-            <form action={loginAction} className="flex flex-col gap-4">
+            <form
+              action={loginAction}
+              method="post"
+              className="flex flex-col gap-4"
+            >
               {error && (
                 <p className="text-sm text-rose-500" role="alert">
                   {ERROR_MESSAGES[error] ?? "Erro ao fazer login."}
@@ -69,7 +73,10 @@ export default async function LoginPage({
                   id="email"
                   name="email"
                   type="email"
-                  autoComplete="email"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   placeholder="seu@email.com"
                   className="w-full border-b border-slate-200 bg-transparent px-0 py-2.5 text-base text-slate-700 placeholder-slate-300 outline-none transition-colors focus:border-blue-400"
@@ -88,6 +95,9 @@ export default async function LoginPage({
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   placeholder="••••••••"
                   className="w-full border-b border-slate-200 bg-transparent px-0 py-2.5 text-base text-slate-700 placeholder-slate-300 outline-none transition-colors focus:border-blue-400"
