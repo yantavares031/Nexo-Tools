@@ -10,6 +10,7 @@ import {
 } from "@/lib/repositories";
 import { getDeskfyWorkflowImportPreviewUseCase } from "@/lib/use-cases/get-deskfy-workflow-import-preview.use-case";
 import { getDeskfyWorkflowImportDateRangeUseCase } from "@/lib/use-cases/get-deskfy-workflow-import-date-range.use-case";
+import { normalizeDeskfyUserMessage } from "@/lib/deskfy/deskfy-user-message";
 import { SemPermissao } from "@/components/SemPermissao";
 import type { DemandaImportadaPreview } from "@/lib/deskfy/deskfy-workflow-import-preview.types";
 import Link from "next/link";
@@ -49,24 +50,29 @@ export default async function ImportacaoDemandasPage() {
     );
   }
 
-  let previewItems: DemandaImportadaPreview[] = [];
-  let errorMessage: string | null = null;
-
   const demandaRepository = getDemandaRepository();
   const solicitanteRepository = getSolicitanteRepository();
   const agenciaRepository = getAgenciaRepository();
 
   const boardRepository = getDeskfyImportBoardRepository();
 
-  const [previewResult, filterOptions] = await Promise.all([
+  const [{ previewItems, errorMessage }, filterOptions] = await Promise.all([
     (async () => {
       try {
-        return await fetchDeskfyImportPreview();
+        return {
+          previewItems: await fetchDeskfyImportPreview(),
+          errorMessage: null,
+        };
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Erro ao carregar relatório Deskfy.";
-        errorMessage = msg;
-        console.error("[Importar] Deskfy error:", msg, err instanceof Error ? err.stack : "");
-        return [];
+        const rawMsg = err instanceof Error ? err.message : "Erro ao carregar relatório Deskfy.";
+        const userMessage = normalizeDeskfyUserMessage(err, {
+          fallback: "Erro de servidor ao carregar a importação da Deskfy.",
+        });
+        console.error("[Importar] Deskfy error:", rawMsg, err instanceof Error ? err.stack : "");
+        return {
+          previewItems: [],
+          errorMessage: userMessage,
+        };
       }
     })(),
     getDemandasFilterOptionsUseCase(undefined, {
@@ -76,8 +82,6 @@ export default async function ImportacaoDemandasPage() {
       deskfyImportBoardRepository: boardRepository,
     }),
   ]);
-
-  previewItems = previewResult;
 
   return (
     <div className="p-6">
@@ -93,7 +97,8 @@ export default async function ImportacaoDemandasPage() {
               Importação de demandas Deskfy
             </h1>
             <p className="text-sm text-slate-500">
-              Esta pagina vai receber demandas vindas de outro sistema. Em seguida, voce podera revisar e importar.
+              Esta pagina recebe demandas vindas da Deskfy. Voce pode revisar a lista carregada ou
+              buscar uma solicitacao especifica pelo codigo SEB para importar.
             </p>
           </div>
 

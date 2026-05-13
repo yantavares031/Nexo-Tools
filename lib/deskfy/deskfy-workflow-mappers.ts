@@ -1,8 +1,8 @@
-import type { DeskfyWorkflowReportItem } from "@/types/globals";
+import type { DeskfyTaskDetailsResponse, DeskfyWorkflowReportItem } from "@/types/globals";
 import type { DemandaImportadaPreview } from "@/lib/deskfy/deskfy-workflow-import-preview.types";
 import { formatMonthYearDisplay, parseMonthYearToInput } from "@/lib/month-year";
 
-function parseDeskfyDateToYyyyMm(dateStr: string | null | undefined): string {
+export function parseDeskfyDateToYyyyMm(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
   const t = dateStr.trim();
   if (!t) return "";
@@ -51,5 +51,60 @@ export function mapDeskfyWorkflowReportToImportPreviewItems(
       mesYyyyMm,
     };
   });
+}
+
+function getStringField(obj: Record<string, unknown>, key: string): string {
+  const value = obj[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getPositiveIntegerField(obj: Record<string, unknown>, key: string): number | null {
+  const value = obj[key];
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseInt(value.trim(), 10)
+        : Number.NaN;
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return Math.floor(parsed);
+}
+
+export function mapDeskfyTaskDetailsToImportPreviewItem(
+  data: DeskfyTaskDetailsResponse
+): DemandaImportadaPreview {
+  const solicitacao =
+    data.solicitacao && typeof data.solicitacao === "object" && !Array.isArray(data.solicitacao)
+      ? data.solicitacao
+      : null;
+
+  if (!solicitacao) {
+    throw new Error("Resposta inesperada da Deskfy: dados da solicitação ausentes.");
+  }
+
+  const taskId = getPositiveIntegerField(solicitacao, "id");
+  if (!taskId) {
+    throw new Error("Resposta inesperada da Deskfy: taskId inválido.");
+  }
+
+  const codigo = getStringField(solicitacao, "codigo");
+  const mesYyyyMm = parseDeskfyDateToYyyyMm(getStringField(solicitacao, "dt_cadastro"));
+
+  return {
+    id: String(taskId),
+    codigo,
+    demanda: getStringField(solicitacao, "titulo") || codigo || `SEB-${taskId}`,
+    solicitante: getStringField(solicitacao, "solicitante") || "—",
+    status: getStringField(solicitacao, "status") || "—",
+    board: getStringField(solicitacao, "board") || "—",
+    colunaAtual: getStringField(solicitacao, "colunaatual") || "—",
+    valor: "—",
+    mes: formatMonthYearDisplay(mesYyyyMm) || "—",
+    mesYyyyMm,
+  };
 }
 

@@ -224,6 +224,7 @@ interface ImportarDemandaModalProps {
   onClose: () => void;
   options: DemandaFilterOptions;
   initialData: DemandaImportadaPreview | null;
+  initialDeskfyDetails?: DeskfyTaskDetailsResponse | null;
 }
 
 export function ImportarDemandaModal({
@@ -231,6 +232,7 @@ export function ImportarDemandaModal({
   onClose,
   options,
   initialData,
+  initialDeskfyDetails = null,
 }: ImportarDemandaModalProps) {
   const [state, formAction, isImportPending] = useActionState(
     createDemandaAction,
@@ -301,6 +303,16 @@ export function ImportarDemandaModal({
       return;
     }
 
+    if (initialDeskfyDetails) {
+      queueMicrotask(() => {
+        setActiveTab("dados");
+        setDeskfyDetails(initialDeskfyDetails);
+        setDeskfyError(null);
+        setDeskfyLoading(false);
+      });
+      return;
+    }
+
     startTransition(() => {
       setActiveTab("dados");
       setDeskfyDetails(null);
@@ -323,7 +335,7 @@ export function ImportarDemandaModal({
     return () => {
       cancelled = true;
     };
-  }, [open, initialData?.id]);
+  }, [open, initialData?.id, initialDeskfyDetails]);
 
   if (!initialData) return null;
 

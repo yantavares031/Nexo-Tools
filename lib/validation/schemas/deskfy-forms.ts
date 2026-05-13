@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDeskfyTaskIdFromCode } from "@/lib/deskfy/deskfy-task-code";
 
 export const deskfyBoardNomeSchema = z
   .string()
@@ -7,6 +8,24 @@ export const deskfyBoardNomeSchema = z
   .max(500);
 
 export const deskfyTaskIdSchema = z.coerce.number().int().positive("ID da tarefa inválido.");
+
+export const deskfyTaskCodeSchema = z
+  .string()
+  .trim()
+  .min(1, "Informe o código da solicitação.")
+  .max(50, "Código da solicitação inválido.")
+  .transform((raw, ctx) => {
+    const taskId = parseDeskfyTaskIdFromCode(raw);
+    if (!taskId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe um código válido, como SEB-300114 ou 300114.",
+      });
+      return z.NEVER;
+    }
+
+    return taskId;
+  });
 
 export function formDataToDeskfyWorkflowRaw(formData: FormData) {
   return {
