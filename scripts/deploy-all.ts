@@ -7,6 +7,8 @@
  * Requer `sshpass` no PATH (macOS: brew install hudochenkov/sshpass/sshpass).
  * Senha SSH: defina DEPLOY_SSH_PASSWORD no .env (não commitar).
  * Docker Hub: defina DOCKERHUB_TOKEN (PAT) no .env; opcional DOCKERHUB_USERNAME (padrão: yantavares021 — mesmo usuário da imagem).
+ *
+ * Se `docker:push` falhar com I/O em `containerd ... meta.db`: disco do Mac ou disco da VM do Docker cheio — libere espaço e reinicie o Docker Desktop.
  */
 
 import { config } from "dotenv";
@@ -27,6 +29,32 @@ function assertSshpass(): void {
 
 function runOrFail(command: string): void {
   execSync(command, { stdio: "inherit", cwd: process.cwd() });
+}
+
+/**
+ * Aviso se pouco espaço em `/` — builds Docker (BuildKit/containerd) costumam falhar com
+ * `write ... meta.db: input/output error` quando o disco do Mac ou o disco da VM do Docker está cheio.
+ */
+function warnIfLowDiskSpace(): void {
+  try {
+    const out = execSync("df -k /", { encoding: "utf8" });
+    const line = out.trim().split("\n").pop();
+    if (!line) return;
+    const parts = line.trim().split(/\s+/);
+    const availKb = Number.parseInt(parts[3] ?? "0", 10);
+    if (!Number.isFinite(availKb) || availKb <= 0) return;
+    const availGiB = availKb / (1024 * 1024);
+    const thresholdGiB = 5;
+    if (availGiB < thresholdGiB) {
+      console.warn(
+        `\n⚠️  deploy-all: pouco espaço livre em / (~${availGiB.toFixed(1)} GiB, abaixo de ~${thresholdGiB} GiB). ` +
+          "Docker Desktop frequentemente retorna erro de I/O em `containerd ... meta.db` com disco cheio. " +
+          "Libere espaço no Mac e/ou em Docker → Settings → Resources / limpe imagens (`docker system prune`).\n"
+      );
+    }
+  } catch {
+    // `df` indisponível — ignorar
+  }
 }
 
 /** Trecho seguro para uso dentro de aspas simples em bash remoto. */
@@ -85,6 +113,7 @@ function main(): void {
       process.exit(dockerLogin.status ?? 1);
     }
 
+    warnIfLowDiskSpace();
     console.log("\n→ npm run docker:push\n");
     runOrFail("npm run docker:push");
   } else {

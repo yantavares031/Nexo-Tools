@@ -2,7 +2,7 @@ import type { DeskfyIntegrationConfig } from "@/types/globals";
 import type { IDeskfyConfigRepository } from "@/lib/domain/deskfy-config.repository";
 
 const MIN_LOOKBACK = 0;
-const MAX_LOOKBACK = 180;
+const MAX_LOOKBACK = 500;
 
 type Dependencies = { deskfyConfigRepository: IDeskfyConfigRepository };
 
@@ -17,7 +17,7 @@ export async function saveDeskfyIntegrationSettingsUseCase(
 ): Promise<DeskfyIntegrationConfig> {
   const n = Math.floor(Number(input.lookbackDays));
   if (!Number.isFinite(n) || n < MIN_LOOKBACK || n > MAX_LOOKBACK) {
-    throw new Error("O intervalo em dias deve estar entre 0 e 180.");
+    throw new Error("O intervalo em dias deve estar entre 0 e 500.");
   }
 
   const base = input.baseUrl.trim();

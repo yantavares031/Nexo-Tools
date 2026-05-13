@@ -66,19 +66,19 @@ export function DeskfyIntegracaoSection({ initialPanel }: DeskfyIntegracaoSectio
             Intervalo da importação (dias retroativos a partir de hoje): {lookbackDays}
           </label>
           <p className="mb-2 text-xs text-slate-500">
-            O relatório usa de (hoje − N dias) até amanhã. Mínimo 0, máximo 180.
+            O relatório usa de (hoje − N dias) até amanhã. Mínimo 0, máximo 500.
           </p>
           <input
             id="deskfy-lookback"
             type="range"
             min={0}
-            max={180}
+            max={500}
             step={1}
             value={lookbackDays}
             onChange={(e) => setLookbackDays(Number(e.target.value))}
             className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-blue-600 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600"
             aria-valuemin={0}
-            aria-valuemax={180}
+            aria-valuemax={500}
             aria-valuenow={lookbackDays}
           />
           <input type="hidden" name="lookbackDays" value={lookbackDays} />

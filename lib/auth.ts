@@ -2,7 +2,22 @@ import { cookies } from "next/headers";
 import type { User, UserRole } from "@/types/globals";
 
 export const COOKIE_NAME = "nexo_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 dias
+
+const SECONDS_PER_DAY = 60 * 60 * 24;
+/** Padrão: 30 dias (cookie de sessão, não JWT). */
+const DEFAULT_SESSION_MAX_AGE_SECONDS = SECONDS_PER_DAY * 30;
+const MAX_SESSION_MAX_AGE_SECONDS = SECONDS_PER_DAY * 365;
+
+function sessionCookieMaxAgeSeconds(): number {
+  const raw = process.env.SESSION_COOKIE_MAX_AGE_SECONDS;
+  if (raw != null && String(raw).trim() !== "") {
+    const n = Number.parseInt(String(raw).trim(), 10);
+    if (Number.isFinite(n) && n > 0) {
+      return Math.min(n, MAX_SESSION_MAX_AGE_SECONDS);
+    }
+  }
+  return DEFAULT_SESSION_MAX_AGE_SECONDS;
+}
 
 export type SessionUser = {
   userId: string;
@@ -39,7 +54,7 @@ export async function createSession(user: SessionUser): Promise<void> {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: sessionCookieMaxAgeSeconds(),
     path: "/",
   });
 }

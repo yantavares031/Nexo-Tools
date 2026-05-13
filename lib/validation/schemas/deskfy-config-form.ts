@@ -9,7 +9,7 @@ export function formDataToDeskfyIntegrationSettingsRaw(formData: FormData) {
 
 export const deskfyIntegrationSettingsFormSchema = z.object({
   baseUrl: z.string().trim().min(1, "Informe a URL base.").max(2000),
-  lookbackDays: z.coerce.number().int().min(0).max(180),
+  lookbackDays: z.coerce.number().int().min(0).max(500),
 });
 
 export function formDataToDeskfyApiKeyRaw(formData: FormData) {
