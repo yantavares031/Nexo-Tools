@@ -137,7 +137,7 @@ export function AddCertidaoForm() {
             type="text"
             id="descricao"
             name="descricao"
-            placeholder="Ex.: Certidão negativa de débitos — mar/2026"
+            placeholder="Ex.: Federal — abr/2026 ou FGTS — vigência 06/2026"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
           />
         </div>

@@ -43,7 +43,7 @@ export function CertidoesFilters({
           id="q"
           name="q"
           defaultValue={defaultQ}
-          placeholder="Ex.: negativa de débitos, regularidade fiscal..."
+              placeholder="Ex.: RFB, FGTS, federal..."
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
       </div>
