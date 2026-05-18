@@ -10,12 +10,14 @@ const BACKUPS_PREFIX = "backups/";
 
 /** Prefixos no bucket nexo-tools (pastas no painel R2). */
 export const R2_KEY_PREFIX_COMPROVACOES = "comprovacoes/";
+export const R2_KEY_PREFIX_CERTIDOES = "certidoes/";
 export const R2_KEY_PREFIX_ORDENS_COMPRA = "ordens-compra/";
 export const R2_KEY_PREFIX_AVATARS = "avatars/";
 export const R2_KEY_PREFIX_WHATSAPP_INTEGRATION = "whatsapp-integration/";
 
 const APP_OBJECT_PREFIXES = [
   R2_KEY_PREFIX_COMPROVACOES,
+  R2_KEY_PREFIX_CERTIDOES,
   R2_KEY_PREFIX_ORDENS_COMPRA,
   R2_KEY_PREFIX_AVATARS,
   R2_KEY_PREFIX_WHATSAPP_INTEGRATION,
@@ -32,6 +34,10 @@ export function isR2AppObjectKey(key: string): boolean {
 
 export function buildComprovacaoObjectKey(fileId: string, ext: string): string {
   return `${R2_KEY_PREFIX_COMPROVACOES}${fileId}${ext}`;
+}
+
+export function buildCertidaoObjectKey(fileId: string, ext: string): string {
+  return `${R2_KEY_PREFIX_CERTIDOES}${fileId}${ext}`;
 }
 
 /** PDF enviado pela agência: ordens-compra/{ordemId}/agencia/{fileId}.ext */

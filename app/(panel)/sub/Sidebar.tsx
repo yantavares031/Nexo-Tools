@@ -15,14 +15,16 @@ import {
   FileCheck,
   FileSignature,
   ScrollText,
+  ShieldCheck,
 } from "lucide-react";
 import type { UserRole } from "@/types/globals";
-import { canAccessRoute } from "@/lib/roles";
+import { canAccessRoute, MENU_ITEMS_BY_ROLE } from "@/lib/roles";
 
 const ALL_MENU_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/", label: "Demandas", icon: Workflow },
   { href: "/comprovacoes", label: "Comprovações", icon: FileCheck },
+  { href: "/certidoes", label: "Certidões", icon: ShieldCheck },
   { href: "/ordens-compra", label: "Ordens de compra", icon: FileSignature },
   { href: "/agencias", label: "Agências", icon: Megaphone },
   { href: "/solicitantes", label: "Solicitantes", icon: UserPlus },
@@ -46,17 +48,27 @@ interface SidebarProps {
   role?: UserRole | null;
 }
 
+function isMenuHrefAllowedForRole(role: UserRole, href: string): boolean {
+  const allowed = MENU_ITEMS_BY_ROLE[role];
+  return allowed.some((path) => path === href || path.startsWith(`${href}/`));
+}
+
 export function Sidebar({ role = "operator" }: SidebarProps) {
   const pathname = usePathname();
+  const roleKey = role ?? "operator";
+
+  const mainMenuItems = ALL_MENU_ITEMS.filter((item) =>
+    isMenuHrefAllowedForRole(roleKey, item.href)
+  );
 
   const navItems =
-    role === "admin"
-      ? [...ALL_MENU_ITEMS, PERFIL_MENU_ITEM, ...ADMIN_MENU_ITEMS]
-      : [...ALL_MENU_ITEMS, PERFIL_MENU_ITEM];
+    roleKey === "admin"
+      ? [...mainMenuItems, PERFIL_MENU_ITEM, ...ADMIN_MENU_ITEMS]
+      : [...mainMenuItems, PERFIL_MENU_ITEM];
 
   return (
     <aside className="flex w-56 flex-col border-r border-slate-200 bg-white">
-      <nav className="flex flex-col gap-0.5 p-3">
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
         {navItems.map(({ href, label, icon: Icon }) => {
           const hasAccess = canAccessRoute(role ?? "operator", href);
           const isActive =

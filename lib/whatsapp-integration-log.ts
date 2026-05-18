@@ -8,7 +8,7 @@ export type WhatsAppNotifySkipReason =
   | "no_recipients_configured"
   | "recipients_invalid_phone";
 
-export type WhatsAppNotifyContext = "oc_enviada" | "oc_assinada" | "comprovacao";
+export type WhatsAppNotifyContext = "oc_enviada" | "oc_assinada" | "comprovacao" | "certidao";
 
 export function logWhatsAppNotifySkipped(params: {
   reason: WhatsAppNotifySkipReason;

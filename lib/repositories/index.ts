@@ -9,6 +9,7 @@ export {
   getSolicitanteRepository,
   getAgenciaRepository,
   getDemandaComprovacaoRepository,
+  getCertidaoRepository,
   getOrdemCompraRepository,
   getDemandaCentroCustoRepository,
   getCentroCustoRepository,

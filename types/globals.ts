@@ -117,6 +117,23 @@ export interface Comprovacao {
 /** Dados para criar uma comprovação (sem id e createdAt). */
 export type ComprovacaoInput = Omit<Comprovacao, "id" | "createdAt">;
 
+/** Certidão (anexo independente de demanda, vinculada à agência quando enviada por usuário agency). */
+export interface Certidao {
+  id: string;
+  nomeArquivo: string;
+  tipoArquivo: string;
+  tamanho: number;
+  caminhoArquivo: string;
+  descricao?: string;
+  autor: string;
+  cadastradoPorUserId?: string | null;
+  agenciaId?: string | null;
+  createdAt: string;
+}
+
+/** Dados para criar uma certidão (sem id e createdAt). */
+export type CertidaoInput = Omit<Certidao, "id" | "createdAt">;
+
 /** @deprecated Use Comprovacao. Mantido para compatibilidade no modal. */
 export interface DemandaComprovacao extends Comprovacao {
   demandaId: string;

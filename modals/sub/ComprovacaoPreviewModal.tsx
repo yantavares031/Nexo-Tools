@@ -10,8 +10,8 @@ interface ComprovacaoPreviewModalProps {
   tipoArquivo: string;
   open: boolean;
   onClose: () => void;
-  /** Padrão: comprovações. Use "ordens-compra" para documento de OC. */
-  apiResource?: "comprovacoes" | "ordens-compra";
+  /** Padrão: comprovações. Use "ordens-compra" para documento de OC ou "certidoes". */
+  apiResource?: "comprovacoes" | "ordens-compra" | "certidoes";
   /** Para OC: qual versão do PDF abrir na API (`?versao=assinada`). */
   previewVersao?: "original" | "assinada";
 }

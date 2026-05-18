@@ -10,6 +10,7 @@ import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { ISolicitanteRepository } from "@/lib/domain/solicitante.repository";
 import type { IAgenciaRepository } from "@/lib/domain/agencia.repository";
 import type { IDemandaComprovacaoRepository } from "@/lib/domain/demanda-comprovacao.repository";
+import type { ICertidaoRepository } from "@/lib/domain/certidao.repository";
 import type { IDemandaCentroCustoRepository } from "@/lib/domain/demanda-centro-custo.repository";
 import type { ICentroCustoRepository } from "@/lib/domain/centro-custo.repository";
 import type { IDemandaMensagemRepository } from "@/lib/domain/demanda-mensagem.repository";
@@ -25,6 +26,7 @@ import { DemandaSqliteRepository } from "./sqlite/demanda-sqlite.repository";
 import { SolicitanteSqliteRepository } from "./sqlite/solicitante-sqlite.repository";
 import { AgenciaSqliteRepository } from "./sqlite/agencia-sqlite.repository";
 import { DemandaComprovacaoSqliteRepository } from "./sqlite/demanda-comprovacao-sqlite.repository";
+import { CertidaoSqliteRepository } from "./sqlite/certidao-sqlite.repository";
 import { DemandaCentroCustoSqliteRepository } from "./sqlite/demanda-centro-custo-sqlite.repository";
 import { CentroCustoSqliteRepository } from "./sqlite/centro-custo-sqlite.repository";
 import { DemandaMensagemSqliteRepository } from "./sqlite/demanda-mensagem-sqlite.repository";
@@ -40,6 +42,7 @@ import { DemandaPostgresRepository } from "./postgres/demanda-postgres.repositor
 import { SolicitantePostgresRepository } from "./postgres/solicitante-postgres.repository";
 import { AgenciaPostgresRepository } from "./postgres/agencia-postgres.repository";
 import { DemandaComprovacaoPostgresRepository } from "./postgres/demanda-comprovacao-postgres.repository";
+import { CertidaoPostgresRepository } from "./postgres/certidao-postgres.repository";
 import { DemandaCentroCustoPostgresRepository } from "./postgres/demanda-centro-custo-postgres.repository";
 import { CentroCustoPostgresRepository } from "./postgres/centro-custo-postgres.repository";
 import { DemandaMensagemPostgresRepository } from "./postgres/demanda-mensagem-postgres.repository";
@@ -74,6 +77,10 @@ export function getDemandaComprovacaoRepository(): IDemandaComprovacaoRepository
   return pg
     ? new DemandaComprovacaoPostgresRepository()
     : new DemandaComprovacaoSqliteRepository();
+}
+
+export function getCertidaoRepository(): ICertidaoRepository {
+  return pg ? new CertidaoPostgresRepository() : new CertidaoSqliteRepository();
 }
 
 export function getDemandaCentroCustoRepository(): IDemandaCentroCustoRepository {

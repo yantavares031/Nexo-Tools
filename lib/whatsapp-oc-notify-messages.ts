@@ -164,3 +164,42 @@ export function buildWhatsAppComprovacaoMessage(params: {
 
   return `${parts.join("\n")}${blocoRodapeAviso()}`;
 }
+
+/** Certidão — sem vínculo com demanda; campos: arquivo(s), descrição, enviado por. */
+export function buildWhatsAppCertidaoMessage(params: {
+  nomesArquivos: string[];
+  enviadoPorUsuario: string;
+  descricao?: string;
+}): string {
+  const files = params.nomesArquivos.map((n) => escapeWhatsAppBoldSegment(n)).filter(Boolean);
+  const fileLine =
+    files.length === 0
+      ? "—"
+      : files.length <= 4
+        ? files.join(", ")
+        : `${files.slice(0, 3).join(", ")} (+${files.length - 3})`;
+
+  const descTrim = params.descricao?.trim();
+  const descBody =
+    descTrim && descTrim.length > 0
+      ? truncateWhatsAppDescription(escapeWhatsAppDescription(descTrim))
+      : null;
+
+  const enviado = params.enviadoPorUsuario.trim() || "—";
+
+  const parts: string[] = [
+    "📜 *Nexo • Nova certidão*",
+    "",
+    SEP,
+    `📎 *Arquivo(s):* ${wrapMonospace(fileLine)}`,
+    "",
+  ];
+
+  if (descBody) {
+    parts.push("📝 *Descrição*", descBody, "");
+  }
+
+  parts.push("🏢 *Enviado por*", italicWrap(enviado));
+
+  return `${parts.join("\n")}${blocoRodapeAviso()}`;
+}

@@ -75,6 +75,22 @@ CREATE TABLE IF NOT EXISTS comprovacao_demandas (
 CREATE INDEX IF NOT EXISTS idx_comprovacao_demandas_comprovacao ON comprovacao_demandas (comprovacao_id);
 CREATE INDEX IF NOT EXISTS idx_comprovacao_demandas_demanda ON comprovacao_demandas (demanda_id);
 
+CREATE TABLE IF NOT EXISTS certidoes (
+  id TEXT PRIMARY KEY,
+  "nomeArquivo" TEXT NOT NULL,
+  "tipoArquivo" TEXT NOT NULL,
+  tamanho INTEGER NOT NULL,
+  "caminhoArquivo" TEXT NOT NULL,
+  descricao TEXT,
+  autor TEXT NOT NULL,
+  "cadastradoPorUserId" TEXT REFERENCES users(id) ON DELETE SET NULL,
+  "agenciaId" TEXT REFERENCES agencias(id) ON DELETE SET NULL,
+  "createdAt" TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_certidoes_agenciaId ON certidoes ("agenciaId");
+CREATE INDEX IF NOT EXISTS idx_certidoes_createdAt ON certidoes ("createdAt");
+
 CREATE TABLE IF NOT EXISTS demanda_comprovacoes (
   id TEXT PRIMARY KEY,
   "demandaId" TEXT NOT NULL REFERENCES demandas(id) ON DELETE CASCADE,
