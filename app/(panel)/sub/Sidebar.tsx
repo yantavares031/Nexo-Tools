@@ -21,7 +21,6 @@ import type { UserRole } from "@/types/globals";
 import { canAccessRoute, MENU_ITEMS_BY_ROLE } from "@/lib/roles";
 
 const ALL_MENU_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/", label: "Demandas", icon: Workflow },
   { href: "/comprovacoes", label: "Comprovações", icon: FileCheck },
   { href: "/certidoes", label: "Certidões", icon: ShieldCheck },
@@ -32,6 +31,12 @@ const ALL_MENU_ITEMS = [
   { href: "/usuarios", label: "Usuários", icon: Users },
   { href: "/integracoes", label: "Integrações", icon: Plug },
 ] as const;
+
+const DASHBOARD_MENU_ITEM = {
+  href: "/dashboard",
+  label: "Dashboard",
+  icon: LayoutDashboard,
+} as const;
 
 const ADMIN_MENU_ITEMS = [
   { href: "/admin/logs", label: "Logs do sistema", icon: ScrollText },
@@ -61,10 +66,21 @@ export function Sidebar({ role = "operator" }: SidebarProps) {
     isMenuHrefAllowedForRole(roleKey, item.href)
   );
 
+  const showDashboard = isMenuHrefAllowedForRole(roleKey, DASHBOARD_MENU_ITEM.href);
+
   const navItems =
     roleKey === "admin"
-      ? [...mainMenuItems, PERFIL_MENU_ITEM, ...ADMIN_MENU_ITEMS]
-      : [...mainMenuItems, PERFIL_MENU_ITEM];
+      ? [
+          ...mainMenuItems,
+          ...(showDashboard ? [DASHBOARD_MENU_ITEM] : []),
+          PERFIL_MENU_ITEM,
+          ...ADMIN_MENU_ITEMS,
+        ]
+      : [
+          ...mainMenuItems,
+          ...(showDashboard ? [DASHBOARD_MENU_ITEM] : []),
+          PERFIL_MENU_ITEM,
+        ];
 
   return (
     <aside className="flex w-56 flex-col border-r border-slate-200 bg-white">
