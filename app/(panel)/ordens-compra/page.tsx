@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import Link from "next/link";
 import { CircleDot, Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -20,7 +21,7 @@ export default async function OrdensCompraPage({
   searchParams: Promise<{ page?: string; q?: string; tab?: string }>;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (!canAccessOrdensCompra(session.role)) redirect("/");
 
   const { page: pageParam, q, tab: tabRaw } = await searchParams;

@@ -1,10 +1,6 @@
 import type { UserRole } from "@/types/globals";
 
-export const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Admin",
-  operator: "Operador",
-  agency: "Agência",
-};
+export { ROLE_LABELS } from "@/lib/roles";
 
 export const ROLE_FILTER_VALUES = ["admin", "operator", "agency"] as const satisfies readonly UserRole[];
 

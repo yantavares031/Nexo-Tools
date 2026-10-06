@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -25,7 +26,7 @@ export default async function CertidoesPage({
   searchParams: Promise<{ page?: string; q?: string; mes?: string; agenciaId?: string }>;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
 
   const { page: pageParam, q, mes, agenciaId: agenciaIdParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);

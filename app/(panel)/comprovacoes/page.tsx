@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -29,7 +30,7 @@ export default async function ComprovacoesPage({
   searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
 
   const { page: pageParam, q } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);

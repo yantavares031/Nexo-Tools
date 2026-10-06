@@ -22,5 +22,6 @@ export {
   getDemandaHistoricoRepository,
   getPendingReminderConfigRepository,
   getCapacityAlertRepository,
+  getSessionRevocationRepository,
 } from "@/lib/infra/repositories";
 export { getWebhookSender } from "@/lib/infra/webhook-sender";

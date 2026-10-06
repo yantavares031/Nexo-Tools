@@ -141,6 +141,12 @@ CREATE TABLE IF NOT EXISTS capacity_alert_sent (
   FOREIGN KEY (agencia_id) REFERENCES agencias(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS user_session_revocations (
+  user_id TEXT PRIMARY KEY,
+  revoked_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS deskfy_import_boards (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE

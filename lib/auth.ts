@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import type { User, UserRole } from "@/types/globals";
+import { getCachedSessionRevocationRepository } from "@/lib/infra/cached-session-revocation.repository";
+import { COOKIE_NAME, readSessionValue, signSessionValue } from "@/lib/session-cookie";
 
-export const COOKIE_NAME = "nexo_session";
+export { COOKIE_NAME };
 
 const SECONDS_PER_DAY = 60 * 60 * 24;
 /** Padrão: 30 dias (cookie de sessão, não JWT). */
@@ -50,7 +52,7 @@ type SessionPayload = SessionUser & { at: number };
 export async function createSession(user: SessionUser): Promise<void> {
   const cookieStore = await cookies();
   const payload: SessionPayload = { ...user, at: Date.now() };
-  cookieStore.set(COOKIE_NAME, JSON.stringify(payload), {
+  cookieStore.set(COOKIE_NAME, signSessionValue(payload), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -64,51 +66,26 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function getSession(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const session = cookieStore.get(COOKIE_NAME);
-  if (!session?.value) return null;
-  try {
-    const { userId, email, name, role, agenciaId, mustChangePassword, avatarKey } = JSON.parse(
-      session.value
-    ) as SessionPayload & { userId?: string; mustChangePassword?: boolean; avatarKey?: string | null };
-    if (!email) return null;
-    return {
-      userId: userId ?? "",
-      email,
-      name: name ?? email,
-      role: role ?? "operator",
-      agenciaId,
-      mustChangePassword: Boolean(mustChangePassword),
-      avatarKey: avatarKey ?? undefined,
-    };
-  } catch {
-    return null;
-  }
+async function isSessionRevoked(userId: string, issuedAt: number | undefined): Promise<boolean> {
+  const revokedAt = await getCachedSessionRevocationRepository().getRevokedAt(userId);
+  return revokedAt != null && (issuedAt ?? 0) <= revokedAt;
 }
 
-export function getSessionFromCookie(
-  cookieHeader: string | undefined
-): SessionUser | null {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
-  if (!match) return null;
-  try {
-    const decoded = decodeURIComponent(match[1]);
-    const { userId, email, name, role, agenciaId, mustChangePassword, avatarKey } = JSON.parse(
-      decoded
-    ) as SessionPayload & { userId?: string; mustChangePassword?: boolean; avatarKey?: string | null };
-    if (!email) return null;
-    return {
-      userId: userId ?? "",
-      email,
-      name: name ?? email,
-      role: role ?? "operator",
-      agenciaId,
-      mustChangePassword: Boolean(mustChangePassword),
-      avatarKey: avatarKey ?? undefined,
-    };
-  } catch {
-    return null;
-  }
+export async function getSession(): Promise<SessionUser | null> {
+  const cookieStore = await cookies();
+  const payload = readSessionValue(cookieStore.get(COOKIE_NAME)?.value) as
+    | (Partial<SessionPayload> & { avatarKey?: string | null })
+    | null;
+  if (!payload?.email) return null;
+  const { userId, email, name, role, agenciaId, mustChangePassword, avatarKey, at } = payload;
+  if (userId && (await isSessionRevoked(userId, at))) return null;
+  return {
+    userId: userId ?? "",
+    email,
+    name: name ?? email,
+    role: role ?? "operator",
+    agenciaId,
+    mustChangePassword: Boolean(mustChangePassword),
+    avatarKey: avatarKey ?? undefined,
+  };
 }

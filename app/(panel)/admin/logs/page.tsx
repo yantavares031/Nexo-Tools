@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import { PageHeader } from "@/components/layout/page-header";
 import { getSession } from "@/lib/auth";
 import { getAppLogsPageUseCase } from "@/lib/use-cases/get-app-logs-page.use-case";
@@ -10,7 +11,7 @@ export default async function AdminLogsPage({
   searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "admin") redirect("/");
 
   const sp = await searchParams;

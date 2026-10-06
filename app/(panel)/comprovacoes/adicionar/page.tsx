@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import { getSession } from "@/lib/auth";
 import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
 import { getDemandaRepository } from "@/lib/repositories";
@@ -33,7 +34,7 @@ export default async function AddComprovacaoPage({
   searchParams: Promise<{ mes?: string; q?: string }>;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
 
   const { mes: mesParam, q } = await searchParams;
   const mesDefault = getDefaultMes();

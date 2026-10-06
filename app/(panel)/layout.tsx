@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
+import { RealtimeListener } from "@/components/realtime/realtime-listener";
 import { logoutAction } from "@/app/actions/auth";
 import { globalSearchAction } from "@/app/actions/search";
 import { ToasterProvider } from "@/components/ToasterProvider";
@@ -16,7 +18,7 @@ export default async function PanelLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.mustChangePassword) redirect("/primeiro-acesso");
 
   const avatarUrl = session.avatarKey
@@ -47,6 +49,7 @@ export default async function PanelLayout({
         </div>
       </div>
       <ToasterProvider />
+      <RealtimeListener />
       <WelcomeReleaseModal userId={session.userId} userName={session.name} role={session.role ?? "operator"} />
     </div>
   );

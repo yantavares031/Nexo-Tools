@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import { PageHeader } from "@/components/layout/page-header";
 import { getSession } from "@/lib/auth";
 import { getUserRepository } from "@/lib/repositories";
@@ -6,10 +7,10 @@ import { ProfilePanel } from "./sub/ProfilePanel";
 
 export default async function PerfilPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
 
   const user = await getUserRepository().findById(session.userId);
-  if (!user) redirect("/login");
+  if (!user) redirect(SESSION_ENDED_LOGIN_PATH);
 
   return (
     <div className="w-full">

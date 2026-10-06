@@ -540,6 +540,31 @@ export type DeskfyTaskDetailsBriefing = {
   publicUrls?: Record<string, string[]>;
 } & Record<string, unknown>;
 
+/** Aba conectada ao canal de eventos em tempo real (SSE). */
+export interface RealtimeConnection {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  role: UserRole;
+  ip: string | null;
+  userAgent: string | null;
+  connectedAt: string;
+}
+
+export type RealtimeNoticeVariant = "info" | "success" | "warning";
+
+export interface RealtimeNotice {
+  title: string;
+  message: string;
+  variant: RealtimeNoticeVariant;
+}
+
+export type RealtimeNoticeTarget =
+  | { type: "all" }
+  | { type: "role"; role: UserRole }
+  | { type: "user"; userId: string };
+
 export interface DeskfyTaskDetailsResponse {
   solicitacao?: Record<string, unknown>;
   responsaveis?: string | null;

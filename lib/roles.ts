@@ -1,5 +1,11 @@
 import type { UserRole } from "@/types/globals";
 
+export const ROLE_LABELS: Record<UserRole, string> = {
+  admin: "Admin",
+  operator: "Operador",
+  agency: "Agência",
+};
+
 /** Rotas que operator não pode acessar (exclusivas de admin). */
 const FORBIDDEN_FOR_OPERATOR = [
   "/agencias",
@@ -49,6 +55,7 @@ export const MENU_ITEMS_BY_ROLE: Record<UserRole, string[]> = {
     "/centros-custo",
     "/integracoes",
     "/perfil",
+    "/admin/conexoes",
     "/admin/logs",
   ],
   operator: ["/dashboard", "/", "/comprovacoes", "/certidoes", "/solicitantes", "/centros-custo", "/perfil"],

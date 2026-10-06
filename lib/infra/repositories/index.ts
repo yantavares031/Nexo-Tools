@@ -23,6 +23,7 @@ import type { IWhatsAppIntegrationRepository } from "@/lib/domain/whatsapp-integ
 import type { IDemandaHistoricoRepository } from "@/lib/domain/demanda-historico.repository";
 import type { IPendingReminderConfigRepository } from "@/lib/domain/pending-reminder-config.repository";
 import type { ICapacityAlertRepository } from "@/lib/domain/capacity-alert.repository";
+import type { ISessionRevocationRepository } from "@/lib/domain/session-revocation.repository";
 
 import { UserSqliteRepository } from "./sqlite/user-sqlite.repository";
 import { DemandaSqliteRepository } from "./sqlite/demanda-sqlite.repository";
@@ -42,6 +43,7 @@ import { WhatsAppIntegrationSqliteRepository } from "./sqlite/whatsapp-integrati
 import { DemandaHistoricoSqliteRepository } from "./sqlite/demanda-historico-sqlite.repository";
 import { PendingReminderConfigSqliteRepository } from "./sqlite/pending-reminder-config-sqlite.repository";
 import { CapacityAlertSqliteRepository } from "./sqlite/capacity-alert-sqlite.repository";
+import { SessionRevocationSqliteRepository } from "./sqlite/session-revocation-sqlite.repository";
 
 import { UserPostgresRepository } from "./postgres/user-postgres.repository";
 import { DemandaPostgresRepository } from "./postgres/demanda-postgres.repository";
@@ -61,6 +63,7 @@ import { WhatsAppIntegrationPostgresRepository } from "./postgres/whatsapp-integ
 import { DemandaHistoricoPostgresRepository } from "./postgres/demanda-historico-postgres.repository";
 import { PendingReminderConfigPostgresRepository } from "./postgres/pending-reminder-config-postgres.repository";
 import { CapacityAlertPostgresRepository } from "./postgres/capacity-alert-postgres.repository";
+import { SessionRevocationPostgresRepository } from "./postgres/session-revocation-postgres.repository";
 
 export { PrepareRepository } from "./prepare.repository";
 
@@ -150,4 +153,8 @@ export function getPendingReminderConfigRepository(): IPendingReminderConfigRepo
 
 export function getCapacityAlertRepository(): ICapacityAlertRepository {
   return pg ? new CapacityAlertPostgresRepository() : new CapacityAlertSqliteRepository();
+}
+
+export function getSessionRevocationRepository(): ISessionRevocationRepository {
+  return pg ? new SessionRevocationPostgresRepository() : new SessionRevocationSqliteRepository();
 }

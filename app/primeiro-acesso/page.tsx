@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import { APP_CONFIG } from "@/config/app";
 import { getSession } from "@/lib/auth";
 import { PrimeiroAcessoForm } from "./sub/PrimeiroAcessoForm";
@@ -7,7 +8,7 @@ import { ToasterProvider } from "@/components/ToasterProvider";
 export default async function PrimeiroAcessoPage() {
   const session = await getSession();
   if (!session) {
-    redirect("/login");
+    redirect(SESSION_ENDED_LOGIN_PATH);
   }
   if (!session.mustChangePassword) {
     redirect(APP_CONFIG.homeHref);

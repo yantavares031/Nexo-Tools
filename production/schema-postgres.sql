@@ -161,6 +161,11 @@ CREATE TABLE IF NOT EXISTS capacity_alert_sent (
   UNIQUE (agencia_id, year, threshold)
 );
 
+CREATE TABLE IF NOT EXISTS user_session_revocations (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  revoked_at BIGINT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS deskfy_import_boards (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE

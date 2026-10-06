@@ -552,6 +552,11 @@ export function initDb(database: Database.Database): void {
         UNIQUE (agencia_id, year, threshold),
         FOREIGN KEY (agencia_id) REFERENCES agencias(id) ON DELETE CASCADE
       );
+      CREATE TABLE IF NOT EXISTS user_session_revocations (
+        user_id TEXT PRIMARY KEY,
+        revoked_at INTEGER NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
     `);
   } catch {
     // ignora

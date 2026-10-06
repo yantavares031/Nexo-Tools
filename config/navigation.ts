@@ -8,6 +8,7 @@ import {
   List,
   Megaphone,
   Plug,
+  RadioTower,
   ScrollText,
   ShieldCheck,
   Tag,
@@ -91,6 +92,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Usuários", href: "/usuarios", icon: Users, enabled: true },
       { label: "Integrações", href: "/integracoes", icon: Plug, enabled: true },
+      { label: "Conexões ativas", href: "/admin/conexoes", icon: RadioTower, enabled: true },
       { label: "Logs do sistema", href: "/admin/logs", icon: ScrollText, enabled: true },
     ],
   },

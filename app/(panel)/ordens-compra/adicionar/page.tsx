@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/session-cookie";
 import { getSession } from "@/lib/auth";
 import { canAccessOrdensCompra } from "@/lib/roles";
 import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
@@ -34,7 +35,7 @@ export default async function AdicionarOrdemCompraPage({
   searchParams: Promise<{ mes?: string; q?: string }>;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (!canAccessOrdensCompra(session.role)) redirect("/");
   if (session.role !== "agency") redirect("/ordens-compra");
 

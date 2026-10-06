@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { APP_CONFIG } from "@/config/app";
-import { COOKIE_NAME } from "./lib/auth";
+import { COOKIE_NAME, readSessionValue } from "./lib/session-cookie";
 import type { UserRole } from "./types/globals";
 
 type ParsedSession = {
@@ -13,27 +13,15 @@ type ParsedSession = {
 };
 
 function parseSession(cookieValue: string | undefined): ParsedSession | null {
-  if (!cookieValue) return null;
-  try {
-    const decoded = decodeURIComponent(cookieValue);
-    const { email, name, role, agenciaId, mustChangePassword } = JSON.parse(decoded) as {
-      email?: string;
-      name?: string;
-      role?: UserRole;
-      agenciaId?: string;
-      mustChangePassword?: boolean;
-    };
-    if (!email) return null;
-    return {
-      email,
-      name: name ?? email,
-      role: role ?? "operator",
-      agenciaId,
-      mustChangePassword: Boolean(mustChangePassword),
-    };
-  } catch {
-    return null;
-  }
+  const payload = readSessionValue(cookieValue) as Partial<ParsedSession> | null;
+  if (!payload?.email) return null;
+  return {
+    email: payload.email,
+    name: payload.name ?? payload.email,
+    role: payload.role ?? "operator",
+    agenciaId: payload.agenciaId,
+    mustChangePassword: Boolean(payload.mustChangePassword),
+  };
 }
 
 export function proxy(request: NextRequest) {
@@ -44,6 +32,12 @@ export function proxy(request: NextRequest) {
   // Recuperação de senha funciona com ou sem sessão (o link chega por e-mail).
   if (pathname.startsWith("/login/esqueci-senha") || pathname.startsWith("/login/redefinir-senha")) {
     return NextResponse.next();
+  }
+
+  if (pathname === "/login" && request.nextUrl.searchParams.get("session") === "ended") {
+    const response = NextResponse.next();
+    response.cookies.delete(COOKIE_NAME);
+    return response;
   }
 
   if (pathname.startsWith("/login")) {

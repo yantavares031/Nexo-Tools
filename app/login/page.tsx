@@ -15,9 +15,9 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reset?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string; session?: string }>;
 }) {
-  const { error, reset } = await searchParams;
+  const { error, reset, session } = await searchParams;
 
   return (
     <>
@@ -26,6 +26,7 @@ export default async function LoginPage({
       <form action={loginAction} className="mt-8 flex flex-col gap-5">
         {error && <Alert tone="error">{ERROR_MESSAGES[error] ?? "Erro ao fazer login."}</Alert>}
         {!error && reset && <Alert tone="success">Senha redefinida. Entre com a nova senha.</Alert>}
+        {!error && !reset && session === "ended" && <Alert tone="info">Sua sessão foi encerrada. Entre novamente.</Alert>}
 
         <div className="space-y-1.5">
           <Label htmlFor="email">E-mail</Label>
