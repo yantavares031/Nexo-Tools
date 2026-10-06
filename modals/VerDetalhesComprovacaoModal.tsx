@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { FileCheck, Download, Eye } from "lucide-react";
 import { Modal } from "@/components/Modal";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import { getComprovacaoDetalhesAction } from "@/app/actions/demanda-comprovacao";
 import type { Comprovacao } from "@/types/globals";
 import type { Demanda } from "@/types/globals";
@@ -43,6 +47,12 @@ const STATUS_LABELS: Record<string, string> = {
   faturado: "Faturado",
   comprometido: "Comprometido",
   entregue: "Entregue",
+};
+
+const STATUS_TONES: Record<string, BadgeTone> = {
+  faturado: "success",
+  comprometido: "warning",
+  entregue: "info",
 };
 
 function canPreview(tipoArquivo: string): boolean {
@@ -111,7 +121,7 @@ export function VerDetalhesComprovacaoModal({
         <Modal.Header onClose={onClose}>
           <h2
             id="modal-comprovacao-title"
-            className="flex items-center gap-2 text-lg font-semibold text-slate-800"
+            className="flex items-center gap-2 text-lg font-semibold text-neutral-950"
           >
             <FileCheck className="size-5 shrink-0" />
             Detalhes da comprovação
@@ -119,93 +129,81 @@ export function VerDetalhesComprovacaoModal({
         </Modal.Header>
         <Modal.Body className="max-h-[70vh] p-6">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
+            <div className="flex justify-center py-12 text-neutral-400">
+              <Spinner className="size-8" />
             </div>
           ) : comprovacao ? (
             <div className="space-y-6">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <h3 className="mb-3 text-sm font-semibold text-slate-800">Arquivo</h3>
+              <div className="rounded-xl border border-neutral-200 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-800">{comprovacao.nomeArquivo}</p>
-                    <p className="text-sm text-slate-500">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-neutral-950" title={comprovacao.nomeArquivo}>
+                      {comprovacao.nomeArquivo}
+                    </p>
+                    <p className="mt-0.5 text-xs tabular-nums text-neutral-500">
                       {formatFileSize(comprovacao.tamanho)} • {formatDateTime(comprovacao.createdAt)}
                     </p>
                     {comprovacao.descricao && (
-                      <p className="mt-2 text-sm text-slate-600">{comprovacao.descricao}</p>
+                      <p className="mt-2 text-[13px] text-neutral-600">{comprovacao.descricao}</p>
                     )}
-                    <p className="mt-1 text-sm text-slate-500">Autor: {comprovacao.autor}</p>
+                    <p className="mt-1 text-xs text-neutral-500">Autor: {comprovacao.autor}</p>
                   </div>
                   <div className="flex gap-2">
                     {canPreview(comprovacao.tipoArquivo) && (
-                      <button
-                        onClick={() => setPreviewOpen(true)}
-                        className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        <Eye className="size-4" />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+                        <Eye className="size-4" aria-hidden />
                         Visualizar
-                      </button>
+                      </Button>
                     )}
-                    <button
-                      onClick={handleDownload}
-                      className="flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-                    >
-                      <Download className="size-4" />
+                    <Button type="button" size="sm" onClick={handleDownload}>
+                      <Download className="size-4" aria-hidden />
                       Baixar
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-slate-800">
-                  Demandas vinculadas ({demandas.length})
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-950">
+                  Demandas vinculadas
+                  <span className="text-xs font-normal tabular-nums text-neutral-400">{demandas.length}</span>
                 </h3>
                 {demandas.length === 0 ? (
-                  <p className="text-sm text-slate-500">Nenhuma demanda vinculada.</p>
+                  <p className="py-6 text-[13px] text-neutral-500">Nenhuma demanda vinculada.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border border-slate-200">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50">
-                          <th className="px-4 py-3 font-semibold text-slate-800">Demanda</th>
-                          <th className="px-4 py-3 font-semibold text-slate-800">OC/PI</th>
-                          <th className="px-4 py-3 font-semibold text-slate-800">Status</th>
-                          <th className="px-4 py-3 font-semibold text-slate-800">Mês</th>
-                          <th className="px-4 py-3 font-semibold text-slate-800">Valor</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demandas.map((d) => (
-                          <tr key={d.id} className="border-b border-slate-100">
-                            <td className="px-4 py-3 text-slate-800">
-                              <span className="block max-w-[200px] truncate" title={d.demanda}>
-                                {d.demanda}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-mono text-slate-600">{d.ocPi || "—"}</td>
-                            <td className="px-4 py-3 text-slate-600">
-                              {STATUS_LABELS[d.status] ?? d.status}
-                            </td>
-                            <td className="px-4 py-3 text-slate-600">
-                              {formatMonthYearDisplay(d.mes)}
-                            </td>
-                            <td className="px-4 py-3 font-medium tabular-nums text-slate-800">
-                              {formatCurrency(d.valor)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>Demanda</TableHeaderCell>
+                        <TableHeaderCell>OC/PI</TableHeaderCell>
+                        <TableHeaderCell>Status</TableHeaderCell>
+                        <TableHeaderCell>Mês</TableHeaderCell>
+                        <TableHeaderCell>Valor</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {demandas.map((d) => (
+                        <TableRow key={d.id}>
+                          <TableCell className="max-w-[200px] truncate font-medium text-neutral-950" title={d.demanda}>
+                            {d.demanda}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap tabular-nums">{d.ocPi || "—"}</TableCell>
+                          <TableCell>
+                            <Badge tone={STATUS_TONES[d.status] ?? "neutral"}>{STATUS_LABELS[d.status] ?? d.status}</Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{formatMonthYearDisplay(d.mes)}</TableCell>
+                          <TableCell className="whitespace-nowrap tabular-nums text-neutral-800">
+                            {formatCurrency(d.valor)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </div>
             </div>
           ) : (
-            <p className="py-8 text-center text-sm text-slate-500">
-              Comprovação não encontrada.
-            </p>
+            <p className="py-8 text-[13px] text-neutral-500">Comprovação não encontrada.</p>
           )}
         </Modal.Body>
       </Modal>

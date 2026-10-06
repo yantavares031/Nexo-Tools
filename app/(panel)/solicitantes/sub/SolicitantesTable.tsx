@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2, Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { removeSolicitanteAction } from "@/app/actions/solicitante";
-import { useConfirm } from "@/lib/confirm-context";
+import { useConfirm } from "@/components/confirm-provider";
+import { IconButton } from "@/components/ui/icon-button";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import { EditarSolicitanteModal } from "@/modals/EditarSolicitanteModal";
 import type { Solicitante } from "@/types/globals";
 
@@ -33,64 +35,56 @@ export function SolicitantesTable({
     });
   }
 
-  if (solicitantes.length === 0) {
-    return (
-      <p className="py-12 text-center text-slate-500">
-        {emptyMessage ?? "Nenhum solicitante cadastrado."}
-      </p>
-    );
-  }
-
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[400px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 font-semibold text-slate-800">Nome</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">
-                Un. Responsável
-              </th>
-              <th className="w-20 px-2 py-3 font-semibold text-slate-800" aria-label="Ações" />
-            </tr>
-          </thead>
-          <tbody>
-            {solicitantes.map((s) => (
-              <tr
-                key={s.id}
-                className="border-b border-slate-100 transition hover:bg-slate-50/50"
-              >
-                <td className="px-4 py-3 text-slate-800">{s.nome}</td>
-                <td className="px-4 py-3 text-slate-600">
-                  {s.unResponsavel || "—"}
-                </td>
-                <td className="px-2 py-3">
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>Nome</TableHeaderCell>
+            <TableHeaderCell>Un. responsável</TableHeaderCell>
+            <TableHeaderCell className="w-24">
+              <span className="sr-only">Ações</span>
+            </TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {solicitantes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={3} className="py-12 text-neutral-500">
+                {emptyMessage ?? "Nenhum solicitante cadastrado."}
+              </TableCell>
+            </TableRow>
+          ) : (
+            solicitantes.map((solicitante) => (
+              <TableRow key={solicitante.id} className="transition-colors hover:bg-sky-50/60">
+                <TableCell className="max-w-72 truncate font-medium text-neutral-950" title={solicitante.nome}>
+                  {solicitante.nome}
+                </TableCell>
+                <TableCell>{solicitante.unResponsavel || "—"}</TableCell>
+                <TableCell>
                   <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setEditingSolicitante(s)}
-                      disabled={isPending}
-                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
+                    <IconButton
                       aria-label="Editar solicitante"
-                    >
-                      <Pencil className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(s.id)}
+                      onClick={() => setEditingSolicitante(solicitante)}
                       disabled={isPending}
-                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                      aria-label="Remover solicitante"
                     >
-                      <Trash2 className="size-4" />
-                    </button>
+                      <Pencil />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Remover solicitante"
+                      variant="danger"
+                      onClick={() => handleRemove(solicitante.id)}
+                      disabled={isPending}
+                    >
+                      <Trash2 />
+                    </IconButton>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       <EditarSolicitanteModal
         open={!!editingSolicitante}

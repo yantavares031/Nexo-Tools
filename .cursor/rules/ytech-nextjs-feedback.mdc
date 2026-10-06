@@ -1,0 +1,94 @@
+---
+description: Feedback visual ao usuário no Next.js da Ytech — loading.tsx na navegação, toasts (Sonner), loading em botões e confirmação com useConfirm
+globs: app/**/*.tsx,components/**/*.tsx,modals/**/*.tsx
+alwaysApply: false
+---
+
+# Feedback ao usuário Ytech
+
+Toda ação do usuário (criar, editar, excluir, salvar) tem feedback visual completo:
+
+1. **Loading no botão** enquanto a ação roda.
+2. **Toast de sucesso** quando der certo.
+3. **Toast de erro** quando der errado.
+
+## Loading na navegação (`loading.tsx`)
+
+Toda navegação entre páginas (menu, links) mostra feedback visual. A interface nunca fica parada sem indicação de carregamento.
+
+- Todo segmento de rota com página server que busca dados tem `loading.tsx` no mesmo nível ou em um nível acima.
+- No mínimo, um `loading.tsx` no grupo de rotas do painel (ex.: `app/(app)/loading.tsx`), cobrindo todas as páginas dele.
+- Rotas com carregamento pesado (ex.: `[id]/`, relatórios, dashboards) ganham seu próprio `loading.tsx`.
+- Visual padrão: spinner + texto "Carregando..." centralizado, ocupando a área de conteúdo (`min-h-[60vh]`).
+- O visual fica no componente reutilizável `components/page-loading.tsx`; os arquivos `loading.tsx` apenas o renderizam.
+
+```tsx
+// components/page-loading.tsx
+import { Spinner } from "@/components/ui/spinner";
+
+export function PageLoading() {
+  return (
+    <div role="status" className="flex min-h-[60vh] w-full flex-col items-center justify-center gap-4 p-6">
+      <Spinner className="size-8 text-neutral-400" />
+      <p className="text-sm text-neutral-500">Carregando...</p>
+    </div>
+  );
+}
+
+// app/(app)/loading.tsx
+import { PageLoading } from "@/components/page-loading";
+
+export default function Loading() {
+  return <PageLoading />;
+}
+```
+
+## Toasts (Sonner)
+
+- Biblioteca: `sonner`. O `<Toaster />` fica uma única vez no layout raiz (ou no layout do painel).
+- Sucesso: `toast.success("Pedido criado com sucesso.")`. Erro: `toast.error(result.error)`.
+- **Nunca** exibir erros inline (parágrafo ou div vermelha) para resultado de ações; use toast. Mensagens de validação de campo junto do input são permitidas.
+- Mensagens em pt-BR, curtas e sem detalhes técnicos.
+
+Formulários com `useActionState` usam `FormState<Field>` (`lib/form-state.ts`: `success`, `message`, `fieldErrors`, `values`) e o hook `useActionToast(state)` (`components/form/use-action-toast.ts`), que dispara `toast.success(state.success)` ou `toast.error(state.message)`. Não reescreva esse `useEffect` em cada formulário.
+
+```tsx
+"use client";
+
+const [state, formAction] = useActionState(createOrderAction, {} as FormState<OrderField>);
+useActionToast(state);
+```
+
+Ações fora de formulário (retorno `ActionResult`) chamam `toast.success`/`toast.error(result.error)` direto após o `await`.
+
+**Após `redirect`:** a action redireciona com um parâmetro (ex.: `?success=created`) e a página de destino tem uma ilha client pequena que lê o parâmetro, mostra o toast e remove o parâmetro da URL com `router.replace`.
+
+## Loading em botões
+
+- Botões de submit usam `SubmitButton` de `components/ui/submit-button.tsx` (baseado em `useFormStatus`), com `pendingLabel` (ex.: `pendingLabel="Salvando..."`): mostra spinner, troca o texto e fica desabilitado durante a ação.
+- Ações disparadas fora de formulário usam `useTransition` e o `Button` com a prop `loading={isPending}`.
+
+## Confirmação de ações (`useConfirm`)
+
+- **Nunca** usar `confirm()`, `alert()` ou `prompt()` nativos do navegador.
+- Ações destrutivas ou irreversíveis (excluir, cancelar, bloquear) sempre pedem confirmação pelo hook `useConfirm()`.
+- Estrutura: `ConfirmProvider` + `useConfirm` em `components/confirm-provider.tsx`; o visual em `modals/confirm-modal.tsx`. O provider envolve a aplicação no layout.
+
+```tsx
+"use client";
+
+const { confirm } = useConfirm();
+
+async function handleDelete() {
+  const ok = await confirm({
+    title: "Excluir pedido",
+    message: "Essa ação não pode ser desfeita.",
+    confirmLabel: "Excluir",
+    variant: "danger",
+  });
+  if (!ok) return;
+  // chama a action e mostra o toast
+}
+```
+
+Opções: `title`, `message`, `confirmLabel`, `cancelLabel`, `variant` (`"danger"` | `"default"`).

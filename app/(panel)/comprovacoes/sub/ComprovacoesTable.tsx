@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import type { ComprovacaoListItem } from "@/lib/domain/demanda-comprovacao.repository";
 import { removeComprovacaoAction } from "@/app/actions/demanda-comprovacao";
 import { toast } from "sonner";
-import { Download, Trash2, Eye } from "lucide-react";
-import { useConfirm } from "@/lib/confirm-context";
+import { Download, Eye, File, FileCode, FileImage, FileSpreadsheet, FileText, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/confirm-provider";
+import { IconButton } from "@/components/ui/icon-button";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import { ComprovacaoPreviewModal } from "@/modals/sub/ComprovacaoPreviewModal";
 import { VerDetalhesComprovacaoModal } from "@/modals/VerDetalhesComprovacaoModal";
 import { UserAvatarThumb } from "@/components/UserAvatarThumb";
@@ -34,14 +36,14 @@ function formatDateTime(dateString: string): string {
   }
 }
 
-function getFileIcon(tipoArquivo: string): string {
+function FileTypeIcon({ tipoArquivo }: { tipoArquivo: string }) {
   const ext = tipoArquivo.toLowerCase();
-  if (ext === ".pdf") return "📄";
-  if (ext === ".xml") return "📋";
-  if ([".doc", ".docx"].includes(ext)) return "📝";
-  if ([".xls", ".xlsx"].includes(ext)) return "📊";
-  if ([".jpg", ".jpeg", ".png"].includes(ext)) return "🖼️";
-  return "📎";
+  const className = "size-4 shrink-0 text-neutral-400";
+  if (ext === ".pdf" || [".doc", ".docx", ".txt"].includes(ext)) return <FileText className={className} aria-hidden />;
+  if (ext === ".xml") return <FileCode className={className} aria-hidden />;
+  if ([".xls", ".xlsx"].includes(ext)) return <FileSpreadsheet className={className} aria-hidden />;
+  if ([".jpg", ".jpeg", ".png"].includes(ext)) return <FileImage className={className} aria-hidden />;
+  return <File className={className} aria-hidden />;
 }
 
 function canPreview(tipoArquivo: string): boolean {
@@ -52,23 +54,16 @@ function canPreview(tipoArquivo: string): boolean {
 interface ComprovacoesTableProps {
   comprovacoes: ComprovacaoListItem[];
   userRole: "admin" | "operator" | "agency";
+  emptyMessage?: string;
 }
 
-export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableProps) {
+export function ComprovacoesTable({ comprovacoes, userRole, emptyMessage }: ComprovacoesTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [previewComprovacao, setPreviewComprovacao] = useState<ComprovacaoListItem | null>(null);
   const [detalhesComprovacaoId, setDetalhesComprovacaoId] = useState<string | null>(null);
   const { confirm } = useConfirm();
   const canRemove = userRole === "admin";
-
-  function handlePreview(comp: ComprovacaoListItem) {
-    setPreviewComprovacao(comp);
-  }
-
-  function handleClosePreview() {
-    setPreviewComprovacao(null);
-  }
 
   async function handleDownload(comp: ComprovacaoListItem) {
     try {
@@ -112,36 +107,37 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
     });
   }
 
-  if (comprovacoes.length === 0) {
-    return (
-      <p className="rounded-lg border border-slate-200 bg-slate-50 py-12 text-center text-sm text-slate-500">
-        Nenhuma comprovação cadastrada. Clique em &quot;Adicionar&quot; para criar uma.
-      </p>
-    );
-  }
-
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[700px] table-fixed text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 font-semibold text-slate-800">Arquivo</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Descrição</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Autor</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Demandas</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Data</th>
-              <th className="w-32 px-4 py-3 font-semibold text-slate-800">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {comprovacoes.map((comp) => (
-              <tr
+      <Table className="min-w-[760px]">
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>Arquivo</TableHeaderCell>
+            <TableHeaderCell>Descrição</TableHeaderCell>
+            <TableHeaderCell>Autor</TableHeaderCell>
+            <TableHeaderCell>Demandas</TableHeaderCell>
+            <TableHeaderCell>Data</TableHeaderCell>
+            <TableHeaderCell className="w-32">
+              <span className="sr-only">Ações</span>
+            </TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {comprovacoes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="py-12 text-neutral-500">
+                {emptyMessage ?? "Nenhuma comprovação cadastrada. Clique em “Nova comprovação” para criar uma."}
+              </TableCell>
+            </TableRow>
+          ) : (
+            comprovacoes.map((comp) => (
+              <TableRow
                 key={comp.id}
                 onClick={() => setDetalhesComprovacaoId(comp.id)}
-                className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
+                className="cursor-pointer transition-colors outline-none hover:bg-sky-50/60 focus-visible:bg-sky-50/60"
                 role="button"
                 tabIndex={0}
+                aria-label={`Ver detalhes de ${comp.nomeArquivo}`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -149,76 +145,61 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
                   }
                 }}
               >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{getFileIcon(comp.tipoArquivo)}</span>
+                <TableCell className="max-w-72">
+                  <div className="flex items-center gap-2.5">
+                    <FileTypeIcon tipoArquivo={comp.tipoArquivo} />
                     <div className="min-w-0">
-                      <p
-                        className="truncate font-medium text-slate-800"
-                        title={comp.nomeArquivo}
-                      >
+                      <p className="truncate font-medium text-neutral-950" title={comp.nomeArquivo}>
                         {comp.nomeArquivo}
                       </p>
-                      <p className="text-xs text-slate-500">{formatFileSize(comp.tamanho)}</p>
+                      <p className="mt-0.5 text-[11px] text-neutral-400 tabular-nums">
+                        {formatFileSize(comp.tamanho)}
+                      </p>
                     </div>
                   </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className="block max-w-[180px] truncate text-slate-600"
-                    title={comp.descricao}
-                  >
-                    {comp.descricao || "—"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
+                </TableCell>
+                <TableCell className="max-w-56 truncate" title={comp.descricao || undefined}>
+                  {comp.descricao || "—"}
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <UserAvatarThumb userId={comp.cadastradoPorUserId} label={comp.autor} />
-                    <span>{comp.autor}</span>
+                    <span className="truncate">{comp.autor}</span>
                   </div>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {comp.demandaCount} {comp.demandaCount === 1 ? "demanda" : "demandas"}
-                </td>
-                <td className="px-4 py-3 text-slate-600">{formatDateTime(comp.createdAt)}</td>
-                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                </TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <span className="text-link tabular-nums">
+                    {comp.demandaCount} {comp.demandaCount === 1 ? "demanda" : "demandas"}
+                  </span>
+                </TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{formatDateTime(comp.createdAt)}</TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1">
                     {canPreview(comp.tipoArquivo) && (
-                      <button
-                        type="button"
-                        onClick={() => handlePreview(comp)}
-                        className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
-                        title="Visualizar"
-                      >
-                        <Eye className="size-4" />
-                      </button>
+                      <IconButton aria-label="Visualizar arquivo" onClick={() => setPreviewComprovacao(comp)}>
+                        <Eye />
+                      </IconButton>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(comp)}
-                      className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
-                      title="Baixar"
-                    >
-                      <Download className="size-4" />
-                    </button>
+                    <IconButton aria-label="Baixar arquivo" onClick={() => handleDownload(comp)}>
+                      <Download />
+                    </IconButton>
                     {canRemove && (
-                      <button
-                        type="button"
+                      <IconButton
+                        aria-label="Remover comprovação"
+                        variant="danger"
                         onClick={() => handleRemove(comp)}
                         disabled={isPending}
-                        className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                        title="Remover"
                       >
-                        <Trash2 className="size-4" />
-                      </button>
+                        <Trash2 />
+                      </IconButton>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       {previewComprovacao && (
         <ComprovacaoPreviewModal
@@ -226,7 +207,7 @@ export function ComprovacoesTable({ comprovacoes, userRole }: ComprovacoesTableP
           nomeArquivo={previewComprovacao.nomeArquivo}
           tipoArquivo={previewComprovacao.tipoArquivo}
           open={!!previewComprovacao}
-          onClose={handleClosePreview}
+          onClose={() => setPreviewComprovacao(null)}
         />
       )}
 

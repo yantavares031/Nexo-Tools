@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { APP_VERSION } from "@/lib/version";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -29,11 +29,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
         {children}
         <span
-          className="fixed bottom-3 right-3 text-[10px] text-slate-400"
+          className="fixed bottom-3 right-3 text-[10px] text-neutral-400 max-lg:hidden"
           title={`NEXO Tools v${APP_VERSION}`}
         >
           v{APP_VERSION}

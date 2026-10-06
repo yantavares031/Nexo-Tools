@@ -15,6 +15,12 @@ export function formatMonthYearDisplay(mes: string): string {
   return mes;
 }
 
+/** Ano do mês de referência (aceita os mesmos formatos de `parseMonthYearToInput`); `null` se não reconhecido. */
+export function yearOfMonthYear(mes: string): number | null {
+  const normalized = parseMonthYearToInput(mes);
+  return normalized ? Number(normalized.slice(0, 4)) : null;
+}
+
 /**
  * Normaliza valor para o formato do input type="month" (YYYY-MM).
  * Aceita: YYYY-MM, MM/YYYY, DD/MM/YYYY (extrai mês/ano).

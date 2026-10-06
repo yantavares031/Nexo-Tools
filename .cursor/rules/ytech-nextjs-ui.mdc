@@ -1,0 +1,64 @@
+---
+description: Servidor primeiro, largura total, onde criar componentes (components/, sub/) e modais no Next.js da Ytech
+globs: app/**/*.tsx,components/**/*.tsx,modals/**/*.tsx
+alwaysApply: false
+---
+
+# UI Next.js Ytech
+
+## Servidor primeiro
+
+- Páginas, layouts e componentes são **Server Components** por padrão.
+- `"use client"` apenas quando houver: estado (`useState`), efeitos, event handlers (`onClick`, `onChange`) ou APIs do navegador.
+- O componente client é uma **ilha pequena**: um botão, um campo, um filtro. Nunca marque a página inteira, um layout ou uma tabela inteira como client por causa de um único botão; extraia só o botão.
+- Não crie uma página server que só renderiza um componente client gigante.
+- Busque dados no Server Component e passe para a ilha client apenas o necessário via props.
+
+```
+Page (server) → OrdersTable (server) → DeleteOrderButton (client) ← só este usa onClick
+```
+
+## Largura do conteúdo
+
+- O conteúdo das páginas **sempre ocupa toda a largura** disponível (ao lado da sidebar, quando houver).
+- Wrapper da página: `w-full` com padding (ex.: `flex w-full flex-col gap-6 p-6`).
+- **Proibido** no container principal da página: `max-w-*`, `container` ou `mx-auto` para criar uma coluna estreita centralizada.
+- Para organizar seções dentro da área larga, use `grid` ou `flex`.
+- `max-w-*` só em blocos internos pontuais (ex.: um parágrafo longo ou um formulário curto), nunca no wrapper da página.
+
+## Onde criar componentes
+
+| Uso do componente | Onde criar |
+|-------------------|------------|
+| Reutilizado em 2 ou mais rotas | `components/` |
+| Específico de uma rota | `app/<rota-mae>/sub/` |
+| Modal (qualquer um) | `modals/` |
+
+- Antes de criar um componente novo, verifique se já existe um equivalente em `components/`.
+- Se um componente de `sub/` passar a ser usado em outra rota, mova-o para `components/`.
+
+## Pasta `sub/` (componentes de uma rota)
+
+- **Uma rota mãe = um único `sub/`**, criado dentro da pasta da rota mãe.
+- Componentes das sub-rotas (dinâmicas ou não) também vão para o `sub/` da rota mãe. **Nunca** crie `sub/` dentro de `[id]/`, `novo/`, `editar/` etc.
+- Se houver muitos arquivos, organize em subpastas dentro do próprio `sub/` (ex.: `sub/tabs/`).
+
+```
+app/(app)/pedidos/
+  page.tsx                  # lista
+  sub/                      # ÚNICO sub de pedidos
+    orders-table.tsx
+    order-details.tsx       # usado em [id]/
+    new-order-form.tsx      # usado em novo/
+  [id]/
+    page.tsx                # importa de ../sub/order-details
+  novo/
+    page.tsx                # importa de ../sub/new-order-form
+```
+
+## Modais (`modals/`)
+
+- **Todo** modal do projeto fica em `modals/`, um arquivo por modal: `modals/create-order-modal.tsx`.
+- Nunca defina modal dentro de página, em `components/` ou inline em outro componente.
+- A página ou componente que abre o modal importa de `@/modals/...` e controla `open`/`onClose`.
+- Modal fecha com a tecla ESC.

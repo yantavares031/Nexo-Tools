@@ -1,40 +1,46 @@
-"use client";
-
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, FileCheck2, XCircle } from "lucide-react";
+import { integerFormat } from "@/lib/format";
 import type { DemandasComprovacoesResult } from "@/lib/use-cases/get-demandas-comprovacoes-agencia.use-case";
+import { DashboardCard } from "./DashboardCard";
 
 export function DashboardComprovacoes({ data }: { data: DemandasComprovacoesResult }) {
+  const items = [
+    {
+      label: "Comprovadas",
+      value: data.totalComprovadas,
+      description: `${data.totalComprovadas === 1 ? "demanda" : "demandas"} com comprovações anexadas`,
+      icon: <CheckCircle2 aria-hidden />,
+      tone: "bg-lime-100 text-lime-700",
+    },
+    {
+      label: "Não comprovadas",
+      value: data.totalNaoComprovadas,
+      description: `${data.totalNaoComprovadas === 1 ? "demanda" : "demandas"} sem comprovações`,
+      icon: <XCircle aria-hidden />,
+      tone: "bg-amber-50 text-amber-600",
+    },
+  ];
+
   return (
-    <section>
-      <h2 className="mb-4 text-base font-semibold text-slate-800">
-        Relatório de Comprovações
-      </h2>
-
+    <DashboardCard
+      icon={<FileCheck2 aria-hidden />}
+      title="Relatório de comprovações"
+      description="Demandas da sua agência com e sem comprovações anexadas."
+    >
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Card Comprovadas */}
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="size-5 text-emerald-600" />
-            <h3 className="text-sm font-semibold text-emerald-800">Comprovadas</h3>
+        {items.map((item) => (
+          <div key={item.label} className="rounded-lg border border-neutral-200 p-4">
+            <div className="flex items-center gap-2">
+              <span className={`rounded-md p-1.5 [&_svg]:size-3.5 ${item.tone}`}>{item.icon}</span>
+              <h3 className="text-[13px] font-medium text-neutral-700">{item.label}</h3>
+            </div>
+            <p className="mt-3 text-2xl font-semibold tabular-nums text-neutral-950">
+              {integerFormat.format(item.value)}
+            </p>
+            <p className="mt-0.5 text-xs text-neutral-500">{item.description}</p>
           </div>
-          <p className="text-2xl font-bold text-emerald-900">{data.totalComprovadas}</p>
-          <p className="text-xs text-emerald-700 mt-1">
-            {data.totalComprovadas === 1 ? "demanda" : "demandas"} com comprovações anexadas
-          </p>
-        </div>
-
-        {/* Card Não Comprovadas */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <XCircle className="size-5 text-amber-600" />
-            <h3 className="text-sm font-semibold text-amber-800">Não Comprovadas</h3>
-          </div>
-          <p className="text-2xl font-bold text-amber-900">{data.totalNaoComprovadas}</p>
-          <p className="text-xs text-amber-700 mt-1">
-            {data.totalNaoComprovadas === 1 ? "demanda" : "demandas"} sem comprovações
-          </p>
-        </div>
+        ))}
       </div>
-    </section>
+    </DashboardCard>
   );
 }

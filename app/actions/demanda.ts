@@ -12,10 +12,14 @@ import {
   getWebhookConfigRepository,
   getWebhookSender,
   getAgenciaRepository,
+  getDemandaHistoricoRepository,
 } from "@/lib/repositories";
 import { parseBrazilianCurrency } from "@/lib/currency";
 import { getSession } from "@/lib/auth";
-import type { DemandaInput } from "@/types/globals";
+import { historicoDepsFromSession } from "@/lib/infra/historico-deps";
+import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
+import { getDemandaHistoricoUseCase } from "@/lib/use-cases/get-demanda-historico.use-case";
+import type { DemandaHistorico, DemandaInput } from "@/types/globals";
 import {
   demandaFormFieldsSchema,
   formDataToDemandaRaw,
@@ -23,6 +27,8 @@ import {
 } from "@/lib/validation/schemas/demanda-form";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
+import { makeCapacityAlertsDeps } from "@/lib/infra/capacity-alerts-deps";
+import { checkCapacityAlertsUseCase } from "@/lib/use-cases/check-capacity-alerts.use-case";
 import { parseDemandaRecordId } from "@/lib/validation/schemas/common";
 
 export async function createDemandaAction(
@@ -94,6 +100,7 @@ export async function createDemandaAction(
         demandaCentroCustoRepository,
         webhookConfigRepository,
         webhookSender,
+        historico: session ? historicoDepsFromSession(session) : undefined,
       }
     );
   } catch (err) {
@@ -103,6 +110,7 @@ export async function createDemandaAction(
     } as const;
   }
 
+  await checkCapacityAlertsUseCase(makeCapacityAlertsDeps());
   revalidatePath("/");
   revalidatePath("/dashboard");
   const redirectTo = f.redirectTo.trim();
@@ -117,6 +125,10 @@ export async function updateDemandaAction(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
+  const session = await getSession();
+  if (!session) {
+    return { error: "Não autenticado." } as const;
+  }
   const idCheck = parseDemandaRecordId(id);
   if (!idCheck.ok) {
     return { error: idCheck.error } as const;
@@ -146,13 +158,18 @@ export async function updateDemandaAction(
   const demandaRepository = getDemandaRepository();
   const agenciaRepository = getAgenciaRepository();
   try {
-    await updateDemandaUseCase(idCheck.id, input, { demandaRepository, agenciaRepository });
+    await updateDemandaUseCase(idCheck.id, input, {
+      demandaRepository,
+      agenciaRepository,
+      historico: historicoDepsFromSession(session),
+    });
   } catch (err) {
     await logServerActionError("updateDemandaAction", err, { id: idCheck.id });
     return {
       error: err instanceof Error ? err.message : "Erro ao atualizar demanda.",
     } as const;
   }
+  await checkCapacityAlertsUseCase(makeCapacityAlertsDeps());
   revalidatePath("/");
   revalidatePath("/dashboard");
   redirect("/?updated=1");
@@ -174,4 +191,24 @@ export async function removeDemandaAction(id: string) {
   revalidatePath("/");
   revalidatePath("/dashboard");
   redirect("/?removed=1");
+}
+
+export async function getDemandaHistoricoAction(demandaId: string): Promise<DemandaHistorico[]> {
+  const session = await getSession();
+  if (!session) return [];
+  const idCheck = parseDemandaRecordId(demandaId);
+  if (!idCheck.ok) return [];
+
+  try {
+    const agencyScope =
+      session.role === "agency" ? ((await getAgencyDemandaScope(session)) ?? null) : null;
+    if (session.role === "agency" && !agencyScope) return [];
+    return await getDemandaHistoricoUseCase(idCheck.id, agencyScope, {
+      demandaHistoricoRepository: getDemandaHistoricoRepository(),
+      demandaRepository: getDemandaRepository(),
+    });
+  } catch (err) {
+    await logServerActionError("getDemandaHistoricoAction", err, { demandaId: idCheck.id });
+    return [];
+  }
 }

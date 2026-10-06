@@ -5,12 +5,18 @@ import type { IWebhookConfigRepository } from "@/lib/domain/webhook-config.repos
 import type { IWebhookSender } from "@/lib/domain/webhook-sender";
 import { dispatchWebhookForEventUseCase } from "./dispatch-webhook-for-event.use-case";
 import { logUseCaseInfo } from "@/lib/server-action-log";
+import {
+  formatStatusLabel,
+  recordDemandaHistoricoUseCase,
+  type HistoricoDeps,
+} from "./record-demanda-historico.use-case";
 
 type Dependencies = {
   demandaComprovacaoRepository: IDemandaComprovacaoRepository;
   demandaRepository?: IDemandaRepository;
   webhookConfigRepository?: IWebhookConfigRepository;
   webhookSender?: IWebhookSender;
+  historico?: HistoricoDeps;
 };
 
 /**
@@ -35,9 +41,22 @@ export async function addDemandaComprovacaoUseCase(
         // ignora
       }
       if (demanda) {
+        const statusAnterior = demanda.status;
         const { id: _id, createdAt: _c, updatedAt: _u, ...demandaInput } = demanda;
         await deps.demandaRepository.update(demandaId, { ...demandaInput, status: "faturado" });
         demanda = { ...demanda, status: "faturado" };
+        await recordDemandaHistoricoUseCase(
+          {
+            demandaId,
+            tipo: "comprovacao_adicionada",
+            descricao: `Comprovação "${comprovacao.nomeArquivo}" anexada`,
+            alteracoes:
+              statusAnterior === "faturado"
+                ? []
+                : [{ campo: "Status", de: formatStatusLabel(statusAnterior), para: "Faturado" }],
+          },
+          deps.historico
+        );
       }
       if (deps.webhookConfigRepository && deps.webhookSender) {
         await dispatchWebhookForEventUseCase(

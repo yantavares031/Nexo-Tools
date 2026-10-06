@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/layout/page-header";
 import { getSession } from "@/lib/auth";
 import { getAppLogsPageUseCase } from "@/lib/use-cases/get-app-logs-page.use-case";
 import { AdminLogsPanel } from "./sub/AdminLogsPanel";
@@ -24,14 +25,12 @@ export default async function AdminLogsPage({
   });
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <h1 className="text-xl font-semibold text-slate-800">Logs do sistema</h1>
-        <p className="text-sm text-slate-600">
-          Logs estruturados (Pino). A tabela mostra data, nível, mensagem e detalhes em formato
-          chave/valor (ação, usuário, IP, etc.). Paginação e filtro valem para o trecho lido do
-          arquivo (até 32 MB a partir do final, se o arquivo for maior).
-        </p>
+    <div className="w-full">
+      <div className="space-y-6">
+        <PageHeader
+          title="Logs do sistema"
+          description="Logs estruturados (Pino), mais recentes primeiro. Busca e paginação valem para o trecho lido do arquivo (até 32 MB a partir do final)."
+        />
         <AdminLogsPanel data={data} searchQuery={q} />
       </div>
     </div>

@@ -1,40 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { UserPublic } from "@/types/globals";
-import type { Agencia } from "@/types/globals";
-import { VerDetalhesUsuarioModal } from "@/modals/VerDetalhesUsuarioModal";
 import { UserAvatarThumb } from "@/components/UserAvatarThumb";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
+import { VerDetalhesUsuarioModal } from "@/modals/VerDetalhesUsuarioModal";
+import type { Agencia, UserPublic, UserRole } from "@/types/globals";
+import { ROLE_LABELS } from "./user-roles";
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  operator: "Operador",
-  agency: "Agência",
+const ROLE_TONES: Record<UserRole, BadgeTone> = {
+  admin: "dark",
+  operator: "neutral",
+  agency: "info",
 };
 
-function getRoleBadgeClass(role: UserPublic["role"]): string {
-  const base = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium";
-  switch (role) {
-    case "admin":
-      return `${base} bg-blue-100 text-blue-800`;
-    case "agency":
-      return `${base} bg-slate-100 text-slate-700`;
-    default:
-      return `${base} bg-emerald-100 text-emerald-800`;
-  }
-}
-
-function getAcessoBadgeClass(acesso: boolean): string {
-  const base = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium";
-  return acesso
-    ? `${base} bg-emerald-100 text-emerald-800`
-    : `${base} bg-red-100 text-red-800`;
-}
-
-function getAgenciaName(agencias: Agencia[], agenciaId?: string): string {
-  if (!agenciaId) return "—";
-  const a = agencias.find((ag) => ag.id === agenciaId);
-  return a?.nomeFantasia ?? agenciaId;
+function getAgenciaName(agencias: Agencia[], agenciaId?: string): string | undefined {
+  if (!agenciaId) return undefined;
+  return agencias.find((agencia) => agencia.id === agenciaId)?.nomeFantasia ?? agenciaId;
 }
 
 interface UsuariosTableProps {
@@ -43,85 +25,75 @@ interface UsuariosTableProps {
   emptyMessage?: string;
 }
 
-export function UsuariosTable({
-  users,
-  agencias,
-  emptyMessage,
-}: UsuariosTableProps) {
+export function UsuariosTable({ users, agencias, emptyMessage }: UsuariosTableProps) {
   const [selectedUser, setSelectedUser] = useState<UserPublic | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  function handleRowClick(u: UserPublic) {
-    setSelectedUser(u);
+  function openDetails(user: UserPublic) {
+    setSelectedUser(user);
     setModalOpen(true);
-  }
-
-  if (users.length === 0) {
-    return (
-      <p className="py-12 text-center text-slate-500">
-        {emptyMessage ?? "Nenhum usuário cadastrado."}
-      </p>
-    );
   }
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[500px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 font-semibold text-slate-600 text-left">Nome</th>
-              <th className="px-4 py-3 font-semibold text-slate-600 text-left">E-mail</th>
-              <th className="px-4 py-3 font-semibold text-slate-600 text-left">Perfil</th>
-              <th className="px-4 py-3 font-semibold text-slate-600 text-left">Agência</th>
-              <th className="px-4 py-3 font-semibold text-slate-600 text-left">Acesso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr
-                key={u.id}
-                onClick={() => handleRowClick(u)}
-                className="cursor-pointer border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleRowClick(u);
-                  }
-                }}
-              >
-                <td className="px-4 py-3 text-slate-800">
-                  <div className="flex items-center gap-2">
-                    <UserAvatarThumb
-                      userId={u.id}
-                      label={u.name?.trim() ? u.name : u.email}
-                    />
-                    <span>{u.name ?? "—"}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                <td className="px-4 py-3 text-left">
-                  <span className={getRoleBadgeClass(u.role)}>
-                    {ROLE_LABELS[u.role] ?? u.role}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {u.role === "agency"
-                    ? getAgenciaName(agencias, u.agenciaId)
-                    : "—"}
-                </td>
-                <td className="px-4 py-3 text-left">
-                  <span className={getAcessoBadgeClass(u.acesso !== false)}>
-                    {u.acesso !== false ? "Liberado" : "Bloqueado"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>Usuário</TableHeaderCell>
+            <TableHeaderCell className="w-28">Perfil</TableHeaderCell>
+            <TableHeaderCell>Agência</TableHeaderCell>
+            <TableHeaderCell className="w-28">Acesso</TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {users.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="py-12 text-neutral-500">
+                {emptyMessage ?? "Nenhum usuário cadastrado."}
+              </TableCell>
+            </TableRow>
+          ) : (
+            users.map((user) => {
+              const displayName = user.name?.trim() || user.email;
+              const agenciaName = user.role === "agency" ? getAgenciaName(agencias, user.agenciaId) : undefined;
+              const hasAccess = user.acesso !== false;
+              return (
+                <TableRow
+                  key={user.id}
+                  className="relative cursor-pointer transition-colors hover:bg-sky-50/60 has-[button:focus-visible]:bg-sky-50/60"
+                >
+                  <TableCell className="max-w-80" title={`${displayName} — ${user.email}`}>
+                    <div className="flex items-center gap-2.5">
+                      <UserAvatarThumb userId={user.id} label={displayName} />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-neutral-950">
+                          <button
+                            type="button"
+                            onClick={() => openDetails(user)}
+                            className="text-left outline-none after:absolute after:inset-0 after:content-['']"
+                          >
+                            {user.name?.trim() || "—"}
+                          </button>
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-neutral-500">{user.email}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge tone={ROLE_TONES[user.role] ?? "neutral"}>{ROLE_LABELS[user.role] ?? user.role}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-56 truncate" title={agenciaName}>
+                    {agenciaName ? <span className="text-link">{agenciaName}</span> : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {hasAccess ? <Badge tone="success">Liberado</Badge> : <Badge tone="danger">Bloqueado</Badge>}
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
 
       <VerDetalhesUsuarioModal
         user={selectedUser}

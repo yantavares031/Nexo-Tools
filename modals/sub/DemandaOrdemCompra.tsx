@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { getOrdensCompraPorDemandaAction } from "@/app/actions/ordem-compra";
 import type { Demanda, OrdemCompra } from "@/types/globals";
 import { toast } from "sonner";
+import { FileSignature } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Spinner } from "@/components/ui/spinner";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 
 function formatDateTime(dateString: string): string {
   try {
@@ -62,82 +67,70 @@ export function DemandaOrdemCompra({ demanda, demandaId }: DemandaOrdemCompraPro
   if (loading) {
     return (
       <div className="flex min-h-[120px] flex-col items-center justify-center gap-3 py-8">
-        <div
-          className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500"
-          aria-hidden
-        />
-        <p className="text-sm text-slate-500">Carregando...</p>
+        <Spinner className="size-8 text-neutral-400" />
+        <p className="text-sm text-neutral-500">Carregando...</p>
       </div>
     );
   }
 
   if (lista.length === 0) {
     return (
-      <p className="rounded-lg border border-slate-200 bg-slate-50 py-10 text-center text-sm text-slate-600">
-        Nenhum pedido de ordem de compra vinculado a esta demanda.
-      </p>
+      <EmptyState
+        icon={<FileSignature aria-hidden />}
+        title="Nenhuma ordem de compra"
+        description="Nenhum pedido de ordem de compra vinculado a esta demanda."
+      />
     );
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        Agência vinculada à demanda:{" "}
-        <span className="font-medium text-slate-800">{agenciaDemanda}</span>
+      <p className="text-[13px] text-neutral-600">
+        Agência vinculada à demanda: <span className="font-medium text-neutral-950">{agenciaDemanda}</span>
       </p>
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-3 py-2 font-semibold text-slate-800">Situação</th>
-              <th className="px-3 py-2 font-semibold text-slate-800">Documento enviado</th>
-              <th className="px-3 py-2 font-semibold text-slate-800">Documento assinado</th>
-              <th className="px-3 py-2 font-semibold text-slate-800">Quem enviou</th>
-              <th className="px-3 py-2 font-semibold text-slate-800">Data do pedido</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lista.map((oc) => {
-              const temAssinado = Boolean(
-                oc.caminhoArquivoAssinado && oc.nomeArquivoAssinado
-              );
-              return (
-                <tr key={oc.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-3 py-3 text-left text-slate-600">
-                    {oc.status === "assinada" ? (
-                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                        {STATUS_LABEL.assinada}
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-                        {STATUS_LABEL.em_aberto}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-left text-slate-700">
-                    <span className="line-clamp-2" title={oc.nomeArquivo}>
-                      {oc.nomeArquivo}
+      <Table className="min-w-[640px]">
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>Situação</TableHeaderCell>
+            <TableHeaderCell>Documento enviado</TableHeaderCell>
+            <TableHeaderCell>Documento assinado</TableHeaderCell>
+            <TableHeaderCell>Quem enviou</TableHeaderCell>
+            <TableHeaderCell>Data do pedido</TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {lista.map((oc) => {
+            const temAssinado = Boolean(oc.caminhoArquivoAssinado && oc.nomeArquivoAssinado);
+            return (
+              <TableRow key={oc.id}>
+                <TableCell>
+                  {oc.status === "assinada" ? (
+                    <Badge tone="success">{STATUS_LABEL.assinada}</Badge>
+                  ) : (
+                    <Badge tone="warning">{STATUS_LABEL.em_aberto}</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-neutral-700">
+                  <span className="line-clamp-2" title={oc.nomeArquivo}>
+                    {oc.nomeArquivo}
+                  </span>
+                </TableCell>
+                <TableCell className="text-neutral-700">
+                  {temAssinado ? (
+                    <span className="line-clamp-2" title={oc.nomeArquivoAssinado}>
+                      {oc.nomeArquivoAssinado}
                     </span>
-                  </td>
-                  <td className="px-3 py-3 text-left text-slate-700">
-                    {temAssinado ? (
-                      <span className="line-clamp-2 text-emerald-800" title={oc.nomeArquivoAssinado}>
-                        {oc.nomeArquivoAssinado}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-left text-slate-600">{oc.autor || "—"}</td>
-                  <td className="px-3 py-3 text-left text-slate-600">
-                    {formatDateTime(oc.createdAt)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  ) : (
+                    <span className="text-neutral-400">—</span>
+                  )}
+                </TableCell>
+                <TableCell>{oc.autor || "—"}</TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{formatDateTime(oc.createdAt)}</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

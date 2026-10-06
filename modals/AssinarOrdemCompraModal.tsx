@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { FileSignature, FileText, Upload, X } from "lucide-react";
 import { Modal } from "@/components/Modal";
+import { IconButton } from "@/components/ui/icon-button";
+import { Button } from "@/components/ui/button";
 import { uploadOrdemCompraAssinadaAction } from "@/app/actions/ordem-compra";
 import { toast } from "sonner";
 
@@ -65,26 +67,32 @@ export function AssinarOrdemCompraModal({
       <Modal.Header onClose={resetAndClose}>
         <h2
           id="assinar-oc-title"
-          className="flex items-center gap-2 text-lg font-semibold text-slate-800"
+          className="flex items-center gap-2 text-lg font-semibold text-neutral-950"
         >
           <FileSignature className="size-5 shrink-0" />
           Registrar OC assinada
         </h2>
       </Modal.Header>
       <Modal.Body as="form" id="form-assinar-oc" onSubmit={handleSubmit} className="space-y-4 p-6">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-          <p className="font-medium text-slate-800">Demanda</p>
-          <p className="mt-1 line-clamp-2" title={demandaDescricao}>
-            {demandaDescricao || "—"}
-          </p>
-          <p className="mt-2 font-medium text-slate-800">Documento enviado pela agência</p>
-          <p className="mt-1 truncate text-slate-600" title={nomeArquivoEnviado}>
-            {nomeArquivoEnviado}
-          </p>
-        </div>
+        <dl className="space-y-3 rounded-xl border border-neutral-200 p-4">
+          <div>
+            <dt className="text-[11px] font-medium tracking-wide text-neutral-400 uppercase">Demanda</dt>
+            <dd className="mt-0.5 line-clamp-2 text-[13px] text-neutral-950" title={demandaDescricao}>
+              {demandaDescricao || "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium tracking-wide text-neutral-400 uppercase">
+              Documento enviado pela agência
+            </dt>
+            <dd className="mt-0.5 truncate text-[13px] text-neutral-700" title={nomeArquivoEnviado}>
+              {nomeArquivoEnviado}
+            </dd>
+          </div>
+        </dl>
 
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-800">PDF assinado (admin)</p>
+          <p className="mb-1.5 text-[13px] text-neutral-700">PDF assinado (admin)</p>
           <div
             onDrop={(ev) => {
               ev.preventDefault();
@@ -98,10 +106,10 @@ export function AssinarOrdemCompraModal({
             }}
             onDragLeave={() => setIsDragging(false)}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed py-8 transition ${
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed py-8 transition ${
               isDragging
-                ? "border-blue-400 bg-blue-50"
-                : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
+                ? "border-sky-400 bg-sky-50"
+                : "border-neutral-300 bg-white hover:border-sky-300 hover:bg-sky-50/60"
             }`}
           >
             <input
@@ -115,48 +123,37 @@ export function AssinarOrdemCompraModal({
                 ev.target.value = "";
               }}
             />
-            <Upload className={`mb-2 size-8 ${isDragging ? "text-blue-600" : "text-slate-400"}`} />
-            <p className="text-center text-sm font-medium text-slate-700">
+            <Upload className={`mb-2 size-8 ${isDragging ? "text-link" : "text-neutral-400"}`} />
+            <p className="text-center text-sm font-medium text-neutral-700">
               Clique ou arraste o PDF assinado
             </p>
-            <p className="mt-0.5 text-xs text-slate-500">Apenas PDF, até {MAX_FILE_SIZE_MB}MB</p>
+            <p className="mt-0.5 text-xs text-neutral-500">Apenas PDF, até {MAX_FILE_SIZE_MB}MB</p>
           </div>
           {file && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-              <FileText className="size-5 shrink-0 text-blue-600" />
-              <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{file.name}</span>
-              <button
-                type="button"
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2">
+              <FileText className="size-5 shrink-0 text-link" aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-sm text-neutral-800">{file.name}</span>
+              <IconButton
+                aria-label="Remover arquivo"
+                variant="danger"
                 onClick={(ev) => {
                   ev.stopPropagation();
                   setFile(null);
                 }}
-                className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-red-600"
-                aria-label="Remover arquivo"
               >
-                <X className="size-4" />
-              </button>
+                <X />
+              </IconButton>
             </div>
           )}
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <button
-          type="button"
-          onClick={resetAndClose}
-          disabled={isSubmitting}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-        >
+        <Button type="button" variant="ghost" onClick={resetAndClose} disabled={isSubmitting}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          form="form-assinar-oc"
-          disabled={!file || isSubmitting}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" form="form-assinar-oc" disabled={!file} loading={isSubmitting}>
           {isSubmitting ? "Enviando..." : "Salvar e marcar como assinada"}
-        </button>
+        </Button>
       </Modal.Footer>
     </Modal>
   );

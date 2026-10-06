@@ -2,6 +2,9 @@
 
 import { useState, useRef, useCallback } from "react";
 import { CurrencyInput } from "@/components/CurrencyInput";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { inputClassName } from "@/components/ui/input";
+import { cn } from "@/lib/cn";
 import { parseBrazilianCurrency, formatBrazilianCurrency } from "@/lib/currency";
 import { formatMonthYearDisplay, parseMonthYearToInput } from "@/lib/month-year";
 import type { Demanda } from "@/types/globals";
@@ -11,6 +14,12 @@ const STATUS_LABELS: Record<string, string> = {
   faturado: "Faturado",
   comprometido: "Comprometido",
   entregue: "Entregue",
+};
+
+const STATUS_TONES: Record<string, BadgeTone> = {
+  faturado: "success",
+  comprometido: "warning",
+  entregue: "info",
 };
 
 function formatCurrency(value: number): string {
@@ -99,25 +108,16 @@ export function DemandaDetalhesGeral({
   );
 
   const textClass = readOnly
-    ? "rounded px-2 py-1 text-sm text-slate-800"
-    : "cursor-pointer rounded px-2 py-1 text-sm text-slate-800 hover:bg-slate-50";
-  const valorTextClass = readOnly
-    ? "rounded px-2 py-1 text-sm font-bold text-emerald-600"
-    : "cursor-pointer rounded px-2 py-1 text-sm font-bold text-emerald-600 hover:bg-slate-50";
-  const inputClass =
-    "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400";
-
-  const statusBadgeClass =
-    values.status === "faturado"
-      ? "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800"
-      : values.status === "entregue"
-        ? "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800"
-        : "inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800";
+    ? "-mx-2 rounded-field px-2 py-1.5 text-sm text-neutral-800"
+    : "-mx-2 cursor-pointer rounded-field px-2 py-1.5 text-sm text-neutral-800 transition-colors hover:bg-neutral-50";
+  const valorTextClass = `${textClass} font-semibold tabular-nums text-neutral-950`;
+  const inputClass = cn("block w-full", inputClassName);
+  const fieldLabelClass = "mb-1 block text-[11px] font-medium tracking-wide text-neutral-400 uppercase";
 
   return (
     <div className="space-y-3">
       <div className="group">
-        <span className="mb-1 block text-xs font-medium text-slate-500">Demanda *</span>
+        <span className={fieldLabelClass}>Demanda *</span>
         {!readOnly && editingField === "demanda" ? (
           <input
             name="demanda"
@@ -140,7 +140,7 @@ export function DemandaDetalhesGeral({
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">Solicitante *</span>
+          <span className={fieldLabelClass}>Solicitante *</span>
           {!readOnly && editingField === "solicitante" ? (
             <>
               <input
@@ -173,7 +173,7 @@ export function DemandaDetalhesGeral({
           )}
         </div>
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">Un. Responsável *</span>
+          <span className={fieldLabelClass}>Un. Responsável *</span>
           {!readOnly && editingField === "unResponsavel" ? (
             <>
               <input
@@ -204,7 +204,7 @@ export function DemandaDetalhesGeral({
           )}
         </div>
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">Status</span>
+          <span className={fieldLabelClass}>Status</span>
           {!readOnly && editingField === "status" ? (
             <select
               name="status"
@@ -223,21 +223,16 @@ export function DemandaDetalhesGeral({
           ) : (
             <>
               {!readOnly && <input type="hidden" name="status" value={values.status} />}
-              <div
-                onClick={readOnly ? undefined : () => setEditingField("status")}
-                className={
-                  readOnly
-                    ? `rounded px-2 py-1 ${statusBadgeClass}`
-                    : `cursor-pointer rounded px-2 py-1 hover:bg-slate-50 ${statusBadgeClass}`
-                }
-              >
-                {STATUS_LABELS[values.status] ?? values.status}
+              <div onClick={readOnly ? undefined : () => setEditingField("status")} className={textClass}>
+                <Badge tone={STATUS_TONES[values.status] ?? "neutral"}>
+                  {STATUS_LABELS[values.status] ?? values.status}
+                </Badge>
               </div>
             </>
           )}
         </div>
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">Agência</span>
+          <span className={fieldLabelClass}>Agência</span>
           {!readOnly && editingField === "agencia" ? (
             <select
               name="agencia"
@@ -259,13 +254,8 @@ export function DemandaDetalhesGeral({
               {!readOnly && <input type="hidden" name="agencia" value={values.agencia} />}
               <div
                 onClick={readOnly ? undefined : () => setEditingField("agencia")}
-                className={
-                  values.agencia
-                    ? readOnly
-                      ? "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
-                      : "cursor-pointer inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
-                    : textClass
-                }
+                className={cn(textClass, values.agencia && "truncate text-link")}
+                title={values.agencia || undefined}
               >
                 {values.agencia || "—"}
               </div>
@@ -275,7 +265,7 @@ export function DemandaDetalhesGeral({
       </div>
 
       <div className="group">
-        <span className="mb-1 block text-xs font-medium text-slate-500">Observações</span>
+        <span className={fieldLabelClass}>Observações</span>
         {!readOnly && editingField === "obs" ? (
           <input
             name="obs"
@@ -297,7 +287,7 @@ export function DemandaDetalhesGeral({
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">Valor (R$)</span>
+          <span className={fieldLabelClass}>Valor (R$)</span>
           {!readOnly && editingField === "valor" ? (
             <div
               onBlur={(e) => {
@@ -324,7 +314,7 @@ export function DemandaDetalhesGeral({
           )}
         </div>
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">OC/PI</span>
+          <span className={fieldLabelClass}>OC/PI</span>
           {!readOnly && editingField === "ocPi" ? (
             <input
               name="ocPi"
@@ -332,20 +322,14 @@ export function DemandaDetalhesGeral({
               onChange={(e) => setValues((v) => ({ ...v, ocPi: e.target.value }))}
               onBlur={() => setEditingField(null)}
               autoFocus
-              className={`${inputClass} font-mono`}
+              className={cn(inputClass, "tabular-nums")}
             />
           ) : (
             <>
               {!readOnly && <input type="hidden" name="ocPi" value={values.ocPi} />}
               <div
                 onClick={readOnly ? undefined : () => setEditingField("ocPi")}
-                className={
-                  values.ocPi
-                    ? readOnly
-                      ? "font-mono inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
-                      : "cursor-pointer font-mono inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
-                    : `${textClass} font-mono`
-                }
+                className={cn(textClass, "tabular-nums")}
               >
                 {values.ocPi || "—"}
               </div>
@@ -353,7 +337,7 @@ export function DemandaDetalhesGeral({
           )}
         </div>
         <div className="group">
-          <span className="mb-1 block text-xs font-medium text-slate-500">Mês / Ano</span>
+          <span className={fieldLabelClass}>Mês / Ano</span>
           {!readOnly && editingField === "mes" ? (
             <input
               name="mes"
@@ -375,10 +359,8 @@ export function DemandaDetalhesGeral({
         </div>
       </div>
 
-      <div className="border-t border-slate-200 pt-3">
-        <div className="text-sm text-blue-600">
-          <span className="font-semibold">Criado em:</span> {formatDateTime(demanda.createdAt)}
-        </div>
+      <div className="border-t border-neutral-100 pt-3 text-xs text-neutral-500">
+        Criado em <span className="tabular-nums">{formatDateTime(demanda.createdAt)}</span>
       </div>
     </div>
   );

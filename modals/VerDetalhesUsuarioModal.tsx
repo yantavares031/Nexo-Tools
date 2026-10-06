@@ -2,11 +2,14 @@
 
 import { useState, useActionState, useEffect, useTransition } from "react";
 import { Check, CircleMinus, Users } from "lucide-react";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { updateUserAction, removeUserAction } from "@/app/actions/user";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
-import { useConfirm } from "@/lib/confirm-context";
+import { useConfirm } from "@/components/confirm-provider";
 import { Modal } from "@/components/Modal";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { inputClassName } from "@/components/ui/input";
+import { cn } from "@/lib/cn";
 import type { UserPublic } from "@/types/globals";
 type UserRole = UserPublic["role"];
 import type { Agencia } from "@/types/globals";
@@ -87,16 +90,12 @@ export function VerDetalhesUsuarioModal({
   if (!open || !user) return null;
 
   const textClass =
-    "cursor-pointer rounded px-2 py-1 text-sm text-slate-800 hover:bg-slate-50";
-  const inputClass =
-    "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400";
+    "-mx-2 cursor-pointer rounded-field px-2 py-1.5 text-sm text-neutral-800 transition-colors hover:bg-neutral-50";
+  const inputClass = cn("block w-full", inputClassName);
+  const fieldLabelClass = "mb-1 block text-[11px] font-medium tracking-wide text-neutral-400 uppercase";
 
-  const roleBadgeClass =
-    values.role === "admin"
-      ? "inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
-      : values.role === "agency"
-        ? "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
-        : "inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800";
+  const roleBadgeTone: BadgeTone =
+    values.role === "admin" ? "info" : values.role === "agency" ? "neutral" : "success";
 
   return (
     <Modal
@@ -111,7 +110,7 @@ export function VerDetalhesUsuarioModal({
       <Modal.Header onClose={onClose} closeDisabled={isPendingRemove || isPendingSave}>
         <h2
           id="modal-detalhes-usuario-title"
-          className="flex items-center gap-2 text-lg font-semibold text-slate-800"
+          className="flex items-center gap-2 text-lg font-semibold text-neutral-950"
         >
           <Users className="size-5 shrink-0" />
           Detalhes do usuário
@@ -121,11 +120,11 @@ export function VerDetalhesUsuarioModal({
         action={formAction}
         className="flex max-h-[70vh] flex-1 flex-col overflow-hidden"
       >
-        <div className="overflow-y-auto p-6">
+        <div className="overflow-y-auto p-4 sm:p-6">
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="group">
-                <span className="mb-1 block text-xs font-medium text-slate-500">
+                <span className={fieldLabelClass}>
                   Nome
                 </span>
                 {editingField === "name" ? (
@@ -153,7 +152,7 @@ export function VerDetalhesUsuarioModal({
                 )}
               </div>
               <div className="group">
-                <span className="mb-1 block text-xs font-medium text-slate-500">
+                <span className={fieldLabelClass}>
                   E-mail *
                 </span>
                 {editingField === "email" ? (
@@ -184,7 +183,7 @@ export function VerDetalhesUsuarioModal({
             </div>
 
             <div className="group">
-              <span className="mb-1 block text-xs font-medium text-slate-500">
+              <span className={fieldLabelClass}>
                 Senha (deixe em branco para manter)
               </span>
               {editingField === "password" ? (
@@ -214,9 +213,9 @@ export function VerDetalhesUsuarioModal({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="group">
-                <span className="mb-1 block text-xs font-medium text-slate-500">
+                <span className={fieldLabelClass}>
                   Perfil
                 </span>
                 {editingField === "role" ? (
@@ -242,18 +241,15 @@ export function VerDetalhesUsuarioModal({
                 ) : (
                   <>
                     <input type="hidden" name="role" value={values.role} />
-                    <div
-                      onClick={() => setEditingField("role")}
-                      className={`cursor-pointer rounded px-2 py-1 hover:bg-slate-50 ${roleBadgeClass}`}
-                    >
-                      {ROLE_LABELS[values.role] ?? values.role}
+                    <div onClick={() => setEditingField("role")} className={textClass}>
+                      <Badge tone={roleBadgeTone}>{ROLE_LABELS[values.role] ?? values.role}</Badge>
                     </div>
                   </>
                 )}
               </div>
               {values.role === "agency" && (
                 <div className="group">
-                  <span className="mb-1 block text-xs font-medium text-slate-500">
+                  <span className={fieldLabelClass}>
                     Agência
                   </span>
                   {editingField === "agenciaId" ? (
@@ -281,18 +277,14 @@ export function VerDetalhesUsuarioModal({
                         name="agenciaId"
                         value={values.agenciaId}
                       />
-                      <div
-                        onClick={() => setEditingField("agenciaId")}
-                        className={
-                          values.agenciaId
-                            ? "cursor-pointer inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
-                            : textClass
-                        }
-                      >
-                        {values.agenciaId
-                          ? agencias.find((a) => a.id === values.agenciaId)
-                              ?.nomeFantasia ?? values.agenciaId
-                          : "—"}
+                      <div onClick={() => setEditingField("agenciaId")} className={textClass}>
+                        {values.agenciaId ? (
+                          <Badge>
+                            {agencias.find((a) => a.id === values.agenciaId)?.nomeFantasia ?? values.agenciaId}
+                          </Badge>
+                        ) : (
+                          "—"
+                        )}
                       </div>
                     </>
                   )}
@@ -304,7 +296,7 @@ export function VerDetalhesUsuarioModal({
             </div>
 
             <div className="group">
-              <span className="mb-1 block text-xs font-medium text-slate-500">
+              <span className={fieldLabelClass}>
                 Acesso
               </span>
               {editingField === "acesso" ? (
@@ -331,11 +323,8 @@ export function VerDetalhesUsuarioModal({
                     name="acesso"
                     value={values.acesso ? "true" : "false"}
                   />
-                  <div
-                    onClick={() => setEditingField("acesso")}
-                    className={textClass}
-                  >
-                    {values.acesso ? "Liberado" : "Bloqueado"}
+                  <div onClick={() => setEditingField("acesso")} className={textClass}>
+                    {values.acesso ? <Badge tone="success">Liberado</Badge> : <Badge tone="danger">Bloqueado</Badge>}
                   </div>
                 </>
               )}
@@ -344,31 +333,33 @@ export function VerDetalhesUsuarioModal({
         </div>
 
         <Modal.Footer>
-          <FormActionSubmitButton
-            pending={isPendingSave}
-            pendingLabel="Salvando..."
-            idleStart={<Check className="size-3.5 stroke-[2.5]" />}
-          >
-            Salvar
-          </FormActionSubmitButton>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={handleRemover}
-            disabled={isPendingRemove || isPendingSave}
-            className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isPendingSave}
+            loading={isPendingRemove}
+            className="border-red-200 text-red-600 hover:bg-red-50"
           >
             {isPendingRemove ? (
-              <>
-                <span className="size-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                Removendo...
-              </>
+              "Removendo..."
             ) : (
               <>
-                <CircleMinus className="size-3.5 stroke-[2.5]" />
+                <CircleMinus className="size-3.5 stroke-[2.5]" aria-hidden />
                 Remover
               </>
             )}
-          </button>
+          </Button>
+          <Button type="submit" loading={isPendingSave}>
+            {isPendingSave ? (
+              "Salvando..."
+            ) : (
+              <>
+                <Check className="size-3.5 stroke-[2.5]" aria-hidden />
+                Salvar
+              </>
+            )}
+          </Button>
         </Modal.Footer>
       </form>
     </Modal>

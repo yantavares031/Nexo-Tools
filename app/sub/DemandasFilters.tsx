@@ -1,230 +1,208 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import Form from "next/form";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
-import { Search, Plus, Filter, X, FileUp } from "lucide-react";
+import type { ReactNode } from "react";
+import { Building2, CalendarDays, CircleDot, FileCheck2, Megaphone, UserRound } from "lucide-react";
+import { Button, buttonBaseClassName, buttonSizes, buttonVariants } from "@/components/ui/button";
+import { Dropdown } from "@/components/ui/dropdown";
+import { DropdownItem } from "@/components/ui/dropdown-item";
+import { SearchPill } from "@/components/ui/search-pill";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
-import { SearchableSelect } from "@/components/SearchableSelect";
-import { AdicionarDemandaModal } from "@/modals/AdicionarDemandaModal";
+import { cn } from "@/lib/cn";
+import { formatMonthYearDisplay } from "@/lib/month-year";
+import { DemandasFilterOptionsSearch, type FilterOptionLink } from "./DemandasFilterOptionsSearch";
+import {
+  COMPROVACAO_LABELS,
+  DEMANDA_STATUS_LABELS,
+  demandasHref,
+  type DemandasListParams,
+} from "./demandas-hrefs";
 
-const STATUS_LABELS: Record<string, string> = {
-  faturado: "Faturado",
-  comprometido: "Comprometido",
-  entregue: "Entregue",
-};
+type FilterKey = Exclude<keyof DemandasListParams, "q" | "page">;
 
 interface DemandasFiltersProps {
+  params: Omit<DemandasListParams, "page">;
   options: DemandaFilterOptions;
   /** Oculta o filtro de agência (ex.: usuário agency já vê só as demandas dele). */
   hideAgencyFilter?: boolean;
-  /** Role do usuário - agências não podem criar demandas */
-  userRole?: "admin" | "operator" | "agency";
 }
 
-export function DemandasFilters({ options, hideAgencyFilter, userRole = "operator" }: DemandasFiltersProps) {
-  const canCreateDemanda = userRole !== "agency";
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [solicitante, setSolicitante] = useState("");
-  const [unResponsavel, setUnResponsavel] = useState("");
-  const [status, setStatus] = useState("");
-  const [comprovacao, setComprovacao] = useState("");
-
-  const q = searchParams.get("q") ?? "";
-  const mes = searchParams.get("mes") ?? "";
-  const agencia = searchParams.get("agencia") ?? "";
-
-  useEffect(() => {
-    setSolicitante(searchParams.get("solicitante") ?? "");
-    setUnResponsavel(searchParams.get("unResponsavel") ?? "");
-    setStatus(searchParams.get("status") ?? "");
-    setComprovacao(searchParams.get("comprovacao") ?? "");
-  }, [searchParams]);
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const params = new URLSearchParams();
-
-    const qVal = (formData.get("q") as string)?.trim();
-    if (qVal) params.set("q", qVal);
-
-    if (solicitante) params.set("solicitante", solicitante);
-    if (unResponsavel) params.set("unResponsavel", unResponsavel);
-    if (status) params.set("status", status);
-    if (comprovacao === "comprovado" || comprovacao === "nao_comprovado") params.set("comprovacao", comprovacao);
-
-    if (!hideAgencyFilter) {
-      const ag = formData.get("agencia") as string;
-      if (ag) params.set("agencia", ag);
-    }
-
-    const mesVal = (formData.get("mes") as string)?.trim();
-    if (mesVal) params.set("mes", mesVal);
-
-    startTransition(() => {
-      router.push(`/?${params.toString()}`);
-    });
-  }
-
-  function handleClear() {
-    startTransition(() => {
-      router.push("/");
-    });
-  }
-
-  const hasFilters =
-    q || solicitante || unResponsavel || status || mes || comprovacao || (!hideAgencyFilter && !!agencia);
-
+function FilterTrigger({
+  icon,
+  label,
+  value,
+  emptyLabel = "Todos",
+}: {
+  icon: ReactNode;
+  label: string;
+  value?: string;
+  emptyLabel?: string;
+}) {
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-slate-800">Demandas</h1>
-            <div className="flex items-center gap-2">
-              {canCreateDemanda && (
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-                  aria-label="Adicionar demanda"
-                >
-                  <Plus className="size-4" />
-                  Adicionar
-                </button>
-              )}
-              <Link
-                href="/demandas/importar"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-                aria-label="Importar demandas"
-              >
-                <FileUp className="size-4" />
-                Importar
-              </Link>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 disabled:opacity-50"
-              >
-                <Filter className="size-4" />
-                {isPending ? "Filtrando..." : "Filtrar"}
-              </button>
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  disabled={isPending}
-                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50"
-                  aria-label="Limpar filtros"
-                >
-                  <X className="size-4" />
-                  Limpar
-                </button>
-              )}
-            </div>
-          </div>
+      {icon}
+      <span className="opacity-70">{label}</span>
+      <span className="max-w-40 truncate font-medium">{value ?? emptyLabel}</span>
+    </>
+  );
+}
 
-          <div className="flex min-w-0 flex-wrap items-end gap-2 sm:gap-3">
-          <div className="relative min-w-0 flex-1 sm:min-w-[240px]">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="search"
-              name="q"
-              defaultValue={q}
-              placeholder="Buscar por nome da demanda, OC/PI ou SEBID..."
-              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-              aria-label="Buscar demandas"
+export function DemandasFilters({ params, options, hideAgencyFilter }: DemandasFiltersProps) {
+  const dropdownKey = JSON.stringify(params);
+  const hrefWith = (key: FilterKey, value?: string) => demandasHref({ ...params, [key]: value, page: undefined });
+
+  const linksFor = (key: FilterKey, values: string[], labels?: Record<string, string>): FilterOptionLink[] =>
+    values.map((value) => ({
+      label: labels?.[value] ?? value,
+      href: hrefWith(key, value),
+      active: params[key] === value,
+    }));
+
+  const { q, ...filtersWithoutQ } = params;
+
+  return (
+    <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+      <SearchPill
+        action="/"
+        q={q}
+        placeholder="Buscar por demanda, OC/PI ou SEBID"
+        label="Buscar demandas"
+        hiddenParams={filtersWithoutQ}
+        clearHref={demandasHref({ ...params, q: undefined, page: undefined })}
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Dropdown
+          key={`solicitante-${dropdownKey}`}
+          highlighted={!!params.solicitante}
+          trigger={
+            <FilterTrigger icon={<UserRound aria-hidden />} label="Solicitante" value={params.solicitante} />
+          }
+        >
+          <DemandasFilterOptionsSearch
+            placeholder="Buscar solicitante"
+            allOption={{ label: "Todos", href: hrefWith("solicitante"), active: !params.solicitante }}
+            options={linksFor("solicitante", options.solicitantes)}
+          />
+        </Dropdown>
+
+        <Dropdown
+          key={`unResponsavel-${dropdownKey}`}
+          highlighted={!!params.unResponsavel}
+          trigger={
+            <FilterTrigger
+              icon={<Building2 aria-hidden />}
+              label="Un. responsável"
+              value={params.unResponsavel}
+              emptyLabel="Todas"
             />
-          </div>
-          <div className="min-w-[200px] max-w-[220px] shrink-0" aria-label="Filtrar por comprovação">
-            <SearchableSelect
-              options={[
-                { id: "comprovado", label: "Com comprovação" },
-                { id: "nao_comprovado", label: "Sem comprovação" },
-              ]}
-              value={comprovacao}
-              onChange={setComprovacao}
-              placeholder="Comprovação"
-              className="min-w-[200px] max-w-[220px]"
+          }
+        >
+          <DemandasFilterOptionsSearch
+            placeholder="Buscar unidade"
+            allOption={{ label: "Todas", href: hrefWith("unResponsavel"), active: !params.unResponsavel }}
+            options={linksFor("unResponsavel", options.unResponsaveis)}
+          />
+        </Dropdown>
+
+        <Dropdown
+          key={`status-${dropdownKey}`}
+          highlighted={!!params.status}
+          trigger={
+            <FilterTrigger
+              icon={<CircleDot aria-hidden />}
+              label="Status"
+              value={params.status ? (DEMANDA_STATUS_LABELS[params.status] ?? params.status) : undefined}
             />
-          </div>
+          }
+        >
+          <DropdownItem href={hrefWith("status")} active={!params.status}>
+            Todos
+          </DropdownItem>
+          {linksFor("status", options.statuses, DEMANDA_STATUS_LABELS).map((option) => (
+            <DropdownItem key={option.href} href={option.href} active={option.active}>
+              {option.label}
+            </DropdownItem>
+          ))}
+        </Dropdown>
 
-          <div className="flex w-full flex-wrap gap-2 *:shrink-0 sm:w-auto">
-            <div className="min-w-[180px]" aria-label="Filtrar por solicitante">
-              <input type="hidden" name="solicitante" value={solicitante} />
-              <SearchableSelect
-                options={options.solicitantes.map((s) => ({ id: s, label: s }))}
-                value={solicitante}
-                onChange={setSolicitante}
-                placeholder="Solicitante"
-                className="min-w-[180px]"
-              />
-            </div>
-            <div className="min-w-[180px]" aria-label="Filtrar por unidade responsável">
-              <input type="hidden" name="unResponsavel" value={unResponsavel} />
-              <SearchableSelect
-                options={options.unResponsaveis.map((u) => ({ id: u, label: u }))}
-                value={unResponsavel}
-                onChange={setUnResponsavel}
-                placeholder="Un. Responsável"
-                className="min-w-[180px]"
-              />
-            </div>
+        <Dropdown
+          key={`comprovacao-${dropdownKey}`}
+          highlighted={!!params.comprovacao}
+          trigger={
+            <FilterTrigger
+              icon={<FileCheck2 aria-hidden />}
+              label="Comprovação"
+              value={params.comprovacao ? COMPROVACAO_LABELS[params.comprovacao] : undefined}
+              emptyLabel="Todas"
+            />
+          }
+        >
+          <DropdownItem href={hrefWith("comprovacao")} active={!params.comprovacao}>
+            Todas
+          </DropdownItem>
+          {linksFor("comprovacao", Object.keys(COMPROVACAO_LABELS), COMPROVACAO_LABELS).map((option) => (
+            <DropdownItem key={option.href} href={option.href} active={option.active}>
+              {option.label}
+            </DropdownItem>
+          ))}
+        </Dropdown>
 
-            <div className="min-w-[160px]" aria-label="Filtrar por status">
-              <SearchableSelect
-                options={options.statuses.map((s) => ({
-                  id: s,
-                  label: STATUS_LABELS[s] ?? s,
-                }))}
-                value={status}
-                onChange={setStatus}
-                placeholder="Status"
-                className="min-w-[160px]"
-              />
-            </div>
-
+        <Dropdown
+          key={`mes-${dropdownKey}`}
+          highlighted={!!params.mes}
+          trigger={
+            <FilterTrigger
+              icon={<CalendarDays aria-hidden />}
+              label="Mês"
+              value={params.mes ? formatMonthYearDisplay(params.mes) : undefined}
+              emptyLabel="Todos"
+            />
+          }
+        >
+          <Form action="/" className="space-y-2 p-1.5">
+            {Object.entries({ ...params, mes: undefined }).map(([name, value]) =>
+              value ? <input key={name} type="hidden" name={name} value={value} /> : null,
+            )}
             <input
               type="month"
               name="mes"
-              defaultValue={mes || undefined}
-              placeholder="Mês / Ano"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              defaultValue={params.mes}
+              required
               aria-label="Filtrar por mês/ano"
-              title="Mês / Ano"
+              className="block h-9 w-full rounded-field border border-neutral-300 bg-white px-2.5 text-[13px] text-neutral-900 outline-none focus:border-neutral-700"
             />
+            <div className="flex items-center justify-end gap-2">
+              {params.mes && (
+                <Link href={hrefWith("mes")} className={cn(buttonBaseClassName, buttonVariants.ghost, buttonSizes.sm)}>
+                  Limpar
+                </Link>
+              )}
+              <Button type="submit" size="sm">
+                Aplicar
+              </Button>
+            </div>
+          </Form>
+        </Dropdown>
 
-            {!hideAgencyFilter && (
-              <select
-                name="agencia"
-                defaultValue={agencia}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                aria-label="Filtrar por agência"
-              >
-                <option value="">Agência</option>
-                {options.agencias.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        </div>
+        {!hideAgencyFilter && (
+          <Dropdown
+            key={`agencia-${dropdownKey}`}
+            highlighted={!!params.agencia}
+            trigger={
+              <FilterTrigger icon={<Megaphone aria-hidden />} label="Agência" value={params.agencia} emptyLabel="Todas" />
+            }
+          >
+            <DropdownItem href={hrefWith("agencia")} active={!params.agencia}>
+              Todas
+            </DropdownItem>
+            {linksFor("agencia", options.agencias).map((option) => (
+              <DropdownItem key={option.href} href={option.href} active={option.active}>
+                {option.label}
+              </DropdownItem>
+            ))}
+          </Dropdown>
+        )}
       </div>
-    </form>
-
-    <AdicionarDemandaModal
-      open={modalOpen}
-      onClose={() => setModalOpen(false)}
-      options={options}
-    />
-    </>
+    </div>
   );
 }

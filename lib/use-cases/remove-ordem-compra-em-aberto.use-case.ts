@@ -4,10 +4,15 @@ import {
 } from "@/lib/agency-demanda-scope";
 import type { IOrdemCompraRepository } from "@/lib/domain/ordem-compra.repository";
 import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
+import {
+  recordDemandaHistoricoUseCase,
+  type HistoricoDeps,
+} from "./record-demanda-historico.use-case";
 
 type Dependencies = {
   ordemCompraRepository: IOrdemCompraRepository;
   demandaRepository: IDemandaRepository;
+  historico?: HistoricoDeps;
 };
 
 export type RemoveOrdemCompraEmAbertoActor = "admin" | "agency";
@@ -35,4 +40,12 @@ export async function removeOrdemCompraEmAbertoUseCase(
     }
   }
   await deps.ordemCompraRepository.remove(id);
+  await recordDemandaHistoricoUseCase(
+    {
+      demandaId: oc.demandaId,
+      tipo: "ordem_compra_removida",
+      descricao: `Ordem de compra "${oc.nomeArquivo}" removida`,
+    },
+    deps.historico
+  );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { FileText, File } from "lucide-react";
 import { Modal } from "@/components/Modal";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ComprovacaoPreviewModalProps {
   comprovacaoId: string;
@@ -77,7 +78,7 @@ export function ComprovacaoPreviewModal({
       innerClassName="flex h-[95vh] flex-col overflow-hidden"
     >
       <Modal.Header onClose={onClose}>
-        <h2 id="preview-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 id="preview-title" className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
           {isPdf ? <File className="size-5 shrink-0" /> : <FileText className="size-5 shrink-0" />}
           Preview: {nomeArquivo}
         </h2>
@@ -86,8 +87,8 @@ export function ComprovacaoPreviewModal({
         {isLoading ? (
           <div className="flex h-full items-center justify-center p-8">
             <div className="flex flex-col items-center gap-4">
-              <div className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
-              <p className="text-sm text-slate-500">Carregando preview...</p>
+              <Spinner className="size-8 text-neutral-400" />
+              <p className="text-sm text-neutral-500">Carregando preview...</p>
             </div>
           </div>
         ) : error ? (
@@ -102,7 +103,7 @@ export function ComprovacaoPreviewModal({
           />
         ) : isTxt ? (
           <div className="h-full min-h-0 overflow-auto p-6">
-            <pre className="whitespace-pre-wrap font-mono text-sm text-slate-800">{content}</pre>
+            <pre className="whitespace-pre-wrap font-mono text-sm text-neutral-800">{content}</pre>
           </div>
         ) : null}
       </div>

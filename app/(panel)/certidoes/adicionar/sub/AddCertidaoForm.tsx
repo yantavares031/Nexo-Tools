@@ -1,18 +1,28 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Upload, X, FileText, Image, FileSpreadsheet } from "lucide-react";
+import { Check, FileImage, FileSpreadsheet, FileText, NotebookPen, Upload, X } from "lucide-react";
 import { createCertidaoAction } from "@/app/actions/certidao";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonBaseClassName, buttonSizes, buttonVariants } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { FormSection } from "@/components/ui/form-section";
+import { IconButton } from "@/components/ui/icon-button";
+import { Input } from "@/components/ui/input";
+import { PanelHeader } from "@/components/ui/panel-header";
+import { cn } from "@/lib/cn";
 
 const MAX_FILE_SIZE_MB = 10;
 
-function getFileIcon(name: string) {
+function FileIcon({ name }: { name: string }) {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  if (["jpg", "jpeg", "png"].includes(ext)) return <Image className="size-5 text-pink-500" />;
-  if (["xls", "xlsx"].includes(ext)) return <FileSpreadsheet className="size-5 text-emerald-600" />;
-  return <FileText className="size-5 text-blue-600" />;
+  const className = "size-4 shrink-0 text-neutral-400";
+  if (["jpg", "jpeg", "png"].includes(ext)) return <FileImage className={className} aria-hidden />;
+  if (["xls", "xlsx"].includes(ext)) return <FileSpreadsheet className={className} aria-hidden />;
+  return <FileText className={className} aria-hidden />;
 }
 
 export function AddCertidaoForm() {
@@ -68,22 +78,29 @@ export function AddCertidaoForm() {
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-blue-50/30 p-6">
-        <h2 className="mb-3 text-sm font-semibold text-slate-800">Arquivo da certidão</h2>
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onClick={() => fileInputRef.current?.click()}
-          className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed py-10 transition-all ${
-            isDragging
-              ? "scale-[1.02] border-blue-400 bg-blue-50"
-              : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
-          }`}
+    <form onSubmit={handleFormSubmit} noValidate className="max-w-3xl">
+      <fieldset disabled={isSubmitting}>
+        <PanelHeader
+          title="Dados da certidão"
+          description={`${files.length} ${files.length === 1 ? "arquivo selecionado" : "arquivos selecionados"}`}
+          actions={
+            <>
+              {canSubmit && <Badge tone="success">Pronto para enviar</Badge>}
+              <Link href="/certidoes" className={cn(buttonBaseClassName, buttonVariants.ghost, buttonSizes.md)}>
+                Cancelar
+              </Link>
+              <Button type="submit" disabled={!canSubmit} loading={isSubmitting}>
+                {!isSubmitting && <Check className="size-4" strokeWidth={2.25} aria-hidden />}
+                {isSubmitting ? "Enviando…" : "Enviar certidão"}
+              </Button>
+            </>
+          }
+        />
+
+        <FormSection
+          icon={<Upload aria-hidden />}
+          title="Arquivos"
+          description={`PDF, DOC, XLS ou imagens, até ${MAX_FILE_SIZE_MB}MB cada.`}
         >
           <input
             ref={fileInputRef}
@@ -93,85 +110,62 @@ export function AddCertidaoForm() {
             onChange={handleFileSelect}
             className="hidden"
           />
-          <div className={`mb-3 rounded-2xl p-4 transition ${isDragging ? "bg-blue-100" : "bg-slate-100"}`}>
-            <Upload className={`size-10 ${isDragging ? "text-blue-600" : "text-slate-500"}`} />
-          </div>
-          <p className="text-center text-sm font-medium text-slate-700">
-            {isDragging ? "Solte aqui!" : "Clique ou arraste"}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-500">
-            PDF, DOC, XLS, imagens… até {MAX_FILE_SIZE_MB}MB cada
-          </p>
-        </div>
-
-        {files.length > 0 && (
-          <div className="mt-4 space-y-2">
-            {files.map((f, i) => (
-              <div
-                key={`${f.name}-${i}`}
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
-              >
-                {getFileIcon(f.name)}
-                <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{f.name}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    removeFile(i);
-                  }}
-                  className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-red-600"
-                  aria-label="Remover arquivo"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-4">
-          <label htmlFor="descricao" className="mb-1.5 block text-xs font-medium text-slate-600">
-            Descrição (opcional)
-          </label>
-          <input
-            type="text"
-            id="descricao"
-            name="descricao"
-            placeholder="Ex.: Federal — abr/2026 ou FGTS — vigência 06/2026"
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-          />
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between text-sm">
-          <span className="text-slate-600">
-            {files.length} {files.length === 1 ? "arquivo" : "arquivos"}
-          </span>
-          {canSubmit && (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-              Pronto para salvar
+          <button
+            type="button"
+            onDrop={handleDrop}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              "flex w-full flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-800",
+              isDragging ? "border-sky-400 bg-sky-50" : "border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50",
+            )}
+          >
+            <span
+              className={cn(
+                "rounded-full p-3 [&_svg]:size-5",
+                isDragging ? "bg-sky-100 text-sky-600" : "bg-neutral-100 text-neutral-500",
+              )}
+            >
+              <Upload aria-hidden />
             </span>
+            <span className="text-sm font-medium text-neutral-950">
+              {isDragging ? "Solte os arquivos aqui" : "Clique ou arraste os arquivos"}
+            </span>
+            <span className="text-[13px] text-neutral-500">Você pode enviar vários arquivos de uma vez.</span>
+          </button>
+
+          {files.length > 0 && (
+            <ul className="mt-4 divide-y divide-neutral-100 rounded-xl border border-neutral-200">
+              {files.map((f, i) => (
+                <li key={`${f.name}-${i}`} className="flex items-center gap-3 px-3 py-2">
+                  <FileIcon name={f.name} />
+                  <span className="min-w-0 flex-1 truncate text-[13px] text-neutral-800" title={f.name}>
+                    {f.name}
+                  </span>
+                  <IconButton aria-label="Remover arquivo" variant="danger" onClick={() => removeFile(i)}>
+                    <X />
+                  </IconButton>
+                </li>
+              ))}
+            </ul>
           )}
-        </div>
-        <button
-          type="submit"
-          disabled={!canSubmit || isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSubmitting ? (
-            <>
-              <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Check className="size-4" />
-              Enviar certidão
-            </>
-          )}
-        </button>
-      </div>
+        </FormSection>
+
+        <FormSection icon={<NotebookPen aria-hidden />} title="Detalhes" description="Ajuda a identificar a certidão na listagem.">
+          <FormField id="descricao" label="Descrição (opcional)">
+            <Input
+              type="text"
+              id="descricao"
+              name="descricao"
+              placeholder="Ex.: Federal — abr/2026 ou FGTS — vigência 06/2026"
+            />
+          </FormField>
+        </FormSection>
+      </fieldset>
     </form>
   );
 }

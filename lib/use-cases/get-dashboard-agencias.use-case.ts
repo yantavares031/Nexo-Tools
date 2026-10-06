@@ -1,22 +1,40 @@
 import type { DashboardAgencia } from "@/types/globals";
 import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { IAgenciaRepository } from "@/lib/domain/agencia.repository";
+import { yearOfMonthYear } from "@/lib/month-year";
 
 type Dependencies = {
   demandaRepository: IDemandaRepository;
   agenciaRepository: IAgenciaRepository;
 };
 
-/** Caso de uso: obter dados do dashboard — faturado por agência vs capacidade anual. */
+const CAPACITY_TIMEZONE = "America/Sao_Paulo";
+
+/** Ano corrente no fuso de São Paulo: a capacidade anual zera na virada do ano. */
+export function currentCapacityYear(date: Date = new Date()): number {
+  return Number(new Intl.DateTimeFormat("en-CA", { timeZone: CAPACITY_TIMEZONE, year: "numeric" }).format(date));
+}
+
+/** Ano em que a demanda conta para a capacidade: mês de referência; sem mês reconhecível, data de cadastro. */
+function demandaCapacityYear(demanda: { mes: string; createdAt?: string }): number | null {
+  const fromMes = yearOfMonthYear(demanda.mes);
+  if (fromMes) return fromMes;
+  if (!demanda.createdAt) return null;
+  const created = new Date(demanda.createdAt);
+  return Number.isNaN(created.getTime()) ? null : currentCapacityYear(created);
+}
+
+/** Caso de uso: obter dados do dashboard — faturado no ano por agência vs capacidade anual. */
 export async function getDashboardAgenciasUseCase(
-  params: { agenciaId?: string; agenciaNomeLegacy?: string } | void,
+  params: { agenciaId?: string; agenciaNomeLegacy?: string; year?: number } | void,
   deps: Dependencies
 ): Promise<DashboardAgencia[]> {
   const agenciaId = params && typeof params === "object" ? params.agenciaId : undefined;
   const agenciaNomeLegacy =
     params && typeof params === "object" ? params.agenciaNomeLegacy : undefined;
+  const year = (params && typeof params === "object" ? params.year : undefined) ?? currentCapacityYear();
 
-  const [agencias, demandasFaturadas] = await Promise.all([
+  const [agencias, todasFaturadas] = await Promise.all([
     deps.agenciaRepository.findAll(),
     deps.demandaRepository.findAll(
       agenciaId
@@ -24,6 +42,7 @@ export async function getDashboardAgenciasUseCase(
         : { status: "faturado" }
     ),
   ]);
+  const demandasFaturadas = todasFaturadas.filter((d) => demandaCapacityYear(d) === year);
 
   const agenciasToShow = agenciaId
     ? agencias.filter((a) => a.id === agenciaId)

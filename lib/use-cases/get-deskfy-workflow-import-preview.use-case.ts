@@ -42,8 +42,10 @@ export async function getDeskfyWorkflowImportPreviewUseCase(
     return !!b && allowedSet.has(b);
   };
 
-  // Regra: apenas boards cadastrados em Integrações → Configurações.
-  const filtered = items.filter((i) => isAllowed(i.solicitacao.board));
+  // Regra: apenas boards cadastrados em Integrações → Configurações e solicitações não arquivadas.
+  const filtered = items.filter(
+    (i) => isAllowed(i.solicitacao.board) && i.solicitacao.arquivado !== true
+  );
 
   const preview = mapDeskfyWorkflowReportToImportPreviewItems(filtered);
 

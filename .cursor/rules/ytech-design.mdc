@@ -1,0 +1,26 @@
+---
+description: Design system padrão Ytech — obrigatório ao criar ou alterar qualquer tela, componente visual ou estilo
+globs: app/**/*.tsx,components/**/*.tsx,modals/**/*.tsx,app/globals.css
+alwaysApply: false
+---
+
+# Design system Ytech
+
+Antes de criar ou alterar qualquer tela:
+
+1. Leia `docs/design/DESIGN.md` (fundamentos, componentes, padrões de tela).
+2. Siga o código de referência em `docs/design/PATTERNS.md` para listagem, detalhe com abas, formulário e login.
+3. Consulte as capturas em `docs/design/references/` para espaçamento e hierarquia.
+4. Preferências de design do cliente em `.cursor/rules/project-context.mdc` prevalecem sobre o `DESIGN.md`.
+
+## Regras rápidas
+
+- Use os componentes de `components/ui/` antes de estilizar elementos soltos. Não adicione bibliotecas de UI (shadcn, MUI etc.) sem pedido explícito.
+- Cores: só os tokens do `app/globals.css` e a paleta `neutral` + cores de status do `DESIGN.md`. Cor só para significado.
+- Título de página `text-xl font-semibold`; cabeçalho de tabela `font-semibold`; corpo de tabela 13px.
+- Status sempre com `Badge` e o `tone` correspondente.
+- Filtros, busca, paginação e abas vivem na URL (`searchParams`), renderizados no servidor.
+- Tela nova de listagem/detalhe/formulário começa copiando o padrão do `PATTERNS.md`.
+- Nada de gradientes, sombras pesadas (exceto flutuantes) ou bordas grossas.
+
+`docs/design/` é gerenciado pelo ytech-playbook: não edite; ajustes do cliente vão no `project-context.mdc`.

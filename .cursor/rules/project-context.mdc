@@ -1,0 +1,63 @@
+---
+description: Contexto do projeto — produto, usuários, domínio e decisões. Leia antes de implementar qualquer funcionalidade.
+alwaysApply: true
+---
+
+# Contexto do projeto
+
+> Preencha este arquivo no início do projeto e mantenha-o atualizado. Ele é do projeto: o ytech-playbook nunca o sobrescreve.
+
+## Produto
+NEXO Tools: ferramenta interna do Sebrae MA para cadastro e acompanhamento de **demandas** (pedidos a agências), com controle de valores faturados/comprometidos por centro de custo, ordens de compra, comprovações e certidões.
+
+## Cliente e usuários
+Cliente Ytech: Sebrae MA. Perfis (`lib/roles.ts`):
+- `admin`: acesso total, incluindo agências, usuários, integrações, ordens de compra e `/admin`.
+- `operator`: equipe interna; sem agências, usuários, integrações e ordens de compra.
+- `agency`: agência externa; vê dashboard, demandas e ordens de compra.
+
+## Domínio
+
+| Termo | Significado |
+|-------|-------------|
+| Demanda | Pedido cadastrado (descrição, solicitante, un. responsável, obs, status, valor, centro de custo, OC/PI, mês). Ver `project-domain.mdc`. |
+| Status | Faturado ou Comprometido. |
+| Solicitante | Quem pediu a demanda. |
+| Un. responsável | Unidade responsável pela demanda. |
+| Agência | Fornecedor que executa demandas; possui orçamento anual. |
+| Centro de custo | Rateio do valor da demanda. |
+| OC/PI | Ordem de compra / pedido de inserção. |
+
+## Integrações externas
+- Deskfy (importação de boards, tarefas e relatórios de workflow).
+- WhatsApp (notificações de OC).
+- SMTP (e-mail) e webhooks configuráveis.
+- Armazenamento S3/R2 (uploads e backup).
+
+## Stack específica
+- Next.js 16 + React 19 + Tailwind 4, gerenciador **npm** (`package-lock.json`).
+- Banco: SQLite (`better-sqlite3`) e Postgres (`pg`), driver em `lib/infra/db-driver.ts`.
+- Autenticação própria em `lib/auth.ts` (`getSession()`).
+
+## Design — preferências do cliente
+- Design system `ytech-default` adotado: moldura (`components/layout/`), menu em `config/navigation.ts` com seções (`NAV_SECTIONS`), grupos recolhíveis (`components/layout/nav-group.tsx`, estado no `localStorage`, abre sozinho na página ativa) e filtro por perfil (`getNavSectionsForRole`; `getNavItemsForRole` é a lista plana da busca ⌘K). Grupo com um só item visível vira link direto, login em duas colunas, paleta `neutral`, largura total nas páginas.
+- Marca: ícone `Workflow` no `AppLogo`; `accent` padrão (`#e0166f`) até o cliente definir cor própria.
+- Todas as telas do painel foram migradas para `components/ui/` + `PageHeader` (listagens com `SearchPill`, `Dropdown` de filtros, badge de total + `FilterChip`, `Table`, `Pagination`; formulários com `FormSection`/`FormField`; Integrações em abas `?tab=`). Referência de listagem: `app/(panel)/solicitantes/`.
+- Componentes extras do projeto em `components/ui/`: `SearchPill` (busca em pílula na URL) e `IconButton` (ações por ícone em linhas).
+- Busca global ⌘K: `app/actions/search.ts` → `lib/use-cases/global-search.use-case.ts` (demandas, solicitantes, agências, respeitando o perfil) + páginas do menu no client.
+- Crédito "Desenvolvido por Ytech Solution" fica na topbar do painel (`components/layout/developer-credit.tsx`); no login, no rodapé (`AppFooter showCredit`).
+- Usuário de testes local em `docs/acesso-testes.md` (fora do git).
+- Boas-vindas da versão: `modals/welcome-release-modal.tsx` (2 passos + confete com `canvas-confetti`), montado no layout do painel. Aparece uma vez por usuário/navegador via `localStorage` (`nexo-welcome-<data>:<userId>`); para reexibir numa nova versão, trocar `RELEASE_KEY` e atualizar os destaques. Para testar, abrir qualquer página do painel com `?welcometest` (abre sempre e não grava no `localStorage`).
+- Histórico da demanda: tabela `demanda_historico`, gravada pelos use cases via `recordDemandaHistoricoUseCase` (dependência opcional `historico`, montada nas actions com `historicoDepsFromSession`). Eventos: criada, alterada (diff de status, valor, responsáveis etc.), comprovação adicionada/removida, OC enviada/assinada/removida, centros de custo. Exibido na aba "Histórico" de `VerDetalhesDemandaModal`. Falha ao gravar só gera log, nunca bloqueia a operação.
+- Lembretes de pendências (só e-mail): `sendPendingRemindersUseCase` envia à lista SMTP o resumo de OCs em aberto há N dias e demandas Entregue/Faturado sem comprovação há N dias (contados do `updatedAt`); cada agência recebe as suas. Configuração em Integrações → Lembretes (`pending_reminder_config`). Agendado pelo PM2 (`scripts/send-pending-reminders.ts`, `CRON_REMINDERS`, padrão 08:00) e limitado a uma execução por dia; o botão "Enviar agora" força o envio.
+- Alertas de capacidade (só WhatsApp): `checkCapacityAlertsUseCase` calcula o uso como no Dashboard (Faturado do ano corrente ÷ `orcamentoAnual`; `getDashboardAgenciasUseCase` filtra pelo ano do `mes` da demanda, ou do `createdAt` se o mês for inválido, fuso de São Paulo) e avisa os números da aba WhatsApp quando a agência cruza um limite (padrão 80% e 100%, configurável em Integrações → Alertas de capacidade, `capacity_alert_config`). Cada limite dispara uma vez por agência no ano (`capacity_alert_sent`, ano no fuso de São Paulo); cruzando vários de uma vez, avisa só o maior. Roda após criar/editar demanda, adicionar comprovação e editar agência; nunca lança, só loga.
+- Mobile: menu em drawer (`sidebar-drawer.tsx`); tabelas rolam na horizontal dentro do `Table` (wrapper `relative` para o `sr-only` não alargar a página); a lista de demandas vira cartões abaixo de `md`; grids de formulário em modais usam `grid-cols-1 sm:grid-cols-2`. Validar em 390px.
+- Componentes próprios mantidos por não terem equivalente no design system: `Modal` (composite), `CurrencyInput` (obrigatório para R$), `SearchableSelect`, `UserAvatarThumb`.
+- `Toggle` e `Tabs`/`Tab` antigos têm equivalentes (`ui/switch`, `ui/tabs`); usar os do design system em código novo.
+
+## Regras e decisões importantes
+- **Regras próprias do projeto prevalecem** sobre as `ytech-*.mdc` quando houver conflito (exceto design: segue o `ytech-default`).
+- Estrutura de pastas legada mantida: `app/actions/`, `lib/use-cases/`, `lib/domain/`, `lib/infra/`, `lib/repositories/`, `lib/contracts/`, `services/`, `types/globals.ts` (ver `clean-architecture.mdc`). Não migrar para `actions/`, `use-cases/`, `domain/`, `infrastructure/` na raiz sem pedido explícito.
+- Autorização nas actions via `getSession()` + role (não há `withGuards`). Erros de action em `{ error }` com `logServerActionError` (ver `server-actions-boundary.mdc`).
+- Existem rotas em `app/api/` (uploads, integrações, perfil); não criar novas sem necessidade — preferir Server Actions.
+- Nomes de arquivos existentes em PascalCase (componentes/modais) são mantidos; arquivos novos seguem o padrão da pasta onde estão.

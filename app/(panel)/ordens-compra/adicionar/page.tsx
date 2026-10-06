@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { canAccessOrdensCompra } from "@/lib/roles";
 import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
 import { getDemandaRepository, getOrdemCompraRepository } from "@/lib/repositories";
 import { getDemandasParaNovaOrdemCompraUseCase } from "@/lib/use-cases/get-demandas-para-nova-ordem-compra.use-case";
+import { PageHeader } from "@/components/layout/page-header";
 import { AddOrdemCompraForm } from "./sub/AddOrdemCompraForm";
 import { formatMonthYearDisplay } from "@/lib/month-year";
-import { ArrowLeft } from "lucide-react";
 
 function getDefaultMes(): string {
   const now = new Date();
@@ -59,19 +58,14 @@ export default async function AdicionarOrdemCompraPage({
   });
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/ordens-compra"
-            className="flex items-center gap-1 text-sm text-slate-600 transition hover:text-slate-800"
-          >
-            <ArrowLeft className="size-4" />
-            Voltar
-          </Link>
-        </div>
-
-        <h1 className="text-xl font-semibold text-slate-800">Novo pedido de assinatura de OC</h1>
+    <div className="w-full">
+      <div className="space-y-10">
+        <PageHeader
+          eyebrow="Ordens de compra"
+          backHref="/ordens-compra"
+          title="Nova ordem de compra"
+          description="Selecione a demanda e envie o PDF da OC para o gerente assinar digitalmente."
+        />
 
         <AddOrdemCompraForm
           demandas={demandas}

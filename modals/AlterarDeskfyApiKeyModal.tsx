@@ -3,7 +3,9 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/Modal";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { updateDeskfyApiKeyAction } from "@/app/actions/deskfy-config";
 import { Plug } from "lucide-react";
@@ -33,39 +35,34 @@ export function AlterarDeskfyApiKeyModal({ open, onClose }: AlterarDeskfyApiKeyM
     <Modal open={open} onClose={onClose} maxWidth="md" ariaLabelledby={TITLE_ID}>
       <form action={formAction}>
         <Modal.Header onClose={onClose}>
-          <h2 id={TITLE_ID} className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+          <h2 id={TITLE_ID} className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
             <Plug className="size-5 shrink-0" aria-hidden />
             Alterar chave API Deskfy
           </h2>
         </Modal.Header>
         <Modal.Body as="div">
-          <label htmlFor="deskfy-api-key-input" className="mb-1 block text-sm font-medium text-slate-600">
-            Nova chave (x-api-key)
-          </label>
-          <input
+          <FormField
             id="deskfy-api-key-input"
-            name="apiKey"
-            type="password"
-            autoComplete="off"
-            required
-            placeholder="Cole a chave fornecida pela Deskfy"
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-          />
-          <p className="mt-2 text-xs text-slate-500">
-            A chave é armazenada no servidor e não é exibida após salvar.
-          </p>
+            label="Nova chave (x-api-key)"
+            hint="A chave é armazenada no servidor e não é exibida após salvar."
+          >
+            <Input
+              id="deskfy-api-key-input"
+              name="apiKey"
+              type="password"
+              autoComplete="off"
+              required
+              placeholder="Cole a chave fornecida pela Deskfy"
+            />
+          </FormField>
         </Modal.Body>
         <Modal.Footer>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
-          </button>
-          <FormActionSubmitButton pending={isPendingKey} pendingLabel="Salvando...">
-            Salvar chave
-          </FormActionSubmitButton>
+          </Button>
+          <Button type="submit" loading={isPendingKey}>
+            {isPendingKey ? "Salvando..." : "Salvar chave"}
+          </Button>
         </Modal.Footer>
       </form>
     </Modal>

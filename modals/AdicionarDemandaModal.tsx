@@ -2,11 +2,14 @@
 
 import { useActionState, useRef, useCallback, useState } from "react";
 import { Workflow } from "lucide-react";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
 import { createDemandaAction } from "@/app/actions/demanda";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { CurrencyInputControlled } from "@/components/CurrencyInputControlled";
 import { Modal } from "@/components/Modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { DemandaCentrosCusto } from "./sub/DemandaCentrosCusto";
 import type { DemandaCentroCusto } from "@/types/globals";
@@ -52,7 +55,7 @@ export function AdicionarDemandaModal({
       closeOnOverlayClick={!isPending}
     >
       <Modal.Header onClose={onClose} closeDisabled={isPending}>
-        <h2 id="modal-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 id="modal-title" className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
           <Workflow className="size-5 shrink-0" />
           Nova demanda
         </h2>
@@ -83,31 +86,28 @@ export function AdicionarDemandaModal({
           aria-busy={isPending}
         >
           <div>
-            <label
-              htmlFor="demanda"
-              className="mb-1 block text-sm font-medium text-slate-600"
+            <Label
+              htmlFor="demanda" className="mb-1.5"
             >
               Demanda *
-            </label>
-            <input
+            </Label>
+            <Input
               id="demanda"
               name="demanda"
               type="text"
               required
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               placeholder="Descrição da demanda"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <label
-                htmlFor="solicitante"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="solicitante" className="mb-1.5"
               >
                 Solicitante *
-              </label>
-              <input
+              </Label>
+              <Input
                 id="solicitante"
                 name="solicitante"
                 type="text"
@@ -115,7 +115,6 @@ export function AdicionarDemandaModal({
                 required
                 autoComplete="off"
                 onChange={handleSolicitanteChange}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 placeholder="Selecione ou digite"
               />
               <datalist id="solicitantes-list">
@@ -125,13 +124,12 @@ export function AdicionarDemandaModal({
               </datalist>
             </div>
             <div>
-              <label
-                htmlFor="unResponsavel"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="unResponsavel" className="mb-1.5"
               >
                 Un. Responsável *
-              </label>
-              <input
+              </Label>
+              <Input
                 ref={unResponsavelRef}
                 id="unResponsavel"
                 name="unResponsavel"
@@ -140,7 +138,6 @@ export function AdicionarDemandaModal({
                 required
                 autoComplete="off"
                 placeholder="Preenchido ao selecionar solicitante"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               />
               <datalist id="unidades-list">
                 {options.unResponsaveis.map((u) => (
@@ -149,33 +146,29 @@ export function AdicionarDemandaModal({
               </datalist>
             </div>
             <div>
-              <label
-                htmlFor="status"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="status" className="mb-1.5"
               >
                 Status
-              </label>
-              <select
+              </Label>
+              <Select
                 id="status"
-                name="status"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                name="status" className="w-full"
               >
                 <option value="comprometido">Comprometido</option>
                 <option value="faturado">Faturado</option>
                 <option value="entregue">Entregue</option>
-              </select>
+              </Select>
             </div>
             <div>
-              <label
-                htmlFor="agencia"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="agencia" className="mb-1.5"
               >
                 Agência
-              </label>
-              <select
+              </Label>
+              <Select
                 id="agencia"
-                name="agencia"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                name="agencia" className="w-full"
               >
                 <option value="">Selecione</option>
                 {options.agencias.map((a) => (
@@ -183,34 +176,31 @@ export function AdicionarDemandaModal({
                     {a}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 
           <div>
-            <label
-              htmlFor="obs"
-              className="mb-1 block text-sm font-medium text-slate-600"
+            <Label
+              htmlFor="obs" className="mb-1.5"
             >
               Observações
-            </label>
-            <input
+            </Label>
+            <Input
               id="obs"
               name="obs"
               type="text"
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               placeholder="Observações (opcional)"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <label
-                htmlFor="valor"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="valor" className="mb-1.5"
               >
                 Valor (R$)
-              </label>
+              </Label>
               <div className="relative">
                 <CurrencyInputControlled
                   value={valorTotal}
@@ -225,32 +215,28 @@ export function AdicionarDemandaModal({
             </div>
 
             <div>
-              <label
-                htmlFor="ocPi"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="ocPi" className="mb-1.5"
               >
                 OC/PI
-              </label>
-              <input
+              </Label>
+              <Input
                 id="ocPi"
                 name="ocPi"
                 type="text"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 placeholder="SEB-300114"
               />
             </div>
             <div>
-              <label
-                htmlFor="mes"
-                className="mb-1 block text-sm font-medium text-slate-600"
+              <Label
+                htmlFor="mes" className="mb-1.5"
               >
                 Mês / Ano
-              </label>
-              <input
+              </Label>
+              <Input
                 id="mes"
                 name="mes"
                 type="month"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               />
             </div>
           </div>
@@ -266,21 +252,12 @@ export function AdicionarDemandaModal({
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
-        >
+        <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
           Cancelar
-        </button>
-        <FormActionSubmitButton
-          form="adicionar-demanda-form"
-          pending={isPending}
-          pendingLabel="Adicionando..."
-        >
-          Adicionar
-        </FormActionSubmitButton>
+        </Button>
+        <Button type="submit" form="adicionar-demanda-form" loading={isPending}>
+          {isPending ? "Adicionando..." : "Adicionar"}
+        </Button>
       </Modal.Footer>
     </Modal>
   );

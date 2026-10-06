@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
+import { Label } from "@/components/ui/label";
 import type { DemandaCentroCusto } from "@/types/globals";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -216,47 +219,39 @@ export function DemandaCentrosCusto({
     <div className="space-y-3">
       {centrosCusto.length > 0 && (
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-800">Centros de Custo</h3>
+          <h3 className="text-sm font-semibold text-neutral-950">Centros de custo</h3>
           {!readOnly && (
-            <button
-              type="button"
-              onClick={handleAddCentroCusto}
-              className="flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-600"
-            >
-              <Plus className="size-3.5" />
+            <Button type="button" variant="outline" size="sm" onClick={handleAddCentroCusto}>
+              <Plus className="size-3.5" aria-hidden />
               Adicionar
-            </button>
+            </Button>
           )}
         </div>
       )}
 
       {centrosCusto.length === 0 ? (
-        <p className="py-4 text-center text-xs text-slate-500">
-          Nenhum centro de custo cadastrado.
-        </p>
+        <p className="py-4 text-[13px] text-neutral-500">Nenhum centro de custo cadastrado.</p>
       ) : (
         <div className="space-y-3">
           {centrosCusto.map((cc, index) => (
             <div
               key={cc.id || cc.tempId || index}
-              className="relative flex items-start gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3"
+              className="relative flex items-start gap-4 rounded-lg border border-neutral-200 bg-white p-3 pr-12"
             >
               {!readOnly && centrosCusto.length > 1 && (
-                <button
-                  type="button"
+                <IconButton
+                  aria-label="Remover centro de custo"
+                  variant="danger"
                   onClick={() => handleRemoveCentroCusto(index)}
-                  className="absolute right-2 top-2 rounded-lg p-1.5 text-red-600 transition hover:bg-red-50"
-                  title="Remover centro de custo"
+                  className="absolute top-2 right-2"
                 >
-                  <Trash2 className="size-4" />
-                </button>
+                  <Trash2 />
+                </IconButton>
               )}
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-slate-600">
-                  Centro de Custo
-                </label>
+                <Label className="mb-1.5">Centro de custo</Label>
                 {readOnly ? (
-                  <div className="rounded px-2 py-1 text-sm text-slate-800">{cc.centroDeCusto || "—"}</div>
+                  <div className="py-1 text-sm text-neutral-800">{cc.centroDeCusto || "—"}</div>
                 ) : (
                   <SearchableSelect
                     options={centrosCustoOptions.map((cc) => ({
@@ -273,11 +268,9 @@ export function DemandaCentrosCusto({
                 )}
               </div>
               <div className="w-32 shrink-0">
-                <label className="mb-1 block text-xs font-medium text-slate-600">
-                  Valor
-                </label>
+                <Label className="mb-1.5">Valor</Label>
                 {readOnly ? (
-                  <div className="rounded px-2 py-1 text-sm font-medium text-slate-800">
+                  <div className="py-1 text-sm font-medium tabular-nums text-neutral-950">
                     {formatCurrency(cc.valor)}
                   </div>
                 ) : (
@@ -293,16 +286,16 @@ export function DemandaCentrosCusto({
       )}
 
       {!readOnly && centrosCusto.length > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50/60 p-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-slate-600">Total dos centros de custo:</span>
-            <span className={`font-semibold ${temErro ? "text-red-600" : "text-slate-800"}`}>
+            <span className="text-neutral-600">Total dos centros de custo</span>
+            <span className={`font-semibold tabular-nums ${temErro ? "text-red-600" : "text-neutral-950"}`}>
               {formatCurrency(somaAtual)}
             </span>
           </div>
           <div className="mt-1 flex items-center justify-between text-xs">
-            <span className="font-medium text-slate-600">Valor total da demanda:</span>
-            <span className="font-semibold text-slate-800">{formatCurrency(valorTotal)}</span>
+            <span className="text-neutral-600">Valor total da demanda</span>
+            <span className="font-semibold tabular-nums text-neutral-950">{formatCurrency(valorTotal)}</span>
           </div>
           {temErro && (
             <div className="mt-2 text-xs text-red-600">

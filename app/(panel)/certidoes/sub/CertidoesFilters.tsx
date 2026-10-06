@@ -1,102 +1,50 @@
-"use client";
-
-import Link from "next/link";
+import { Megaphone } from "lucide-react";
+import { Dropdown } from "@/components/ui/dropdown";
+import { DropdownItem } from "@/components/ui/dropdown-item";
+import { CertidoesMonthFilter } from "./CertidoesMonthFilter";
+import { certidoesHref, type CertidoesFilterParams } from "./hrefs";
 
 export interface CertidaoAgenciaOption {
   id: string;
   nomeFantasia: string;
 }
 
-export interface CertidoesFilterParams {
-  q?: string;
-  mes?: string;
-  agenciaId?: string;
-}
-
 interface CertidoesFiltersProps {
-  defaultQ: string;
-  defaultMes: string;
-  defaultAgenciaId: string;
+  filters: CertidoesFilterParams;
   agencias: CertidaoAgenciaOption[];
   hideAgencyFilter?: boolean;
 }
 
-export function CertidoesFilters({
-  defaultQ,
-  defaultMes,
-  defaultAgenciaId,
-  agencias,
-  hideAgencyFilter = false,
-}: CertidoesFiltersProps) {
-  const hasFilters = Boolean(defaultQ || defaultMes || (!hideAgencyFilter && defaultAgenciaId));
+export function CertidoesFilters({ filters, agencias, hideAgencyFilter = false }: CertidoesFiltersProps) {
+  const { q, mes, agenciaId } = filters;
+  const agenciaLabel = agencias.find((a) => a.id === agenciaId)?.nomeFantasia ?? "Todas";
 
   return (
-    <form
-      method="GET"
-      className="flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 bg-white p-4"
-    >
-      <div className="min-w-[200px] flex-1">
-        <label htmlFor="q" className="mb-1.5 block text-xs font-medium text-slate-600">
-          Buscar pela descrição
-        </label>
-        <input
-          id="q"
-          name="q"
-          defaultValue={defaultQ}
-              placeholder="Ex.: RFB, FGTS, federal..."
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="mes" className="mb-1.5 block text-xs font-medium text-slate-600">
-          Mês / ano
-        </label>
-        <input
-          type="month"
-          id="mes"
-          name="mes"
-          defaultValue={defaultMes || undefined}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          aria-label="Filtrar por mês e ano"
-        />
-      </div>
+    <div className="flex flex-wrap items-center gap-2">
+      <CertidoesMonthFilter q={q} mes={mes} agenciaId={agenciaId} />
 
       {!hideAgencyFilter && (
-        <div className="min-w-[180px]">
-          <label htmlFor="agenciaId" className="mb-1.5 block text-xs font-medium text-slate-600">
-            Agência
-          </label>
-          <select
-            id="agenciaId"
-            name="agenciaId"
-            defaultValue={defaultAgenciaId}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          >
-            <option value="">Todas</option>
-            {agencias.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nomeFantasia}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <button
-        type="submit"
-        className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-900"
-      >
-        Filtrar
-      </button>
-      {hasFilters && (
-        <Link
-          href="/certidoes"
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        <Dropdown
+          key={`agencia-${q}-${mes}-${agenciaId}`}
+          highlighted={Boolean(agenciaId)}
+          trigger={
+            <>
+              <Megaphone aria-hidden />
+              <span className="opacity-70">Agência</span>
+              <span className="max-w-40 truncate font-medium">{agenciaLabel}</span>
+            </>
+          }
         >
-          Limpar
-        </Link>
+          <DropdownItem href={certidoesHref({ q, mes })} active={!agenciaId}>
+            Todas
+          </DropdownItem>
+          {agencias.map((a) => (
+            <DropdownItem key={a.id} href={certidoesHref({ q, mes, agenciaId: a.id })} active={agenciaId === a.id}>
+              {a.nomeFantasia}
+            </DropdownItem>
+          ))}
+        </Dropdown>
       )}
-    </form>
+    </div>
   );
 }

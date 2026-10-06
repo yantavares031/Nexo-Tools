@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AdicionarAgenciaModal } from "@/modals/AdicionarAgenciaModal";
 
 interface AgenciasHeaderProps {
@@ -13,24 +14,12 @@ export function AgenciasHeader({ boards = [] }: AgenciasHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-800">Agências</h1>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-          aria-label="Adicionar agência"
-        >
-          <Plus className="size-4" />
-          Adicionar
-        </button>
-      </div>
+      <Button onClick={() => setModalOpen(true)}>
+        <Plus className="size-4" strokeWidth={2.25} aria-hidden />
+        Nova agência
+      </Button>
 
-      <AdicionarAgenciaModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        boards={boards}
-      />
+      <AdicionarAgenciaModal open={modalOpen} onClose={() => setModalOpen(false)} boards={boards} />
     </>
   );
 }

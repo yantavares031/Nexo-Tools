@@ -8,13 +8,14 @@ export type WhatsAppNotifySkipReason =
   | "no_recipients_configured"
   | "recipients_invalid_phone";
 
-export type WhatsAppNotifyContext = "oc_enviada" | "oc_assinada" | "comprovacao" | "certidao";
+export type WhatsAppNotifyContext = "oc_enviada" | "oc_assinada" | "comprovacao" | "certidao" | "capacidade";
 
 export function logWhatsAppNotifySkipped(params: {
   reason: WhatsAppNotifySkipReason;
   context: WhatsAppNotifyContext;
   /** Id principal para correlação (ex.: demanda; em comprovação multi, primeiro id). */
-  demandaId: string;
+  demandaId?: string;
+  agenciaId?: string;
 }): void {
   appLogger.info(
     {
@@ -31,7 +32,8 @@ export function logWhatsAppNotifySkipped(params: {
  */
 export function logWhatsAppSendAccepted(params: {
   context: WhatsAppNotifyContext;
-  demandaId: string;
+  demandaId?: string;
+  agenciaId?: string;
   /** Últimos dígitos do número normalizado (privacidade). */
   numberSuffix: string;
   async: boolean;

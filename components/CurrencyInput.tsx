@@ -68,7 +68,7 @@ export function CurrencyInput({
 
   return (
     <div className="relative">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500">
         R$
       </span>
       <input
@@ -80,7 +80,7 @@ export function CurrencyInput({
         value={displayValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        className={`w-full rounded-lg border border-slate-200 pl-9 pr-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 ${className}`}
+        className={`w-full rounded-lg border border-neutral-200 pl-9 pr-4 py-2 text-sm text-neutral-800 outline-none transition focus:border-neutral-700 focus:ring-1 focus:ring-neutral-900/10 ${className}`}
       />
     </div>
   );

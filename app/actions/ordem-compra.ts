@@ -10,6 +10,7 @@ import {
 } from "@/lib/r2-upload";
 import { readStoredUploadFile } from "@/lib/stored-upload";
 import { getSession } from "@/lib/auth";
+import { historicoDepsFromSession } from "@/lib/infra/historico-deps";
 import {
   getAgencyDemandaScope,
   demandaMatchesAgenciaScope,
@@ -122,7 +123,7 @@ export async function createOrdemCompraAction(
         cadastradoPorUserId: session.userId?.trim() || undefined,
         enviadoPorEmail: session.email,
       },
-      { ordemCompraRepository }
+      { ordemCompraRepository, historico: historicoDepsFromSession(session) }
     );
 
     let agenciaNome = demanda.agencia?.trim() || "Agência";
@@ -375,7 +376,7 @@ export async function uploadOrdemCompraAssinadaAction(
         tamanhoAssinado: file.size,
         caminhoArquivoAssinado: objectKey,
       },
-      { ordemCompraRepository }
+      { ordemCompraRepository, historico: historicoDepsFromSession(session) }
     );
 
     const ordemAtualizada = await ordemCompraRepository.findById(ordemId);
@@ -458,14 +459,14 @@ export async function removeOrdemCompraEmAbertoAction(
     if (session.role === "admin") {
       await removeOrdemCompraEmAbertoUseCase(
         ordemId,
-        { ordemCompraRepository, demandaRepository },
+        { ordemCompraRepository, demandaRepository, historico: historicoDepsFromSession(session) },
         { actor: "admin" }
       );
     } else {
       const scope = await getAgencyDemandaScope(session);
       await removeOrdemCompraEmAbertoUseCase(
         ordemId,
-        { ordemCompraRepository, demandaRepository },
+        { ordemCompraRepository, demandaRepository, historico: historicoDepsFromSession(session) },
         { actor: "agency", agencyScope: scope }
       );
     }

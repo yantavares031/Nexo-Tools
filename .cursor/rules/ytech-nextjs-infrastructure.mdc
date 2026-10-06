@@ -1,0 +1,44 @@
+---
+description: Infraestrutura na Ytech — repositórios, serviços externos atrás de contrato e factories
+globs: infrastructure/**/*.ts
+alwaysApply: false
+---
+
+# Infraestrutura Ytech
+
+`infrastructure/` é o único lugar que conhece tecnologia: banco, ORM, `fetch`, SDKs, variáveis de ambiente.
+
+## Subpastas
+
+| Pasta | O que fica |
+|-------|------------|
+| `infrastructure/database/` | Cliente único do banco (Prisma, pg, SQLite...). |
+| `infrastructure/repositories/` | Classes que implementam as interfaces de repositório de `domain/`. |
+| `infrastructure/services/` | Classes que implementam contratos de serviços externos (ERP, pagamento, e-mail, storage). |
+| `infrastructure/factories/` | Funções `make<Nome>UseCase()` que montam o use case com as implementações concretas. |
+
+## Repositórios
+
+- Sempre **classes** que implementam a interface: `class PrismaOrderRepository implements OrderRepository`.
+- Convertem o formato do banco para a entidade do domínio; nenhum tipo do ORM vaza para fora.
+- Só persistência, sem regra de negócio.
+
+## Serviços externos — sempre atrás de contrato
+
+- Todo serviço externo tem uma **interface** em `domain/services/` (ex.: `ErpService`, `PaymentGateway`) com nomes do **negócio**, não do fornecedor.
+- A implementação concreta fica em `infrastructure/services/<fornecedor>/` (ex.: `IxcErpService implements ErpService`).
+- Respostas do fornecedor são convertidas para tipos do domínio dentro do serviço; use cases nunca veem o payload bruto.
+- Quando houver mais de um fornecedor possível, a factory escolhe a implementação por variável de ambiente (ex.: `ERP_PROVIDER=ixc`). Trocar de fornecedor = nova classe + nova opção na factory; use cases não mudam.
+- Nunca importe o SDK/cliente de um fornecedor fora da pasta dele.
+
+## Factories
+
+```typescript
+// infrastructure/factories/orders.ts
+export function makeCreateOrderUseCase(): CreateOrderUseCase {
+  return new CreateOrderUseCase(new PrismaOrderRepository(prisma));
+}
+```
+
+- Actions obtêm use cases **somente** pelas factories.
+- Segredos e `process.env` são lidos apenas aqui, em código de servidor.

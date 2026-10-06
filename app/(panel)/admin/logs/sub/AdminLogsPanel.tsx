@@ -1,4 +1,11 @@
-import Link from "next/link";
+import { TriangleAlert } from "lucide-react";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Callout } from "@/components/ui/callout";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { Pagination } from "@/components/ui/pagination";
+import { SearchPill } from "@/components/ui/search-pill";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
+import { integerFormat } from "@/lib/format";
 import type {
   GetAppLogsPageResult,
   ParsedLogLine,
@@ -83,15 +90,15 @@ function cellMsg(line: ParsedLogLine): string {
   return typeof m === "string" ? m : String(m ?? "—");
 }
 
-function pinoLevelToLabel(level: unknown): { label: string; className: string } {
+function pinoLevelToLabel(level: unknown): { label: string; tone: BadgeTone } {
   const n = typeof level === "number" ? level : parseInt(String(level), 10);
-  if (Number.isNaN(n)) return { label: String(level ?? "—"), className: "bg-slate-100 text-slate-700" };
-  if (n >= 60) return { label: "FATAL", className: "bg-red-900 text-white" };
-  if (n >= 50) return { label: "ERROR", className: "bg-red-600 text-white" };
-  if (n >= 40) return { label: "WARN", className: "bg-amber-500 text-white" };
-  if (n >= 30) return { label: "INFO", className: "bg-blue-600 text-white" };
-  if (n >= 20) return { label: "DEBUG", className: "bg-slate-600 text-white" };
-  return { label: "TRACE", className: "bg-slate-400 text-white" };
+  if (Number.isNaN(n)) return { label: String(level ?? "—"), tone: "neutral" };
+  if (n >= 60) return { label: "FATAL", tone: "danger" };
+  if (n >= 50) return { label: "ERROR", tone: "danger" };
+  if (n >= 40) return { label: "WARN", tone: "warning" };
+  if (n >= 30) return { label: "INFO", tone: "info" };
+  if (n >= 20) return { label: "DEBUG", tone: "muted" };
+  return { label: "TRACE", tone: "muted" };
 }
 
 interface AdminLogsPanelProps {
@@ -103,163 +110,123 @@ export function AdminLogsPanel({ data, searchQuery }: AdminLogsPanelProps) {
   const { lines, page, pageSize, totalLines, totalPages, truncatedSnapshot, totalFileSize, logPath } =
     data;
   const q = searchQuery;
-  const showingFrom = totalLines === 0 ? 0 : (page - 1) * pageSize + 1;
-  const showingTo = Math.min(page * pageSize, totalLines);
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        <span className="font-medium text-slate-700">Arquivo atual:</span>{" "}
-        <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{logPath}</code>
-        {totalFileSize > 0 && (
-          <span className="ml-2">· {(totalFileSize / 1024).toFixed(1)} KB no disco</span>
-        )}
-      </p>
+    <div className="space-y-6">
       {truncatedSnapshot && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <strong>Leitura parcial:</strong> o arquivo excede o limite de leitura (últimos 32 MB). Só
-          as linhas desse trecho entram na busca e na paginação; entradas mais antigas podem não
-          aparecer.
-        </p>
+        <Callout icon={<TriangleAlert aria-hidden />} title="Leitura parcial">
+          O arquivo excede o limite de leitura (últimos 32 MB). Só as linhas desse trecho entram na busca e
+          na paginação; entradas mais antigas podem não aparecer.
+        </Callout>
       )}
 
-      <form method="get" className="flex flex-wrap items-end gap-2">
-        <div className="min-w-[200px] flex-1">
-          <label htmlFor="log-q" className="mb-1 block text-xs font-medium text-slate-500">
-            Filtrar por texto (mensagem, usuário, IP, ação…)
-          </label>
-          <input
-            id="log-q"
-            name="q"
-            type="search"
-            defaultValue={q}
-            placeholder="Ex.: login, userId, 192.168, server_action.error…"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-          />
-        </div>
-        <button
-          type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Buscar
-        </button>
-        {q ? (
-          <Link
-            href="/admin/logs"
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <SearchPill
+          action="/admin/logs"
+          q={q || undefined}
+          placeholder="Mensagem, usuário, IP, ação…"
+          label="Filtrar logs por texto"
+          clearHref={buildAdminLogsUrl(1, "")}
+          className="sm:w-96"
+        />
+        <p className="flex min-w-0 items-center gap-1.5 text-xs text-neutral-500">
+          <span className="shrink-0">Arquivo:</span>
+          <code
+            className="truncate rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-700"
+            title={logPath}
           >
-            Limpar
-          </Link>
-        ) : null}
-      </form>
+            {logPath}
+          </code>
+          {totalFileSize > 0 && (
+            <span className="shrink-0 whitespace-nowrap tabular-nums">
+              · {(totalFileSize / 1024).toFixed(1)} KB no disco
+            </span>
+          )}
+        </p>
+      </div>
 
-      <p className="text-sm text-slate-600">
-        {totalLines === 0 ? (
-          "Nenhuma linha neste trecho."
-        ) : (
-          <>
-            Ordem: mais recentes primeiro. {totalLines} linha(s) correspondem
-            {totalPages > 1 ? ` · Página ${page} de ${totalPages}` : null}
-            {totalLines > 0 ? (
-              <>
-                {" "}
-                · Mostrando {showingFrom}–{showingTo}
-              </>
-            ) : null}
-          </>
-        )}
-      </p>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+          <Badge tone="dark" className="px-2.5 py-1">
+            <span className="tabular-nums">{integerFormat.format(totalLines)}</span>
+            {totalLines === 1 ? "linha" : "linhas"}
+          </Badge>
+          {q && (
+            <FilterChip label="busca" removeHref={buildAdminLogsUrl(1, "")}>
+              “{q}”
+            </FilterChip>
+          )}
+        </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[800px] border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="whitespace-nowrap px-3 py-2 font-semibold text-slate-800">Data / hora</th>
-              <th className="px-3 py-2 font-semibold text-slate-800">Nível</th>
-              <th className="min-w-[140px] px-3 py-2 font-semibold text-slate-800">Mensagem</th>
-              <th className="min-w-[280px] px-3 py-2 font-semibold text-slate-800">Detalhes</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[800px]">
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell className="w-44">Data / hora</TableHeaderCell>
+              <TableHeaderCell className="w-24">Nível</TableHeaderCell>
+              <TableHeaderCell className="min-w-[140px]">Mensagem</TableHeaderCell>
+              <TableHeaderCell className="min-w-[280px]">Detalhes</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {lines.length === 0 ? (
-              <tr>
-                <td className="px-3 py-6 text-slate-500" colSpan={4}>
-                  Sem registros para os filtros atuais.
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={4} className="py-12 text-neutral-500">
+                  {q ? "Sem registros para os filtros atuais." : "Nenhuma linha neste trecho."}
+                </TableCell>
+              </TableRow>
             ) : (
               lines.map((line, i) => {
                 const lev = line.ok ? pinoLevelToLabel(line.json.level) : null;
                 const entries = getDetailEntries(line);
+                const msg = cellMsg(line);
                 return (
-                  <tr key={`${page}-${i}`} className="border-b border-slate-100 align-top">
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-700">
-                      {formatLineTime(line)}
-                    </td>
-                    <td className="px-3 py-2">
-                      {lev ? (
-                        <span
-                          className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${lev.className}`}
-                        >
-                          {lev.label}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="max-w-xs px-3 py-2 text-slate-800">{cellMsg(line)}</td>
-                    <td className="max-w-xl px-3 py-2 text-slate-800">
+                  <TableRow key={`${page}-${i}`} className="align-top transition-colors hover:bg-sky-50/60">
+                    <TableCell className="align-top whitespace-nowrap tabular-nums">{formatLineTime(line)}</TableCell>
+                    <TableCell className="align-top">
+                      {lev ? <Badge tone={lev.tone}>{lev.label}</Badge> : "—"}
+                    </TableCell>
+                    <TableCell className="max-w-xs align-top" title={msg}>
+                      <p className="truncate font-medium text-neutral-950">{msg}</p>
+                    </TableCell>
+                    <TableCell className="max-w-xl align-top">
                       {entries.length === 0 ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-neutral-400">—</span>
                       ) : (
-                        <div className="space-y-1 text-xs">
+                        <dl className="space-y-1 text-xs">
                           {entries.map(([k, v]) => (
                             <div key={k} className="flex gap-2">
-                              <span className="shrink-0 font-medium text-slate-500">{k}:</span>
-                              <span className="min-w-0 break-all font-mono text-slate-800">{v}</span>
+                              <dt className="shrink-0 font-medium text-neutral-500">{k}:</dt>
+                              <dd className="min-w-0 font-mono break-all text-neutral-800">{v}</dd>
                             </div>
                           ))}
-                        </div>
+                        </dl>
                       )}
                       <details className="mt-2">
-                        <summary className="cursor-pointer text-xs font-medium text-blue-600">
+                        <summary className="cursor-pointer text-xs font-medium text-link hover:text-link-hover">
                           JSON bruto
                         </summary>
-                        <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-50 p-2 text-[11px] text-slate-600">
+                        <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-neutral-50 p-2 text-[11px] break-all whitespace-pre-wrap text-neutral-600">
                           {line.raw}
                         </pre>
                       </details>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
 
-      {totalPages > 1 && (
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={buildAdminLogsUrl(Math.max(1, page - 1), q)}
-            className={`rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium ${
-              page <= 1 ? "pointer-events-none opacity-40" : "text-slate-700 hover:bg-slate-50"
-            }`}
-            aria-disabled={page <= 1}
-          >
-            Anterior
-          </Link>
-          <Link
-            href={buildAdminLogsUrl(Math.min(totalPages, page + 1), q)}
-            className={`rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium ${
-              page >= totalPages ? "pointer-events-none opacity-40" : "text-slate-700 hover:bg-slate-50"
-            }`}
-            aria-disabled={page >= totalPages}
-          >
-            Próxima
-          </Link>
-        </div>
-      )}
+        {totalLines > 0 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={totalLines}
+            pageSize={pageSize}
+            hrefForPage={(target) => buildAdminLogsUrl(target, q)}
+          />
+        )}
+      </div>
     </div>
   );
 }

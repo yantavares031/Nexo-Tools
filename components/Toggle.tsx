@@ -26,8 +26,8 @@ export function Toggle({ name, checked, onChange, label, disabled }: ToggleProps
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-50 ${
-          checked ? "bg-blue-500" : "bg-slate-200"
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:ring-offset-2 disabled:opacity-50 ${
+          checked ? "bg-blue-600" : "bg-neutral-200"
         }`}
       >
         <span
@@ -37,7 +37,7 @@ export function Toggle({ name, checked, onChange, label, disabled }: ToggleProps
           style={{ marginTop: 1 }}
         />
       </button>
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="text-sm font-medium text-neutral-700">
         {label}
       </label>
     </div>

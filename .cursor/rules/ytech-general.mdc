@@ -1,0 +1,16 @@
+---
+description: Padrões gerais de desenvolvimento da Ytech, válidos em qualquer stack
+alwaysApply: true
+---
+
+# Padrões gerais Ytech
+
+- Responda sempre em português do Brasil; escreva código, nomes e commits em inglês.
+- Leia `.cursor/rules/project-context.mdc` antes de implementar funcionalidades. Se estiver vazio, peça ao usuário as informações do projeto e preencha-o.
+- Antes de criar um arquivo, verifique se já existe algo equivalente no projeto e reutilize.
+- Siga a estrutura de pastas definida no `AGENTS.md` do projeto; não invente pastas novas sem necessidade.
+- Prefira mudanças pequenas e focadas. Não refatore código não relacionado à tarefa.
+- Valide entradas externas com Zod e derive os tipos com `z.infer`.
+- Nunca coloque segredos no código. Use variáveis de ambiente validadas e atualize o `.env.example`.
+- Não adicione dependências novas sem justificar o motivo.
+- Comentários só para explicar o "porquê" que o código não mostra.

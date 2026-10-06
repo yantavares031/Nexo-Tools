@@ -1,0 +1,23 @@
+---
+description: Next.js 16+ na Ytech — usar proxy.ts em vez de middleware.ts
+alwaysApply: true
+---
+
+# Proxy (não Middleware)
+
+A partir do Next.js 16, o antigo **Middleware** se chama **Proxy**.
+
+- Use **`proxy.ts`** na raiz do projeto. **Nunca** crie `middleware.ts`.
+- Exporte a função nomeada `proxy`:
+
+```ts
+import { NextResponse, type NextRequest } from "next/server";
+
+export function proxy(request: NextRequest) {
+  return NextResponse.next();
+}
+```
+
+- Use apenas para tarefas leves na borda: redirects, rewrites, headers e checagens **otimistas** (ex.: "existe cookie de sessão?").
+- Validação completa de sessão e permissão fica nos guards centrais (`ytech-nextjs-guards.mdc`), usados pelas Server Actions e Server Components, nunca só no proxy.
+- Proibido no proxy: acesso a banco, `fetch` lento ou regra de negócio.

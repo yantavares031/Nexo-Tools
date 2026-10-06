@@ -23,7 +23,7 @@ export type FormActionSubmitButtonProps = {
 };
 
 const defaultPrimaryClass =
-  "flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:pointer-events-none disabled:opacity-50";
+  "flex items-center justify-center gap-2 rounded-lg bg-neutral-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:pointer-events-none disabled:opacity-50";
 
 /**
  * Botão de submit com spinner e disabled durante a server action.

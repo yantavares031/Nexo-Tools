@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AdicionarUsuarioModal } from "@/modals/AdicionarUsuarioModal";
 import type { Agencia } from "@/types/globals";
 
@@ -15,20 +16,10 @@ export function UsuariosHeader({ agencias }: UsuariosHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-slate-800">
-          Cadastro de usuários
-        </h2>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-          aria-label="Adicionar usuário"
-        >
-          <Plus className="size-4" />
-          Adicionar
-        </button>
-      </div>
+      <Button onClick={() => setModalOpen(true)}>
+        <Plus className="size-4" strokeWidth={2.25} aria-hidden />
+        Novo usuário
+      </Button>
 
       <AdicionarUsuarioModal
         key={addModalKey}

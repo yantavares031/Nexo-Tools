@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useConfirm } from "@/lib/confirm-context";
+import { LayoutGrid, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-provider";
 import {
   addDeskfyImportBoardAction,
   removeDeskfyImportBoardAction,
 } from "@/app/actions/deskfy-import-boards";
-import { toast } from "sonner";
-import { Plug } from "lucide-react";
-import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FormSection } from "@/components/ui/form-section";
+import { IconButton } from "@/components/ui/icon-button";
+import { Input } from "@/components/ui/input";
+import { PanelHeader } from "@/components/ui/panel-header";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 
 interface DeskfyImportBoard {
   id: string;
@@ -67,84 +73,79 @@ export function ConfiguracoesBoardsSection({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6">
-      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-slate-800">
-        <Plug className="size-5 shrink-0" />
-        Boards Deskfy
-      </h2>
-      <p className="mb-4 text-sm text-slate-600">
-        Defina quais boards da Deskfy devem aparecer na importação de demandas. Apenas
-        solicitações com status DONE e board nesta lista serão exibidas.
-      </p>
+    <div className="max-w-3xl">
+      <PanelHeader
+        title="Filtro de boards"
+        description="Apenas solicitações com status DONE e board nesta lista aparecem na importação de demandas."
+      />
 
-      <form onSubmit={handleAdd} className="mb-6 flex flex-wrap items-end gap-2">
-        <div className="min-w-0 flex-1">
-          <label htmlFor="novo-board" className="sr-only">
-            Nome do board
-          </label>
-          <input
-            id="novo-board"
-            type="text"
-            value={novoBoard}
-            onChange={(e) => setNovoBoard(e.target.value)}
-            placeholder="Ex.: AGÊNCIA | MALLMANN"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
-            disabled={isAdding}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isAdding || !novoBoard.trim()}
-          className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:pointer-events-none disabled:opacity-50"
+      <div>
+        <FormSection
+          icon={<LayoutGrid aria-hidden />}
+          title="Boards Deskfy"
+          description="Defina quais boards da Deskfy devem aparecer na importação."
         >
-          {isAdding ? (
-            <>
-              <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Adicionando…
-            </>
-          ) : (
-            "Adicionar"
-          )}
-        </button>
-      </form>
+          <div className="space-y-4">
+            <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2">
+              <label htmlFor="novo-board" className="sr-only">
+                Nome do board
+              </label>
+              <Input
+                id="novo-board"
+                type="text"
+                value={novoBoard}
+                onChange={(e) => setNovoBoard(e.target.value)}
+                placeholder="Ex.: AGÊNCIA | MALLMANN"
+                disabled={isAdding}
+                className="w-auto min-w-0 flex-1"
+              />
+              <Button type="submit" loading={isAdding} disabled={!novoBoard.trim()} className="h-10">
+                {!isAdding && <Plus className="size-4" aria-hidden />}
+                {isAdding ? "Adicionando…" : "Adicionar"}
+              </Button>
+            </form>
 
-      {boards.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
-          Nenhum board configurado. Adicione os boards permitidos para a importação.
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-slate-200">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-4 py-3 font-semibold text-slate-600">Board</th>
-                <th className="w-24 px-4 py-3 font-semibold text-slate-600">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {boards.map((board) => (
-                <tr
-                  key={board.id}
-                  className="border-b border-slate-100 last:border-b-0"
-                >
-                  <td className="px-4 py-3 text-slate-800">{board.nome}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(board)}
-                      className="inline-flex items-center gap-1.5 rounded text-red-600 transition hover:bg-red-50 hover:text-red-700"
-                      title="Remover board"
-                    >
-                      <Trash2 className="size-4" />
-                      Remover
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            {boards.length === 0 ? (
+              <EmptyState
+                icon={<LayoutGrid aria-hidden />}
+                title="Nenhum board configurado"
+                description="Adicione os boards permitidos para a importação."
+              />
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-neutral-200">
+                <Table>
+                  <TableHead>
+                    <TableRow className="bg-neutral-50">
+                      <TableHeaderCell>Board</TableHeaderCell>
+                      <TableHeaderCell className="w-16">
+                        <span className="sr-only">Ações</span>
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {boards.map((board) => (
+                      <TableRow key={board.id} className="transition-colors last:border-b-0 hover:bg-sky-50/60">
+                        <TableCell className="max-w-96 truncate font-medium text-neutral-950" title={board.nome}>
+                          {board.nome}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            aria-label="Remover board"
+                            variant="danger"
+                            onClick={() => void handleRemove(board)}
+                          >
+                            <Trash2 />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </FormSection>
+      </div>
     </div>
   );
 }

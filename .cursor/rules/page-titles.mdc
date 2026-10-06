@@ -10,11 +10,11 @@ Todo o painel interno deve usar tamanhos de título consistentes em todas as pá
 ## Regras
 
 1. **Título principal da página** (primeiro título visível na área de conteúdo):
-   - Classes: `text-xl font-semibold text-slate-800`
+   - Classes: `text-xl font-semibold tracking-tight text-neutral-950`
    - Ex.: "Demandas", "Agências", "Dashboard", "Cadastro de solicitantes", "Cadastro de usuários"
 
 2. **Subtítulo de seção** (títulos de blocos dentro de uma página):
-   - Classes: `text-lg font-semibold text-slate-800`
+   - Classes: `text-lg font-semibold text-neutral-950`
    - Ex.: "Por Un. Responsável", "Faturado vs Capacidade anual"
 
 3. **Não misturar**: Nunca usar `text-lg` para título principal nem `text-2xl` ou `text-base` — manter o padrão acima.
@@ -23,11 +23,11 @@ Todo o painel interno deve usar tamanhos de título consistentes em todas as pá
 
 ```tsx
 // ✅ Título principal da página
-<h1 className="text-xl font-semibold text-slate-800">Demandas</h1>
-<h2 className="text-xl font-semibold text-slate-800">Dashboard — Faturado vs Capacidade Anual</h2>
+<h1 className="text-xl font-semibold tracking-tight text-neutral-950">Demandas</h1>
+<h2 className="text-xl font-semibold tracking-tight text-neutral-950">Dashboard — Faturado vs Capacidade Anual</h2>
 
 // ✅ Subtítulo de seção
-<h2 className="mb-4 text-lg font-semibold text-slate-800">Por Un. Responsável</h2>
+<h2 className="mb-4 text-lg font-semibold text-neutral-950">Por Un. Responsável</h2>
 ```
 
 ## Escopo

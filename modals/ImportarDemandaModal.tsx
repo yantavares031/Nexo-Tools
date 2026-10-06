@@ -26,6 +26,10 @@ import { getDeskfyTaskDetailsAction } from "@/app/actions/deskfy-task-details";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { CurrencyInputControlled } from "@/components/CurrencyInputControlled";
 import { Modal } from "@/components/Modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import { DemandaCentrosCusto } from "./sub/DemandaCentrosCusto";
 import type {
@@ -67,8 +71,8 @@ function deskfyAttachmentVisual(extension?: string, contentType?: string): Attac
   ) {
     return {
       Icon: Image,
-      wrapperClass: "bg-emerald-50 ring-1 ring-emerald-100",
-      iconClass: "text-emerald-600",
+      wrapperClass: "bg-sky-50 ring-1 ring-sky-100",
+      iconClass: "text-sky-600",
       typeLabel: ext ? ext.toUpperCase() : "Imagem",
     };
   }
@@ -81,8 +85,8 @@ function deskfyAttachmentVisual(extension?: string, contentType?: string): Attac
   ) {
     return {
       Icon: FileSpreadsheet,
-      wrapperClass: "bg-green-50 ring-1 ring-green-100",
-      iconClass: "text-green-700",
+      wrapperClass: "bg-lime-50 ring-1 ring-lime-100",
+      iconClass: "text-lime-700",
       typeLabel: ext ? ext.toUpperCase() : "Planilha",
     };
   }
@@ -94,8 +98,8 @@ function deskfyAttachmentVisual(extension?: string, contentType?: string): Attac
   ) {
     return {
       Icon: FileText,
-      wrapperClass: "bg-blue-50 ring-1 ring-blue-100",
-      iconClass: "text-blue-600",
+      wrapperClass: "bg-sky-50 ring-1 ring-sky-100",
+      iconClass: "text-link",
       typeLabel: ext ? ext.toUpperCase() : "Documento",
     };
   }
@@ -138,8 +142,8 @@ function deskfyAttachmentVisual(extension?: string, contentType?: string): Attac
 
   return {
     Icon: File,
-    wrapperClass: "bg-slate-100 ring-1 ring-slate-200",
-    iconClass: "text-slate-600",
+    wrapperClass: "bg-neutral-100 ring-1 ring-neutral-200",
+    iconClass: "text-neutral-600",
     typeLabel: ext ? ext.toUpperCase() : "Arquivo",
   };
 }
@@ -157,7 +161,7 @@ function ImportarDemandaAnexoCard({
   const { Icon } = visual;
 
   const cardClass =
-    "group flex w-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400";
+    "group flex w-full items-start gap-3 rounded-xl border border-neutral-200 bg-white p-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-800";
 
   const body = (
     <>
@@ -168,13 +172,13 @@ function ImportarDemandaAnexoCard({
         <Icon className={`size-5 ${visual.iconClass}`} strokeWidth={1.75} />
       </div>
       <div className="min-w-0 flex-1 text-left">
-        <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{displayName}</p>
+        <p className="line-clamp-2 text-sm font-medium leading-snug text-neutral-800">{displayName}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+          <span className="inline-flex rounded-md bg-neutral-100 px-1.5 py-0.5 text-left text-[10px] font-semibold uppercase tracking-wide text-neutral-600">
             {visual.typeLabel}
           </span>
           {anexo.contentType ? (
-            <span className="text-left text-[11px] text-slate-400">{anexo.contentType}</span>
+            <span className="text-left text-[11px] text-neutral-400">{anexo.contentType}</span>
           ) : null}
         </div>
         {!href ? (
@@ -183,7 +187,7 @@ function ImportarDemandaAnexoCard({
       </div>
       {href ? (
         <ExternalLink
-          className="size-4 shrink-0 text-slate-300 transition group-hover:text-blue-500"
+          className="size-4 shrink-0 text-neutral-300 transition group-hover:text-link"
           aria-hidden
         />
       ) : null}
@@ -204,7 +208,7 @@ function ImportarDemandaAnexoCard({
   }
 
   return (
-    <div className={`${cardClass} cursor-default hover:border-slate-200 hover:shadow-sm`}>{body}</div>
+    <div className={`${cardClass} cursor-default hover:border-neutral-200 hover:shadow-sm`}>{body}</div>
   );
 }
 
@@ -357,7 +361,7 @@ export function ImportarDemandaModal({
       closeOnOverlayClick={!isImportPending}
     >
       <Modal.Header onClose={handleCloseImportModal} closeDisabled={isImportPending}>
-        <h2 id="importar-modal-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 id="importar-modal-title" className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
           <Workflow className="size-5 shrink-0" />
           Importar demanda
         </h2>
@@ -385,7 +389,7 @@ export function ImportarDemandaModal({
         className="flex max-h-[70vh] flex-col p-0"
       >
         <div className="shrink-0 px-6 pt-4">
-          <div className="flex border-b border-slate-200" role="tablist" aria-label="Seções da importação">
+          <div className="flex gap-7 border-b border-neutral-200" role="tablist" aria-label="Seções da importação">
             {(
               [
                 { id: "dados" as const, label: "Dados" },
@@ -401,10 +405,10 @@ export function ImportarDemandaModal({
                   role="tab"
                   aria-selected={isSelected}
                   onClick={() => setActiveTab(id)}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`-mb-px border-b-2 px-1 pb-3 text-sm whitespace-nowrap transition-colors ${
                     isSelected
-                      ? "border-b-2 border-blue-500 text-blue-600"
-                      : "text-slate-600 hover:text-slate-800"
+                      ? "border-accent font-medium text-neutral-950"
+                      : "border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-950"
                   }`}
                 >
                   {label}
@@ -414,30 +418,29 @@ export function ImportarDemandaModal({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
         <input type="hidden" name="redirectTo" value="importar" />
         <div className={`space-y-3 ${activeTab !== "dados" ? "hidden" : ""}`}>
           <div>
-            <label htmlFor="import-demanda" className="mb-1 block text-sm font-medium text-slate-600">
+            <Label htmlFor="import-demanda" className="mb-1.5">
               Demanda *
-            </label>
-            <input
+            </Label>
+            <Input
               id="import-demanda"
               name="demanda"
               type="text"
               required
               defaultValue={demanda}
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               placeholder="Descrição da demanda"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <label htmlFor="import-solicitante" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-solicitante" className="mb-1.5">
                 Solicitante *
-              </label>
-              <input
+              </Label>
+              <Input
                 id="import-solicitante"
                 name="solicitante"
                 type="text"
@@ -446,7 +449,6 @@ export function ImportarDemandaModal({
                 autoComplete="off"
                 defaultValue={solicitante}
                 onChange={handleSolicitanteChange}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 placeholder="Selecione ou digite"
               />
               <datalist id="import-solicitantes-list">
@@ -456,10 +458,10 @@ export function ImportarDemandaModal({
               </datalist>
             </div>
             <div>
-              <label htmlFor="import-unResponsavel" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-unResponsavel" className="mb-1.5">
                 Un. Responsável *
-              </label>
-              <input
+              </Label>
+              <Input
                 ref={unResponsavelRef}
                 id="import-unResponsavel"
                 name="unResponsavel"
@@ -469,7 +471,6 @@ export function ImportarDemandaModal({
                 autoComplete="off"
                 defaultValue={unResponsavel}
                 placeholder="Preenchido ao selecionar solicitante"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               />
               <datalist id="import-unidades-list">
                 {options.unResponsaveis.map((u) => (
@@ -478,29 +479,27 @@ export function ImportarDemandaModal({
               </datalist>
             </div>
             <div>
-              <label htmlFor="import-status" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-status" className="mb-1.5">
                 Status
-              </label>
-              <select
+              </Label>
+              <Select
                 id="import-status"
                 name="status"
-                defaultValue="entregue"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                defaultValue="entregue" className="w-full"
               >
                 <option value="comprometido">Comprometido</option>
                 <option value="faturado">Faturado</option>
                 <option value="entregue">Entregue</option>
-              </select>
+              </Select>
             </div>
             <div>
-              <label htmlFor="import-agencia" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-agencia" className="mb-1.5">
                 Agência
-              </label>
-              <select
+              </Label>
+              <Select
                 id="import-agencia"
                 name="agencia"
-                defaultValue={agenciaPreSelecionada}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                defaultValue={agenciaPreSelecionada} className="w-full"
               >
                 <option value="">Selecione</option>
                 {options.agencias.map((a) => (
@@ -508,7 +507,7 @@ export function ImportarDemandaModal({
                     {a}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -519,23 +518,22 @@ export function ImportarDemandaModal({
           )}
 
           <div>
-            <label htmlFor="import-obs" className="mb-1 block text-sm font-medium text-slate-600">
+            <Label htmlFor="import-obs" className="mb-1.5">
               Observações
-            </label>
-            <input
+            </Label>
+            <Input
               id="import-obs"
               name="obs"
               type="text"
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               placeholder="Observações (opcional)"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <label htmlFor="import-valor" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-valor" className="mb-1.5">
                 Valor (R$)
-              </label>
+              </Label>
               <div className="relative">
                 <CurrencyInputControlled
                   value={valorTotal}
@@ -549,28 +547,26 @@ export function ImportarDemandaModal({
               </div>
             </div>
             <div>
-              <label htmlFor="import-ocPi" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-ocPi" className="mb-1.5">
                 OC/PI
-              </label>
-              <input
+              </Label>
+              <Input
                 id="import-ocPi"
                 name="ocPi"
                 type="text"
                 defaultValue={ocPi}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 placeholder="SEB-300114"
               />
             </div>
             <div>
-              <label htmlFor="import-mes" className="mb-1 block text-sm font-medium text-slate-600">
+              <Label htmlFor="import-mes" className="mb-1.5">
                 Mês / Ano
-              </label>
-              <input
+              </Label>
+              <Input
                 id="import-mes"
                 name="mes"
                 type="month"
                 defaultValue={mesYyyyMm}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
               />
             </div>
           </div>
@@ -587,20 +583,20 @@ export function ImportarDemandaModal({
 
         <div className={`space-y-4 ${activeTab !== "briefing" ? "hidden" : ""}`} role="tabpanel">
           {deskfyLoading && (
-            <p className="text-left text-sm text-slate-500">Carregando briefing e anexos na Deskfy…</p>
+            <p className="text-left text-sm text-neutral-500">Carregando briefing e anexos na Deskfy…</p>
           )}
           {!deskfyLoading && deskfyError && (
             <p className="text-left text-sm text-red-600">{deskfyError}</p>
           )}
           {!deskfyLoading && !deskfyError && !briefing && (
-            <p className="text-left text-sm text-slate-500">Nenhum briefing retornado para esta demanda.</p>
+            <p className="text-left text-sm text-neutral-500">Nenhum briefing retornado para esta demanda.</p>
           )}
           {!deskfyLoading && !deskfyError && briefing && (
             <>
-              <h3 className="text-left text-lg font-semibold text-slate-800">Campos do formulário</h3>
+              <h3 className="text-left text-lg font-semibold text-neutral-800">Campos do formulário</h3>
               <ol className="m-0 list-none space-y-3 p-0" aria-label="Campos do formulário do briefing">
                 {briefingFieldEntries.length === 0 ? (
-                  <li className="text-left text-sm text-slate-500">Nenhum campo de texto no briefing.</li>
+                  <li className="text-left text-sm text-neutral-500">Nenhum campo de texto no briefing.</li>
                 ) : (
                   briefingFieldEntries.map(([key, value], index) => {
                     const n = index + 1;
@@ -608,17 +604,17 @@ export function ImportarDemandaModal({
                     return (
                       <li key={key} className="list-none">
                         <article
-                          className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100"
+                          className="overflow-hidden rounded-xl border border-neutral-200/90 bg-white shadow-sm ring-1 ring-neutral-100"
                           aria-label={`Campo ${n} de ${briefingFieldEntries.length}: ${labelText}`}
                         >
                           <div className="space-y-2 p-4">
-                            <h4 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-left text-sm font-semibold leading-snug text-slate-800">
-                              <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold tabular-nums text-blue-700 ring-1 ring-blue-100">
+                            <h4 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-left text-sm font-semibold leading-snug text-neutral-800">
+                              <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-sky-50 text-xs font-bold tabular-nums text-link-hover ring-1 ring-sky-100">
                                 {n}
                               </span>
                               <span className="min-w-0 flex-1">{labelText}</span>
                             </h4>
-                            <div className="rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2.5 text-left text-sm leading-relaxed text-slate-800 whitespace-pre-wrap wrap-break-word">
+                            <div className="rounded-lg border border-neutral-100 bg-neutral-50/90 px-3 py-2.5 text-left text-sm leading-relaxed text-neutral-800 whitespace-pre-wrap wrap-break-word">
                               {briefingValueToDisplay(value)}
                             </div>
                           </div>
@@ -630,11 +626,11 @@ export function ImportarDemandaModal({
               </ol>
 
               {briefingPublicUrls && Object.keys(briefingPublicUrls).length > 0 && (
-                <div className="space-y-3 border-t border-slate-100 pt-4">
-                  <h3 className="text-left text-lg font-semibold text-slate-800">Anexos do briefing</h3>
+                <div className="space-y-3 border-t border-neutral-100 pt-4">
+                  <h3 className="text-left text-lg font-semibold text-neutral-800">Anexos do briefing</h3>
                   {Object.entries(briefingPublicUrls).map(([fieldKey, urls]) => (
                     <div key={fieldKey}>
-                      <p className="mb-2 text-left text-sm font-medium text-slate-600">
+                      <p className="mb-2 text-left text-sm font-medium text-neutral-600">
                         {formatDeskfyBriefingFieldLabel(fieldKey)}
                       </p>
                       <ul className="space-y-2">
@@ -644,7 +640,7 @@ export function ImportarDemandaModal({
                               href={href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+                              className="inline-flex items-center gap-1.5 text-sm text-link hover:underline"
                             >
                               <ExternalLink className="size-3.5 shrink-0" aria-hidden />
                               {urls.length > 1 ? `Abrir arquivo ${idx + 1}` : "Abrir arquivo"}
@@ -662,13 +658,13 @@ export function ImportarDemandaModal({
 
         <div className={`space-y-3 ${activeTab !== "anexos" ? "hidden" : ""}`} role="tabpanel">
           {deskfyLoading && (
-            <p className="text-left text-sm text-slate-500">Carregando anexos na Deskfy…</p>
+            <p className="text-left text-sm text-neutral-500">Carregando anexos na Deskfy…</p>
           )}
           {!deskfyLoading && deskfyError && (
             <p className="text-left text-sm text-red-600">{deskfyError}</p>
           )}
           {!deskfyLoading && !deskfyError && anexosList.length === 0 && (
-            <p className="text-left text-sm text-slate-500">Nenhum anexo nesta demanda.</p>
+            <p className="text-left text-sm text-neutral-500">Nenhum anexo nesta demanda.</p>
           )}
           {!deskfyLoading && !deskfyError && anexosList.length > 0 && (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -688,33 +684,12 @@ export function ImportarDemandaModal({
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <button
-          type="button"
-          onClick={handleCloseImportModal}
-          disabled={isImportPending}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button type="button" variant="ghost" onClick={handleCloseImportModal} disabled={isImportPending}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          form="importar-demanda-form"
-          disabled={isImportPending}
-          aria-busy={isImportPending}
-          className="flex min-w-30 items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {isImportPending ? (
-            <>
-              <span
-                className="size-4 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent"
-                aria-hidden
-              />
-              Importando…
-            </>
-          ) : (
-            "Importar"
-          )}
-        </button>
+        </Button>
+        <Button type="submit" form="importar-demanda-form" loading={isImportPending} className="min-w-30">
+          {isImportPending ? "Importando…" : "Importar"}
+        </Button>
       </Modal.Footer>
     </Modal>
     <DeskfyAnexoPreviewModal

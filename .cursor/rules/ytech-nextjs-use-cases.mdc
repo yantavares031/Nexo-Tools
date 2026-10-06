@@ -1,0 +1,47 @@
+---
+description: Use cases e domínio puros na Ytech — regra de negócio sem Next, ORM ou fetch
+globs: use-cases/**/*.ts,domain/**/*.ts
+alwaysApply: false
+---
+
+# Use Cases e Domínio Ytech
+
+## Use cases (`use-cases/`)
+
+- Um use case = uma operação de negócio (`create-order.use-case.ts`).
+- Toda regra de negócio fica aqui: validações de domínio, duplicidade, cálculos, orquestração de repositórios e serviços.
+- Recebe dependências (repositórios, serviços) **pelo construtor**, tipadas pelas interfaces de `domain/`.
+- Recebe dados já validados e tipados; nunca `FormData`, `Request` ou `any`.
+- Em erro de negócio, lança `DomainError` com mensagem pronta para o usuário (pt-BR).
+
+## Proibido em `use-cases/` e `domain/`
+
+- Importar `next/*`, `react`, Prisma ou qualquer ORM, `fetch`, SDKs de terceiros ou `process.env`.
+- Chamar `redirect`, `revalidatePath`, `cookies` ou `headers`.
+
+## Domínio (`domain/`)
+
+- Entidades (tipos do negócio), interfaces de repositórios e de serviços externos, e `errors.ts`.
+- Só tipos e contratos, nenhuma implementação.
+
+## Exemplo
+
+```typescript
+// domain/orders/order.repository.ts
+export interface OrderRepository {
+  findByCode(code: string): Promise<Order | null>;
+  create(data: CreateOrderInput): Promise<Order>;
+}
+
+// use-cases/orders/create-order.use-case.ts
+export class CreateOrderUseCase {
+  constructor(private readonly orders: OrderRepository) {}
+
+  async execute(input: CreateOrderInput): Promise<Order> {
+    if (await this.orders.findByCode(input.code)) {
+      throw new DomainError("Já existe um pedido com este código.");
+    }
+    return this.orders.create(input);
+  }
+}
+```

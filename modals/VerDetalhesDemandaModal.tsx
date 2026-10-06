@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useActionState, useRef, useEffect, useTransition } from "react";
-import { Check, CircleMinus, FileSignature, Workflow } from "lucide-react";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
+import { Button } from "@/components/ui/button";
+import { Check, CircleMinus, FileSignature, History, Workflow } from "lucide-react";
 import { updateDemandaAction, removeDemandaAction } from "@/app/actions/demanda";
 import type { Demanda } from "@/types/globals";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
-import { useConfirm } from "@/lib/confirm-context";
+import { useConfirm } from "@/components/confirm-provider";
 import { DemandaComprovacoes } from "./sub/DemandaComprovacoes";
 import { DemandaCentrosCusto } from "./sub/DemandaCentrosCusto";
 import { DemandaDetalhesGeral } from "./sub/DemandaDetalhesGeral";
 import { DemandaOrdemCompra } from "./sub/DemandaOrdemCompra";
+import { DemandaHistoricoTimeline } from "./sub/DemandaHistoricoTimeline";
 import { Tab } from "@/components/Tab";
 import { Modal } from "@/components/Modal";
 import type { UserRole } from "@/types/globals";
@@ -110,7 +111,7 @@ export function VerDetalhesDemandaModal({
       innerClassName="flex max-h-[90vh] flex-col overflow-hidden"
     >
       <Modal.Header onClose={onClose} closeDisabled={isPendingRemove || isPendingSave}>
-        <h2 id="modal-detalhes-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 id="modal-detalhes-title" className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
           <Workflow className="size-5 shrink-0" />
           Detalhes da demanda
         </h2>
@@ -120,7 +121,7 @@ export function VerDetalhesDemandaModal({
         action={formAction}
         className="flex max-h-[70vh] flex-1 flex-col overflow-hidden"
       >
-        <div className="overflow-y-auto p-6">
+        <div className="overflow-y-auto p-4 sm:p-6">
           <Tab defaultTab="geral">
             <Tab.List>
               <Tab.Item id="geral">Geral</Tab.Item>
@@ -128,8 +129,14 @@ export function VerDetalhesDemandaModal({
               <Tab.Item id="comprovacoes">Comprovações / Notas Fiscais</Tab.Item>
               <Tab.Item id="ordem-compra">
                 <span className="flex items-center gap-1.5">
-                  <FileSignature className="size-3.5 shrink-0 text-slate-500" aria-hidden />
+                  <FileSignature className="size-3.5 shrink-0 text-neutral-500" aria-hidden />
                   Ordem de compra
+                </span>
+              </Tab.Item>
+              <Tab.Item id="historico">
+                <span className="flex items-center gap-1.5">
+                  <History className="size-3.5 shrink-0 text-neutral-500" aria-hidden />
+                  Histórico
                 </span>
               </Tab.Item>
             </Tab.List>
@@ -161,36 +168,41 @@ export function VerDetalhesDemandaModal({
               <Tab.Panel id="ordem-compra">
                 <DemandaOrdemCompra demanda={demanda} demandaId={demanda.id} />
               </Tab.Panel>
+              <Tab.Panel id="historico">
+                <DemandaHistoricoTimeline demandaId={demanda.id} />
+              </Tab.Panel>
             </Tab.Panels>
           </Tab>
         </div>
         {!readOnly && (
           <Modal.Footer>
-            <FormActionSubmitButton
-              pending={isPendingSave}
-              pendingLabel="Salvando..."
-              idleStart={<Check className="size-3.5 stroke-[2.5]" />}
-            >
-              Salvar
-            </FormActionSubmitButton>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={handleRemover}
-              disabled={isPendingRemove || isPendingSave}
-              className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isPendingSave}
+              loading={isPendingRemove}
+              className="border-red-200 text-red-600 hover:bg-red-50"
             >
               {isPendingRemove ? (
-                <>
-                  <span className="size-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                  Removendo...
-                </>
+                "Removendo..."
               ) : (
                 <>
-                  <CircleMinus className="size-3.5 stroke-[2.5]" />
+                  <CircleMinus className="size-3.5 stroke-[2.5]" aria-hidden />
                   Remover
                 </>
               )}
-            </button>
+            </Button>
+            <Button type="submit" loading={isPendingSave}>
+              {isPendingSave ? (
+                "Salvando..."
+              ) : (
+                <>
+                  <Check className="size-3.5 stroke-[2.5]" aria-hidden />
+                  Salvar
+                </>
+              )}
+            </Button>
           </Modal.Footer>
         )}
       </form>

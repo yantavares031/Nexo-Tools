@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import type { Certidao } from "@/types/globals";
 import { removeCertidaoAction } from "@/app/actions/certidao";
 import { toast } from "sonner";
-import { Download, Trash2, Eye } from "lucide-react";
-import { useConfirm } from "@/lib/confirm-context";
+import { Download, Eye, File, FileCode, FileImage, FileSpreadsheet, FileText, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/confirm-provider";
+import { IconButton } from "@/components/ui/icon-button";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import { ComprovacaoPreviewModal } from "@/modals/sub/ComprovacaoPreviewModal";
 import { UserAvatarThumb } from "@/components/UserAvatarThumb";
 
@@ -33,14 +35,14 @@ function formatDateTime(dateString: string): string {
   }
 }
 
-function getFileIcon(tipoArquivo: string): string {
+function FileTypeIcon({ tipoArquivo }: { tipoArquivo: string }) {
   const ext = tipoArquivo.toLowerCase();
-  if (ext === ".pdf") return "📄";
-  if (ext === ".xml") return "📋";
-  if ([".doc", ".docx"].includes(ext)) return "📝";
-  if ([".xls", ".xlsx"].includes(ext)) return "📊";
-  if ([".jpg", ".jpeg", ".png"].includes(ext)) return "🖼️";
-  return "📎";
+  const className = "size-4 shrink-0 text-neutral-400";
+  if (ext === ".pdf" || [".doc", ".docx", ".txt"].includes(ext)) return <FileText className={className} aria-hidden />;
+  if (ext === ".xml") return <FileCode className={className} aria-hidden />;
+  if ([".xls", ".xlsx"].includes(ext)) return <FileSpreadsheet className={className} aria-hidden />;
+  if ([".jpg", ".jpeg", ".png"].includes(ext)) return <FileImage className={className} aria-hidden />;
+  return <File className={className} aria-hidden />;
 }
 
 function canPreview(tipoArquivo: string): boolean {
@@ -51,18 +53,15 @@ function canPreview(tipoArquivo: string): boolean {
 interface CertidoesTableProps {
   certidoes: Certidao[];
   userRole: "admin" | "operator" | "agency";
+  emptyMessage?: string;
 }
 
-export function CertidoesTable({ certidoes, userRole }: CertidoesTableProps) {
+export function CertidoesTable({ certidoes, userRole, emptyMessage }: CertidoesTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [previewCertidao, setPreviewCertidao] = useState<Certidao | null>(null);
   const { confirm } = useConfirm();
   const canRemove = userRole === "admin";
-
-  function handleClosePreview() {
-    setPreviewCertidao(null);
-  }
 
   async function handleDownload(cert: Certidao) {
     try {
@@ -106,97 +105,80 @@ export function CertidoesTable({ certidoes, userRole }: CertidoesTableProps) {
     });
   }
 
-  if (certidoes.length === 0) {
-    return (
-      <p className="rounded-lg border border-slate-200 bg-slate-50 py-12 text-center text-sm text-slate-500">
-        Nenhuma certidão cadastrada. Clique em &quot;Adicionar&quot; para enviar uma.
-      </p>
-    );
-  }
-
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[640px] table-fixed text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 font-semibold text-slate-800">Arquivo</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Descrição</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Autor</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Data</th>
-              <th className="w-32 px-4 py-3 font-semibold text-slate-800">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {certidoes.map((cert) => (
-              <tr key={cert.id} className="border-b border-slate-100">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{getFileIcon(cert.tipoArquivo)}</span>
+      <Table className="min-w-[680px]">
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>Arquivo</TableHeaderCell>
+            <TableHeaderCell>Descrição</TableHeaderCell>
+            <TableHeaderCell>Autor</TableHeaderCell>
+            <TableHeaderCell>Data</TableHeaderCell>
+            <TableHeaderCell className="w-32">
+              <span className="sr-only">Ações</span>
+            </TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {certidoes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="py-12 text-neutral-500">
+                {emptyMessage ?? "Nenhuma certidão cadastrada. Clique em “Nova certidão” para enviar uma."}
+              </TableCell>
+            </TableRow>
+          ) : (
+            certidoes.map((cert) => (
+              <TableRow key={cert.id} className="transition-colors hover:bg-sky-50/60">
+                <TableCell className="max-w-72">
+                  <div className="flex items-center gap-2.5">
+                    <FileTypeIcon tipoArquivo={cert.tipoArquivo} />
                     <div className="min-w-0">
-                      <p
-                        className="truncate font-medium text-slate-800"
-                        title={cert.nomeArquivo}
-                      >
+                      <p className="truncate font-medium text-neutral-950" title={cert.nomeArquivo}>
                         {cert.nomeArquivo}
                       </p>
-                      <p className="text-xs text-slate-500">{formatFileSize(cert.tamanho)}</p>
+                      <p className="mt-0.5 text-[11px] text-neutral-400 tabular-nums">
+                        {formatFileSize(cert.tamanho)}
+                      </p>
                     </div>
                   </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className="block max-w-[220px] truncate text-slate-600"
-                    title={cert.descricao}
-                  >
-                    {cert.descricao || "—"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
+                </TableCell>
+                <TableCell className="max-w-64 truncate" title={cert.descricao || undefined}>
+                  {cert.descricao || "—"}
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <UserAvatarThumb userId={cert.cadastradoPorUserId} label={cert.autor} />
-                    <span>{cert.autor}</span>
+                    <span className="truncate">{cert.autor}</span>
                   </div>
-                </td>
-                <td className="px-4 py-3 text-slate-600">{formatDateTime(cert.createdAt)}</td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{formatDateTime(cert.createdAt)}</TableCell>
+                <TableCell>
                   <div className="flex items-center gap-1">
                     {canPreview(cert.tipoArquivo) && (
-                      <button
-                        type="button"
-                        onClick={() => setPreviewCertidao(cert)}
-                        className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
-                        title="Visualizar"
-                      >
-                        <Eye className="size-4" />
-                      </button>
+                      <IconButton aria-label="Visualizar arquivo" onClick={() => setPreviewCertidao(cert)}>
+                        <Eye />
+                      </IconButton>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(cert)}
-                      className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
-                      title="Baixar"
-                    >
-                      <Download className="size-4" />
-                    </button>
+                    <IconButton aria-label="Baixar arquivo" onClick={() => handleDownload(cert)}>
+                      <Download />
+                    </IconButton>
                     {canRemove && (
-                      <button
-                        type="button"
+                      <IconButton
+                        aria-label="Remover certidão"
+                        variant="danger"
                         onClick={() => handleRemove(cert)}
                         disabled={isPending}
-                        className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                        title="Remover"
                       >
-                        <Trash2 className="size-4" />
-                      </button>
+                        <Trash2 />
+                      </IconButton>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       {previewCertidao && (
         <ComprovacaoPreviewModal
@@ -204,7 +186,7 @@ export function CertidoesTable({ certidoes, userRole }: CertidoesTableProps) {
           nomeArquivo={previewCertidao.nomeArquivo}
           tipoArquivo={previewCertidao.tipoArquivo}
           open={!!previewCertidao}
-          onClose={handleClosePreview}
+          onClose={() => setPreviewCertidao(null)}
           apiResource="certidoes"
         />
       )}

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useActionState } from "react";
 import { Check, Tag } from "lucide-react";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { createCentroCustoAction, updateCentroCustoAction, listCentrosCustoAction } from "@/app/actions/centro-custo";
 import { Modal } from "@/components/Modal";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
@@ -89,21 +91,15 @@ export function AdicionarCentroCustoModal({
       closeOnOverlayClick={!isPending}
     >
       <Modal.Header onClose={onClose} closeDisabled={isPending}>
-        <h2 id="modal-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 id="modal-title" className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
           <Tag className="size-5 shrink-0" />
           {isEditing ? "Editar centro de custo" : "Novo centro de custo"}
         </h2>
       </Modal.Header>
       <Modal.Body as="form" id="centro-custo-form" action={formAction}>
         <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="nome"
-              className="mb-1 block text-sm font-medium text-slate-600"
-            >
-              Nome *
-            </label>
-            <input
+          <FormField id="nome" label="Nome *">
+            <Input
               id="nome"
               name="nome"
               type="text"
@@ -111,29 +107,25 @@ export function AdicionarCentroCustoModal({
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               disabled={loading || isPending}
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
               placeholder="Ex: CC-001"
             />
-          </div>
+          </FormField>
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
-        >
+        <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
           Cancelar
-        </button>
-        <FormActionSubmitButton
-          form="centro-custo-form"
-          pending={isPending}
-          pendingLabel={isEditing ? "Atualizando..." : "Criando..."}
-          idleStart={<Check className="size-3.5 stroke-[2.5]" />}
-        >
-          {isEditing ? "Atualizar" : "Criar"}
-        </FormActionSubmitButton>
+        </Button>
+        <Button type="submit" form="centro-custo-form" loading={isPending}>
+          {isPending ? (
+            isEditing ? "Atualizando..." : "Criando..."
+          ) : (
+            <>
+              <Check className="size-3.5 stroke-[2.5]" aria-hidden />
+              {isEditing ? "Atualizar" : "Criar"}
+            </>
+          )}
+        </Button>
       </Modal.Footer>
     </Modal>
   );

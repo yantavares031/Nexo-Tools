@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { APP_CONFIG } from "@/config/app";
 import { COOKIE_NAME } from "./lib/auth";
 import type { UserRole } from "./types/globals";
 
@@ -40,12 +41,17 @@ export function proxy(request: NextRequest) {
   const cookie = request.cookies.get(COOKIE_NAME)?.value;
   const session = parseSession(cookie);
 
+  // Recuperação de senha funciona com ou sem sessão (o link chega por e-mail).
+  if (pathname.startsWith("/login/esqueci-senha") || pathname.startsWith("/login/redefinir-senha")) {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/login")) {
     if (session) {
       if (session.mustChangePassword) {
         return NextResponse.redirect(new URL("/primeiro-acesso", request.url));
       }
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL(APP_CONFIG.homeHref, request.url));
     }
     return NextResponse.next();
   }
@@ -55,7 +61,7 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
     if (!session.mustChangePassword) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL(APP_CONFIG.homeHref, request.url));
     }
     return NextResponse.next();
   }
@@ -72,5 +78,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|lottie/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)"],
 };

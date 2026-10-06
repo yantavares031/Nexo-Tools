@@ -1,10 +1,16 @@
 "use client";
 
 import { useState, useActionState, useCallback, useEffect, useRef } from "react";
-import { Users, Copy, Check } from "lucide-react";
+import { Users, Copy, Check, Info } from "lucide-react";
 import { createUserAction, type CreateUserActionState } from "@/app/actions/user";
 import { Modal } from "@/components/Modal";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
+import { Switch } from "@/components/ui/switch";
+import { Callout } from "@/components/ui/callout";
+import { IconButton } from "@/components/ui/icon-button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type { Agencia } from "@/types/globals";
 import { toast } from "sonner";
@@ -89,7 +95,7 @@ export function AdicionarUsuarioModal({
       >
         <h2
           id="modal-usuario-title"
-          className="flex items-center gap-2 text-lg font-semibold text-slate-800"
+          className="flex items-center gap-2 text-lg font-semibold text-neutral-950"
         >
           <Users className="size-5 shrink-0" />
           {showSuccess ? "Usuário criado" : "Novo usuário"}
@@ -100,47 +106,38 @@ export function AdicionarUsuarioModal({
         <>
           <Modal.Body>
             {state.emailNotice === "sent" ? (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-neutral-600">
                 Enviamos um e-mail para <strong className="break-all">{state.userEmail}</strong> com o{" "}
                 <strong>login</strong> e a <strong>senha temporária</strong>. No primeiro acesso será
                 solicitada a <strong>alteração da senha</strong>. Abaixo você pode copiar a senha como
                 reserva, se precisar.
               </p>
             ) : state.emailNotice === "skipped_smtp" ? (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-neutral-600">
                 O envio automático por e-mail não está ativo (configure o SMTP em{" "}
                 <strong>Integrações</strong>). Copie a <strong>senha temporária</strong> abaixo e envie por
                 um canal seguro. No primeiro login será solicitada a alteração da senha.
               </p>
             ) : (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-neutral-600">
                 Não foi possível enviar o e-mail automaticamente. Copie a <strong>senha temporária</strong>{" "}
                 abaixo e envie por um canal seguro para <strong className="break-all">{state.userEmail}</strong>
                 . No primeiro login será solicitada a alteração da senha.
               </p>
             )}
             <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <code className="min-w-0 flex-1 break-all text-sm font-mono text-slate-800">
+              <code className="min-w-0 flex-1 break-all text-sm font-mono text-neutral-800">
                 {state.temporaryPassword}
               </code>
-              <button
-                type="button"
-                onClick={copyPassword}
-                className="shrink-0 rounded-lg border border-amber-300 bg-white p-2 text-amber-800 transition hover:bg-amber-100"
-                title="Copiar senha"
-              >
-                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-              </button>
+              <IconButton aria-label="Copiar senha" onClick={copyPassword} className="shrink-0 text-amber-700 hover:bg-amber-100">
+                {copied ? <Check /> : <Copy />}
+              </IconButton>
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <button
-              type="button"
-              onClick={handleConcluir}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-            >
+            <Button type="button" onClick={handleConcluir}>
               Concluir
-            </button>
+            </Button>
           </Modal.Footer>
         </>
       ) : (
@@ -148,66 +145,61 @@ export function AdicionarUsuarioModal({
           <Modal.Body as="form" id="adicionar-usuario-form" action={formAction}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-600">
+                <Label htmlFor="email" className="mb-1.5">
                   E-mail *
-                </label>
-                <input
+                </Label>
+                <Input
                   id="email"
                   name="email"
                   type="email"
                   required
                   disabled={isPending}
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                   placeholder="usuario@exemplo.com"
                 />
               </div>
 
-              <p className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                A senha será <strong>gerada automaticamente</strong>. Se o SMTP estiver configurado em{" "}
-                <strong>Integrações</strong>, o usuário receberá um e-mail com login e senha temporária; caso
-                contrário, a senha será exibida aqui após o cadastro.
-              </p>
+              <Callout icon={<Info aria-hidden />} title="Senha gerada automaticamente">
+                Se o SMTP estiver configurado em <strong>Integrações</strong>, o usuário receberá um e-mail com
+                login e senha temporária; caso contrário, a senha será exibida aqui após o cadastro.
+              </Callout>
 
               <div>
-                <label htmlFor="name" className="mb-1 block text-sm font-medium text-slate-600">
+                <Label htmlFor="name" className="mb-1.5">
                   Nome
-                </label>
-                <input
+                </Label>
+                <Input
                   id="name"
                   name="name"
                   type="text"
                   disabled={isPending}
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
                   placeholder="Nome do usuário"
                 />
               </div>
 
               <div>
-                <label htmlFor="role" className="mb-1 block text-sm font-medium text-slate-600">
+                <Label htmlFor="role" className="mb-1.5">
                   Perfil *
-                </label>
-                <select
+                </Label>
+                <Select
                   id="role"
                   name="role"
                   required
-                  disabled={isPending}
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+                  disabled={isPending} className="w-full"
                 >
                   <option value="operator">Operador</option>
                   <option value="admin">Admin</option>
                   <option value="agency">Agência</option>
-                </select>
+                </Select>
               </div>
 
               <div id="agencia-field">
-                <label htmlFor="agenciaId" className="mb-1 block text-sm font-medium text-slate-600">
+                <Label htmlFor="agenciaId" className="mb-1.5">
                   Agência
-                </label>
-                <select
+                </Label>
+                <Select
                   id="agenciaId"
                   name="agenciaId"
-                  disabled={isPending}
-                  className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+                  disabled={isPending} className="w-full"
                 >
                   <option value="">Selecione (obrigatório para perfil Agência)</option>
                   {agencias.map((a) => (
@@ -215,41 +207,29 @@ export function AdicionarUsuarioModal({
                       {a.nomeFantasia}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div>
                 <input type="hidden" name="acesso" value={acesso ? "true" : "false"} />
-                <input
+                <Switch
                   id="acesso"
-                  type="checkbox"
                   checked={acesso}
                   disabled={isPending}
                   onChange={(e) => setAcesso(e.target.checked)}
-                  className="size-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400 disabled:opacity-50"
-                />
-                <label htmlFor="acesso" className="text-sm font-medium text-slate-600">
+                >
                   Acesso liberado
-                </label>
+                </Switch>
               </div>
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isPending}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
-            >
+            <Button type="button" variant="ghost" onClick={handleClose} disabled={isPending}>
               Cancelar
-            </button>
-            <FormActionSubmitButton
-              form="adicionar-usuario-form"
-              pending={isPending}
-              pendingLabel="Adicionando..."
-            >
-              Adicionar
-            </FormActionSubmitButton>
+            </Button>
+            <Button type="submit" form="adicionar-usuario-form" loading={isPending}>
+              {isPending ? "Adicionando..." : "Adicionar"}
+            </Button>
           </Modal.Footer>
         </>
       )}

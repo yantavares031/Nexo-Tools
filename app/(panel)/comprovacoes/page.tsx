@@ -1,12 +1,27 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getComprovacoesPaginatedAction } from "@/app/actions/demanda-comprovacao";
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
+import { buttonBaseClassName, buttonSizes, buttonVariants } from "@/components/ui/button";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { Pagination } from "@/components/ui/pagination";
+import { SearchPill } from "@/components/ui/search-pill";
+import { cn } from "@/lib/cn";
+import { integerFormat } from "@/lib/format";
 import { ComprovacoesTable } from "./sub/ComprovacoesTable";
-import { ComprovacoesPagination } from "./sub/ComprovacoesPagination";
-import { Plus } from "lucide-react";
 
 const DEFAULT_PAGE_SIZE = 15;
+
+function comprovacoesHref({ q, page = 1 }: { q?: string; page?: number }) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/comprovacoes?${query}` : "/comprovacoes";
+}
 
 export default async function ComprovacoesPage({
   searchParams,
@@ -18,62 +33,64 @@ export default async function ComprovacoesPage({
 
   const { page: pageParam, q } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const searchQuery = q?.trim() || undefined;
 
   const result = await getComprovacoesPaginatedAction(page, DEFAULT_PAGE_SIZE, { q });
-  const qValue = (q ?? "").trim();
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-800">Comprovações</h1>
-          <Link
-            href="/comprovacoes/adicionar"
-            className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-          >
-            <Plus className="size-4" />
-            Adicionar
-          </Link>
-        </div>
-
-        <form method="GET" className="flex items-end gap-2 rounded-lg border border-slate-200 bg-white p-4">
-          <div className="flex-1">
-            <label htmlFor="q" className="mb-1.5 block text-xs font-medium text-slate-600">
-              Buscar pela descrição
-            </label>
-            <input
-              id="q"
-              name="q"
-              defaultValue={qValue}
-              placeholder="Ex.: impressão, diária, hospedagem..."
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-900"
-          >
-            Buscar
-          </button>
-          {qValue && (
+    <div className="w-full">
+      <div className="space-y-6">
+        <PageHeader
+          title="Comprovações"
+          description="Arquivos que comprovam a execução das demandas."
+          actions={
             <Link
-              href="/comprovacoes"
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              href="/comprovacoes/adicionar"
+              className={cn(buttonBaseClassName, buttonVariants.primary, buttonSizes.md)}
             >
-              Limpar
+              <Plus className="size-4" strokeWidth={2.25} aria-hidden />
+              Nova comprovação
             </Link>
-          )}
-        </form>
-
-        <ComprovacoesTable comprovacoes={result.items} userRole={session.role} />
-
-        <ComprovacoesPagination
-          page={result.page}
-          totalPages={result.totalPages}
-          total={result.total}
-          limit={result.limit}
-          q={qValue || undefined}
+          }
         />
+
+        <SearchPill
+          action="/comprovacoes"
+          q={searchQuery}
+          placeholder="Buscar pela descrição"
+          label="Buscar comprovações"
+          clearHref={comprovacoesHref({})}
+        />
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+            <Badge tone="dark" className="px-2.5 py-1">
+              <span className="tabular-nums">{integerFormat.format(result.total)}</span>
+              {result.total === 1 ? "comprovação" : "comprovações"}
+            </Badge>
+            {searchQuery && (
+              <FilterChip label="busca" removeHref={comprovacoesHref({})}>
+                “{searchQuery}”
+              </FilterChip>
+            )}
+          </div>
+
+          <ComprovacoesTable
+            comprovacoes={result.items}
+            userRole={session.role}
+            emptyMessage={searchQuery ? "Nenhuma comprovação encontrada para a busca." : undefined}
+          />
+
+          {result.total > 0 && (
+            <Pagination
+              page={result.page}
+              totalPages={result.totalPages}
+              total={result.total}
+              pageSize={result.limit}
+              hrefForPage={(target) => comprovacoesHref({ q: searchQuery, page: target })}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

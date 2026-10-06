@@ -19,5 +19,8 @@ export {
   getSmtpConfigRepository,
   getDeskfyConfigRepository,
   getWhatsAppIntegrationRepository,
+  getDemandaHistoricoRepository,
+  getPendingReminderConfigRepository,
+  getCapacityAlertRepository,
 } from "@/lib/infra/repositories";
 export { getWebhookSender } from "@/lib/infra/webhook-sender";

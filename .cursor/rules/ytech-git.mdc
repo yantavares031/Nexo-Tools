@@ -1,0 +1,12 @@
+---
+description: Padrão de commits e branches da Ytech. Use ao criar commits, branches ou pull requests.
+alwaysApply: false
+---
+
+# Git Ytech
+
+- Conventional Commits em inglês, no imperativo: `feat(auth): add magic link login`.
+- Tipos permitidos: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`, `ci`, `style`.
+- Um commit por mudança lógica; não misture refatoração com feature.
+- Branches: `feat/<descricao>`, `fix/<descricao>`, `chore/<descricao>`.
+- Nunca faça commit de `.env`, builds ou `node_modules`.

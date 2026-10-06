@@ -1,6 +1,7 @@
+import { PageHeader } from "@/components/layout/page-header";
 import { getSession } from "@/lib/auth";
 import { getAgencyDemandaScope } from "@/lib/agency-demanda-scope";
-import { getDashboardAgenciasUseCase } from "@/lib/use-cases/get-dashboard-agencias.use-case";
+import { currentCapacityYear, getDashboardAgenciasUseCase } from "@/lib/use-cases/get-dashboard-agencias.use-case";
 import { getDashboardUnidadesUseCase } from "@/lib/use-cases/get-dashboard-unidades.use-case";
 import { getDemandasComprovacoesAgenciaUseCase } from "@/lib/use-cases/get-demandas-comprovacoes-agencia.use-case";
 import { getDemandaRepository, getAgenciaRepository, getDemandaComprovacaoRepository } from "@/lib/repositories";
@@ -11,6 +12,7 @@ import { DashboardChartUsoPercentual } from "./sub/DashboardChartUsoPercentual";
 import { DashboardUnidadesTable } from "./sub/DashboardUnidadesTable";
 import { DashboardComprovacoes } from "./sub/DashboardComprovacoes";
 import { DashboardBlockedCard } from "./sub/DashboardBlockedCard";
+import { DashboardEmpty } from "./sub/DashboardCard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,9 +29,10 @@ export default async function DashboardPage() {
   const agenciaRepository = getAgenciaRepository();
   const comprovacaoRepository = getDemandaComprovacaoRepository();
   const isAgencyOnly = session?.role === "agency";
+  const year = currentCapacityYear();
 
   const [dashboardData, unidadesData, comprovacoesData] = await Promise.all([
-    getDashboardAgenciasUseCase(agencyParams, {
+    getDashboardAgenciasUseCase({ ...agencyParams, year }, {
       demandaRepository,
       agenciaRepository,
     }),
@@ -45,46 +48,32 @@ export default async function DashboardPage() {
   // Agências veem cards bloqueados no lugar dos gráficos e o relatório de comprovações
   if (isAgencyOnly) {
     return (
-      <div className="p-6">
-        <div className="mx-auto max-w-6xl space-y-6">
-          <h2 className="text-lg font-semibold text-slate-800">Dashboard</h2>
+      <div className="w-full">
+        <div className="space-y-6">
+          <PageHeader title="Dashboard" description="Acompanhamento das comprovações das suas demandas." />
 
-          {/* Relatório de comprovações - primeiro conteúdo visível para agências */}
           {comprovacoesData ? (
             <DashboardComprovacoes data={comprovacoesData} />
           ) : (
-            <p className="py-8 text-center text-sm text-slate-500">
-              Carregando relatório de comprovações...
-            </p>
+            <DashboardEmpty>Carregando relatório de comprovações...</DashboardEmpty>
           )}
 
-          <hr className="border-slate-200" />
-
-          <h2 className="text-lg font-semibold text-slate-800">
-            Dashboard — Faturado vs Capacidade Anual
+          <h2 className="border-t border-neutral-200 pt-6 text-base font-semibold text-neutral-950">
+            Faturado vs capacidade anual
           </h2>
 
-          {/* Gráficos bloqueados - grid 2 colunas */}
           <div className="grid gap-6 lg:grid-cols-2">
             <DashboardBlockedCard />
             <DashboardBlockedCard />
           </div>
 
-          {/* Gráfico bloqueado - uso percentual */}
+          <DashboardBlockedCard />
           <DashboardBlockedCard />
 
-          {/* Tabela de agências bloqueada */}
+          <h2 className="border-t border-neutral-200 pt-6 text-base font-semibold text-neutral-950">
+            Por un. responsável
+          </h2>
           <DashboardBlockedCard />
-
-          <hr className="border-slate-200" />
-
-          {/* Tabela de unidades bloqueada */}
-          <section>
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              Por Un. Responsável
-            </h2>
-            <DashboardBlockedCard />
-          </section>
         </div>
       </div>
     );
@@ -92,13 +81,10 @@ export default async function DashboardPage() {
 
   // Admin e Operator veem o dashboard completo de faturamento
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <h2 className="text-lg font-semibold text-slate-800">
-          Dashboard — Faturado vs Capacidade Anual
-        </h2>
+    <div className="w-full">
+      <div className="space-y-6">
+        <PageHeader title="Dashboard" description={`Faturado em ${year} vs capacidade anual das agências e totais por unidade.`} />
 
-        {/* Tabela de agências primeiro */}
         <DashboardAgencias data={dashboardData} />
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -108,14 +94,7 @@ export default async function DashboardPage() {
 
         <DashboardChartUsoPercentual data={dashboardData} />
 
-        <hr className="border-slate-200" />
-
-        <section>
-          <h2 className="mb-4 text-base font-semibold text-slate-800">
-            Por Un. Responsável
-          </h2>
-          <DashboardUnidadesTable data={unidadesData} />
-        </section>
+        <DashboardUnidadesTable data={unidadesData} />
       </div>
     </div>
   );

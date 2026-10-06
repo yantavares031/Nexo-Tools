@@ -1,0 +1,16 @@
+---
+description: Convenções de TypeScript da Ytech
+globs: **/*.ts,**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript Ytech
+
+- Modo `strict` sempre ligado. Proibido `any`; use `unknown` e faça o estreitamento do tipo.
+- Prefira `type` para formatos de dados e uniões; use `interface` apenas quando precisar de extensão.
+- Tipos de retorno explícitos em funções exportadas.
+- Use `as const` e uniões literais em vez de `enum`.
+- Evite asserções (`as Tipo`) e o operador `!`; trate o caso `null`/`undefined`.
+- Use imports absolutos com o alias `@/`.
+- Named exports por padrão; `export default` apenas quando o framework exigir (ex.: `page.tsx`, `layout.tsx`).
+- Datas trafegam como string ISO; converta na borda da aplicação.

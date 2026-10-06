@@ -10,6 +10,12 @@ import { saveDemandaCentrosCustoUseCase } from "./save-demanda-centros-custo.use
 import { dispatchWebhookForEventUseCase } from "./dispatch-webhook-for-event.use-case";
 import type { DemandaCentroCustoInput } from "@/types/globals";
 import { logUseCaseInfo } from "@/lib/server-action-log";
+import {
+  formatStatusLabel,
+  recordDemandaHistoricoUseCase,
+  type HistoricoDeps,
+} from "./record-demanda-historico.use-case";
+import { formatBrazilianCurrency } from "@/lib/currency";
 
 type Dependencies = {
   demandaRepository: IDemandaRepository;
@@ -18,6 +24,7 @@ type Dependencies = {
   /** Opcional: quando informado, dispara webhook "demanda.criada" após criar a demanda. */
   webhookConfigRepository?: IWebhookConfigRepository;
   webhookSender?: IWebhookSender;
+  historico?: HistoricoDeps;
 };
 
 /**
@@ -50,6 +57,19 @@ export async function createDemandaWithCentrosCustoUseCase(
       demandaCentroCustoRepository: deps.demandaCentroCustoRepository,
     });
   }
+
+  await recordDemandaHistoricoUseCase(
+    {
+      demandaId: demandaCriada.id,
+      tipo: "criada",
+      descricao: "Demanda cadastrada",
+      alteracoes: [
+        { campo: "Status", de: "", para: formatStatusLabel(demandaCriada.status) },
+        { campo: "Valor", de: "", para: `R$ ${formatBrazilianCurrency(demandaCriada.valor)}` },
+      ],
+    },
+    deps.historico
+  );
 
   // Regra de negócio: se webhook estiver ativado para "demanda.criada", disparar
   if (deps.webhookConfigRepository && deps.webhookSender) {

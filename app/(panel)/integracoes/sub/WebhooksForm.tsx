@@ -1,11 +1,17 @@
 "use client";
 
 import { useActionState, useEffect, useTransition, useState } from "react";
-import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
-import { updateWebhookConfigAction, testWebhookAction } from "@/app/actions/webhook-config";
+import { Check, Link2, Plus, Power, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { Toggle } from "@/components/Toggle";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
+import { updateWebhookConfigAction, testWebhookAction } from "@/app/actions/webhook-config";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { FormSection } from "@/components/ui/form-section";
+import { IconButton } from "@/components/ui/icon-button";
+import { Input } from "@/components/ui/input";
+import { PanelHeader } from "@/components/ui/panel-header";
+import { Switch } from "@/components/ui/switch";
+import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type { WebhookConfig, WebhookEventCode, WebhookContact } from "@/types/globals";
 
 const EVENT_OPTIONS: { value: WebhookEventCode; label: string }[] = [
@@ -69,163 +75,127 @@ export function WebhooksForm({ initialConfig }: WebhooksFormProps) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6">
-      <p className="mb-4 text-sm text-slate-600">
-        Configure a URL e os eventos que disparam o webhook (método POST). Uma única configuração
-        vale para todo o sistema.
-      </p>
-      <form
-        action={formAction}
-        onSubmit={(e) => {
-          const form = e.currentTarget;
-          const events = Array.from(
-            form.querySelectorAll<HTMLInputElement>('input[name="event-option"]:checked')
-          ).map((el) => el.value) as WebhookEventCode[];
-          const hidden = form.querySelector<HTMLInputElement>("#webhook-events-json");
-          if (hidden) hidden.value = JSON.stringify(events);
-        }}
-        className="space-y-4"
-      >
-        <div>
-          <label
-            htmlFor="webhook-url"
-            className="mb-1 block text-sm font-medium text-slate-600"
-          >
-            URL do webhook
-          </label>
-          <input
-            id="webhook-url"
-            name="url"
-            type="url"
-            defaultValue={defaultUrl}
-            placeholder="https://exemplo.com/webhook"
-            disabled={isPendingSave}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-          />
-        </div>
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        const form = e.currentTarget;
+        const events = Array.from(
+          form.querySelectorAll<HTMLInputElement>('input[name="event-option"]:checked')
+        ).map((el) => el.value) as WebhookEventCode[];
+        const hidden = form.querySelector<HTMLInputElement>("#webhook-events-json");
+        if (hidden) hidden.value = JSON.stringify(events);
+      }}
+      className="max-w-3xl"
+    >
+      <PanelHeader
+        title="Webhooks"
+        description="URL e eventos que disparam o webhook (método POST). Uma única configuração vale para todo o sistema."
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleTest}
+              loading={isTesting}
+              disabled={isPendingSave}
+            >
+              {isTesting ? "Testando..." : "Testar"}
+            </Button>
+            <Button type="submit" loading={isPendingSave}>
+              {!isPendingSave && <Check className="size-4" strokeWidth={2.25} aria-hidden />}
+              {isPendingSave ? "Salvando..." : "Salvar"}
+            </Button>
+          </>
+        }
+      />
 
-        <div className="space-y-1">
-          <Toggle
-            name="enabled"
-            checked={enabled}
-            onChange={setEnabled}
-            disabled={isPendingSave}
-            label="Habilitar webhook"
-          />
-          <p className="text-xs text-slate-500">
-            Quando desligado, nenhum evento será disparado.
-          </p>
-        </div>
+      <fieldset disabled={isPendingSave}>
+        <FormSection icon={<Link2 aria-hidden />} title="Endpoint" description="Endereço que receberá os eventos.">
+          <FormField id="webhook-url" label="URL do webhook">
+            <Input
+              id="webhook-url"
+              name="url"
+              type="url"
+              defaultValue={defaultUrl}
+              placeholder="https://exemplo.com/webhook"
+            />
+          </FormField>
+        </FormSection>
 
-        <div className="space-y-1">
-          <Toggle
-            name="whatsappMod"
-            checked={whatsappMod}
-            onChange={setWhatsappMod}
-            disabled={isPendingSave}
-            label="Modo WhatsApp"
-          />
-          <p className="text-xs text-slate-500">
-            Quando ligado, a lista de contatos será enviada como contact_list no body de todo evento.
-          </p>
-        </div>
-
-        {whatsappMod && (
-          <div>
-            <span className="mb-2 block text-sm font-medium text-slate-600">
-              Lista de contatos
-            </span>
-            <div className="flex flex-col gap-2">
-              {contactList.map((contact, index) => (
-                <div
-                  key={index}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 p-2"
-                >
-                  <input
-                    type="text"
-                    placeholder="Telefone"
-                    value={contact.phone}
-                    onChange={(e) => updateContact(index, "phone", e.target.value)}
-                    disabled={isPendingSave}
-                    className="w-32 rounded border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Nome (opcional)"
-                    value={contact.name ?? ""}
-                    onChange={(e) => updateContact(index, "name", e.target.value)}
-                    disabled={isPendingSave}
-                    className="min-w-32 flex-1 rounded border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeContact(index)}
-                    disabled={isPendingSave}
-                    className="rounded px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                  >
-                    Remover
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addContact}
-                disabled={isPendingSave}
-                className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Adicionar contato
-              </button>
+        <FormSection icon={<Power aria-hidden />} title="Disparo" description="Liga ou desliga o envio e o modo WhatsApp.">
+          <div className="space-y-5">
+            <div className="space-y-1">
+              <input type="hidden" name="enabled" value={enabled ? "true" : "false"} />
+              <Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)}>
+                Habilitar webhook
+              </Switch>
+              <p className="text-xs text-neutral-500">Quando desligado, nenhum evento será disparado.</p>
             </div>
-            <input type="hidden" name="contactList" value={JSON.stringify(contactList)} />
-          </div>
-        )}
 
-        <div>
-          <span className="mb-2 block text-sm font-medium text-slate-600">
-            Eventos que disparam o webhook
-          </span>
-          <div className="flex flex-col gap-2">
+            <div className="space-y-1">
+              <input type="hidden" name="whatsappMod" value={whatsappMod ? "true" : "false"} />
+              <Switch checked={whatsappMod} onChange={(e) => setWhatsappMod(e.target.checked)}>
+                Modo WhatsApp
+              </Switch>
+              <p className="text-xs text-neutral-500">
+                Quando ligado, a lista de contatos será enviada como contact_list no body de todo evento.
+              </p>
+            </div>
+
+            {whatsappMod && (
+              <div className="space-y-2">
+                <p className="text-[13px] text-neutral-700">Lista de contatos</p>
+                {contactList.map((contact, index) => (
+                  <div key={index} className="flex flex-wrap items-center gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Telefone"
+                      aria-label={`Telefone do contato ${index + 1}`}
+                      value={contact.phone}
+                      onChange={(e) => updateContact(index, "phone", e.target.value)}
+                      className="w-40"
+                    />
+                    <Input
+                      type="text"
+                      placeholder="Nome (opcional)"
+                      aria-label={`Nome do contato ${index + 1}`}
+                      value={contact.name ?? ""}
+                      onChange={(e) => updateContact(index, "name", e.target.value)}
+                      className="w-auto min-w-40 flex-1"
+                    />
+                    <IconButton aria-label="Remover contato" variant="danger" onClick={() => removeContact(index)}>
+                      <Trash2 />
+                    </IconButton>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addContact}>
+                  <Plus className="size-3.5" aria-hidden />
+                  Adicionar contato
+                </Button>
+                <input type="hidden" name="contactList" value={JSON.stringify(contactList)} />
+              </div>
+            )}
+          </div>
+        </FormSection>
+
+        <FormSection icon={<Zap aria-hidden />} title="Eventos" description="Quais eventos disparam o webhook.">
+          <div className="space-y-3">
             {EVENT_OPTIONS.map((opt) => (
-              <label
-                key={opt.value}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 p-2 hover:bg-slate-50"
-              >
+              <label key={opt.value} className="flex cursor-pointer items-center gap-2.5 select-none">
                 <input
                   type="checkbox"
                   name="event-option"
                   value={opt.value}
                   defaultChecked={defaultEvents.includes(opt.value)}
-                  disabled={isPendingSave}
-                  className="size-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400 disabled:opacity-50"
+                  className="size-4 rounded border-neutral-300 accent-blue-600"
                 />
-                <span className="text-sm text-slate-800">{opt.label}</span>
+                <span className="text-sm text-neutral-700">{opt.label}</span>
               </label>
             ))}
           </div>
           <input type="hidden" name="events" id="webhook-events-json" value="" />
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={handleTest}
-            disabled={isTesting || isPendingSave}
-            className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {isTesting ? (
-              <>
-                <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                Testando...
-              </>
-            ) : (
-              "Testar"
-            )}
-          </button>
-          <FormActionSubmitButton pending={isPendingSave} pendingLabel="Salvando...">
-            Salvar
-          </FormActionSubmitButton>
-        </div>
-      </form>
-    </div>
+        </FormSection>
+      </fieldset>
+    </form>
   );
 }

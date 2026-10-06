@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Input } from "@/components/ui/input";
 import { addDemandaMensagemAction, getDemandaMensagensAction } from "@/app/actions/demanda-mensagem";
 import type { DemandaMensagem } from "@/types/globals";
 import { toast } from "sonner";
@@ -77,31 +80,29 @@ export function DemandaMensagensHistorico({
   }
 
   return (
-    <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
-      <h3 className="text-sm font-semibold text-slate-800">Histórico de mensagens</h3>
+    <div className="mt-6 space-y-3 border-t border-neutral-200 pt-6">
+      <h3 className="text-sm font-semibold text-neutral-950">Histórico de mensagens</h3>
 
       {/* Área de mensagens com scroll */}
       <div
         ref={mensagensContainerRef}
-        className="max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-4"
+        className="max-h-64 overflow-y-auto rounded-xl border border-neutral-200 bg-neutral-50/60 p-4"
       >
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="size-6 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500" />
+            <Spinner className="size-6 text-neutral-400" />
           </div>
         ) : mensagens.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">
-            Nenhuma mensagem ainda. Seja o primeiro a comentar!
-          </p>
+          <p className="py-8 text-[13px] text-neutral-500">Nenhuma mensagem ainda. Seja o primeiro a comentar!</p>
         ) : (
           <div className="space-y-3">
             {mensagens.map((msg) => (
-              <div key={msg.id} className="rounded-lg bg-white p-3 shadow-sm">
+              <div key={msg.id} className="rounded-lg border border-neutral-200 bg-white p-3">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-800">{msg.autor}</span>
-                  <span className="text-xs text-slate-500">{formatDateTime(msg.createdAt)}</span>
+                  <span className="text-xs font-semibold text-neutral-950">{msg.autor}</span>
+                  <span className="text-[11px] tabular-nums text-neutral-500">{formatDateTime(msg.createdAt)}</span>
                 </div>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.mensagem}</p>
+                <p className="text-[13px] whitespace-pre-wrap text-neutral-700">{msg.mensagem}</p>
               </div>
             ))}
           </div>
@@ -110,7 +111,7 @@ export function DemandaMensagensHistorico({
 
       {/* Input para nova mensagem */}
       <div className="flex gap-2">
-        <input
+        <Input
           ref={inputRef}
           type="text"
           value={novaMensagem}
@@ -118,20 +119,17 @@ export function DemandaMensagensHistorico({
           onKeyDown={handleKeyDown}
           placeholder="Digite uma mensagem e pressione Enter..."
           disabled={isPending}
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1"
         />
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
-          disabled={!novaMensagem.trim() || isPending}
-          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!novaMensagem.trim()}
+          loading={isPending}
+          className="h-10"
         >
-          {isPending ? (
-            <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          ) : (
-            "Enviar"
-          )}
-        </button>
+          {!isPending && "Enviar"}
+        </Button>
       </div>
     </div>
   );

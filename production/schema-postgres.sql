@@ -121,6 +121,46 @@ CREATE TABLE IF NOT EXISTS demanda_mensagens (
 
 CREATE INDEX IF NOT EXISTS idx_demanda_mensagens_demandaId ON demanda_mensagens ("demandaId");
 
+CREATE TABLE IF NOT EXISTS demanda_historico (
+  id TEXT PRIMARY KEY,
+  "demandaId" TEXT NOT NULL REFERENCES demandas(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL,
+  descricao TEXT NOT NULL,
+  alteracoes TEXT NOT NULL DEFAULT '[]',
+  autor TEXT NOT NULL,
+  "autorUserId" TEXT REFERENCES users(id) ON DELETE SET NULL,
+  "createdAt" TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_demanda_historico_demandaId ON demanda_historico ("demandaId");
+
+CREATE TABLE IF NOT EXISTS pending_reminder_config (
+  id TEXT PRIMARY KEY,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  ordem_compra_days INTEGER NOT NULL DEFAULT 3,
+  comprovacao_days INTEGER NOT NULL DEFAULT 7,
+  last_run_at TEXT,
+  last_run_summary TEXT,
+  updated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS capacity_alert_config (
+  id TEXT PRIMARY KEY,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  thresholds TEXT NOT NULL DEFAULT '[80,100]',
+  updated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS capacity_alert_sent (
+  id TEXT PRIMARY KEY,
+  agencia_id TEXT NOT NULL REFERENCES agencias(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  threshold INTEGER NOT NULL,
+  percentual DOUBLE PRECISION NOT NULL,
+  sent_at TEXT NOT NULL,
+  UNIQUE (agencia_id, year, threshold)
+);
+
 CREATE TABLE IF NOT EXISTS deskfy_import_boards (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE

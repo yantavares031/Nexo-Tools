@@ -33,7 +33,7 @@ function TabRoot({ children, defaultTab = "" }: TabRootProps) {
 
 function TabList({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex border-b border-slate-200" role="tablist">
+    <div className="flex overflow-x-auto border-b border-neutral-200 [scrollbar-width:none]" role="tablist">
       {children}
     </div>
   );
@@ -55,10 +55,10 @@ function TabItem({ id, children }: TabItemProps) {
       aria-controls={`${baseId}-panel-${id}`}
       id={`${baseId}-tab-${id}`}
       onClick={() => setActiveTab(id)}
-      className={`px-4 py-2 text-sm font-medium transition-colors ${
+      className={`shrink-0 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors sm:px-4 ${
         isSelected
-          ? "border-b-2 border-blue-500 text-blue-600"
-          : "text-slate-600 hover:text-slate-800"
+          ? "border-b-2 border-accent text-neutral-950"
+          : "text-neutral-600 hover:text-neutral-800"
       }`}
     >
       {children}

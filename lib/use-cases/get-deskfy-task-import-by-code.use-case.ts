@@ -1,3 +1,4 @@
+import { DeskfyBusinessError } from "@/lib/domain/deskfy-errors";
 import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
 import type { IDeskfyWorkflowReportsService } from "@/lib/domain/deskfy-workflow-reports.service";
 import { getNormalizedOcPiKeyFromDeskfyPreview, getOcPiFromDeskfyPreview } from "@/lib/deskfy/deskfy-preview-ocpi";
@@ -24,12 +25,16 @@ export async function getDeskfyTaskImportByCodeUseCase(
     deskfyWorkflowReportsService: deps.deskfyWorkflowReportsService,
   });
 
+  if (details.solicitacao?.arquivado === true) {
+    throw new DeskfyBusinessError("Esta solicitação está arquivada no Deskfy e não pode ser importada.");
+  }
+
   const previewItem = mapDeskfyTaskDetailsToImportPreviewItem(details);
   const ocPiKey = getNormalizedOcPiKeyFromDeskfyPreview(previewItem);
   const existing = await deps.demandaRepository.findExistingOcPiKeysAmong([ocPiKey]);
 
   if (existing.has(ocPiKey)) {
-    throw new Error(`Já existe uma demanda cadastrada com o código ${getOcPiFromDeskfyPreview(previewItem)}.`);
+    throw new DeskfyBusinessError(`Já existe uma demanda cadastrada com o código ${getOcPiFromDeskfyPreview(previewItem)}.`);
   }
 
   return {

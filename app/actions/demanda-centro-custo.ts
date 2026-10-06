@@ -8,6 +8,8 @@ import { saveCentrosCustoPayloadSchema } from "@/lib/validation/schemas/demanda-
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
 import { parseDemandaRecordId } from "@/lib/validation/schemas/common";
+import { getSession } from "@/lib/auth";
+import { historicoDepsFromSession } from "@/lib/infra/historico-deps";
 
 export async function getCentrosCustoAction(demandaId: string): Promise<DemandaCentroCusto[]> {
   const idCheck = parseDemandaRecordId(demandaId);
@@ -22,6 +24,10 @@ export async function saveCentrosCustoAction(
   demandaId: string,
   centrosCusto: Array<Omit<DemandaCentroCustoInput, "demandaId">>
 ): Promise<{ error?: string }> {
+  const session = await getSession();
+  if (!session) {
+    return { error: "Não autenticado." };
+  }
   const parsed = saveCentrosCustoPayloadSchema.safeParse({ demandaId, centrosCusto });
   if (!parsed.success) {
     return { error: zodErrorToActionMessage(parsed.error) };
@@ -51,6 +57,7 @@ export async function saveCentrosCustoAction(
     const repository = getDemandaCentroCustoRepository();
     await saveDemandaCentrosCustoUseCase(did, centros, {
       demandaCentroCustoRepository: repository,
+      historico: historicoDepsFromSession(session),
     });
 
     return {};

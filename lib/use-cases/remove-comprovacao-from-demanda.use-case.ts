@@ -1,9 +1,16 @@
 import type { IDemandaComprovacaoRepository } from "@/lib/domain/demanda-comprovacao.repository";
 import type { IDemandaRepository } from "@/lib/domain/demanda.repository";
+import type { DemandaHistoricoAlteracao } from "@/types/globals";
+import {
+  formatStatusLabel,
+  recordDemandaHistoricoUseCase,
+  type HistoricoDeps,
+} from "./record-demanda-historico.use-case";
 
 type Dependencies = {
   demandaComprovacaoRepository: IDemandaComprovacaoRepository;
   demandaRepository: IDemandaRepository;
+  historico?: HistoricoDeps;
 };
 
 /**
@@ -32,6 +39,7 @@ export async function removeComprovacaoFromDemandaUseCase(
   const comprovacoesDaDemanda = await deps.demandaComprovacaoRepository.findByDemandaId(
     demandaId
   );
+  const comprovacaoRemovida = comprovacoesDaDemanda.find((c) => c.id === comprovacaoId);
   const demandaVaiFicarSemComprovacoes =
     comprovacoesDaDemanda.length === 1 && comprovacoesDaDemanda[0]?.id === comprovacaoId;
 
@@ -44,14 +52,34 @@ export async function removeComprovacaoFromDemandaUseCase(
   }
 
   let revertedDemandaStatus = false;
+  const alteracoes: DemandaHistoricoAlteracao[] = [];
   if (demandaVaiFicarSemComprovacoes) {
     const demanda = await deps.demandaRepository.findById(demandaId);
     if (demanda) {
       const { id: _id, createdAt: _c, updatedAt: _u, ...updateInput } = demanda;
       await deps.demandaRepository.update(demandaId, { ...updateInput, status: "comprometido" });
       revertedDemandaStatus = true;
+      if (demanda.status !== "comprometido") {
+        alteracoes.push({
+          campo: "Status",
+          de: formatStatusLabel(demanda.status),
+          para: "Comprometido",
+        });
+      }
     }
   }
+
+  await recordDemandaHistoricoUseCase(
+    {
+      demandaId,
+      tipo: "comprovacao_removida",
+      descricao: comprovacaoRemovida
+        ? `Comprovação "${comprovacaoRemovida.nomeArquivo}" removida`
+        : "Comprovação removida",
+      alteracoes,
+    },
+    deps.historico
+  );
 
   return { removedComprovacao: removeComprovacaoInteira, revertedDemandaStatus };
 }

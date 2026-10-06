@@ -1,0 +1,103 @@
+---
+description: Guardrails Ytech — regras de acesso centralizadas e wrappers obrigatórios em toda action, página, rota e job protegidos
+alwaysApply: true
+---
+
+# Guardrails (guards centralizados)
+
+Toda porta de entrada protegida passa pelo **mesmo** guard central. Nenhuma action, página, rota `/api` ou job checa sessão, conta ou permissão "na mão".
+
+## Onde fica
+
+Tudo em `infrastructure/auth/guards.ts` (quebre em `infrastructure/auth/guards/` se crescer):
+
+| Função | Papel |
+|--------|-------|
+| `runAccountGuards(userId)` | **Único lugar** com as regras da conta: existe, ativa, não bloqueada, trial válido, adimplente... Retorna `true` ou `{ error }`. |
+| `getGuardedSession()` | Sessão + `runAccountGuards`. Sem sessão → `redirect("/login")`; guard falhou → redirect para a tela de bloqueio/assinatura. Uso em páginas e layouts. |
+| `withGuards(action)` | Wrapper de Server Action de formulário: busca a sessão, roda os guards e injeta `session`. Falha → devolve o erro no formato de retorno da action (`{ message }` em `FormState`, `{ success: false, error }` em `ActionResult`), que vira toast. |
+| `withGuardsRedirect(action)` | Mesma coisa para actions sem formulário: falha → `redirect` com `?blocked=1`. |
+| `withRoleGuards(roles, action)` / `requirePermission(session, perm)` | Guards de papel/permissão, **compostos** sobre o guard da conta. |
+| `requirePageAccess(session, pathname)` | Topo de páginas/layouts protegidos: sem acesso → redireciona para a primeira rota permitida. |
+
+> **Regra de acesso nova entra só em `runAccountGuards` (ou no guard de área), nunca espalhada pelas actions.**
+
+## Actions protegidas
+
+A action é exportada já envolvida; ela recebe `session` pronta e não busca sessão sozinha.
+
+```typescript
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { withGuards } from "@/infrastructure/auth/guards";
+import { makeCreateOrderUseCase } from "@/infrastructure/factories/orders";
+import { createOrderSchema } from "./create-order.schema";
+import { DomainError } from "@/domain/errors";
+
+export const createOrderAction = withGuards(async (session, input: unknown) => {
+  const parsed = createOrderSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "Dados inválidos." };
+
+  try {
+    const order = await makeCreateOrderUseCase().execute({ ...parsed.data, userId: session.userId });
+    revalidatePath("/pedidos");
+    return { success: true, data: { id: order.id } };
+  } catch (error) {
+    if (error instanceof DomainError) return { success: false, error: error.message };
+    console.error("createOrderAction", error);
+    return { success: false, error: "Não foi possível concluir a operação." };
+  }
+});
+```
+
+Guard de área compõe o geral:
+
+```typescript
+export function withFinanceGuards<TArgs extends unknown[], TResult>(
+  action: (session: Session, ...args: TArgs) => Promise<TResult>,
+) {
+  return withGuards(async (session, ...args: TArgs) => {
+    const denied = requirePermission(session, "finance");
+    if (denied) return denied;
+    return action(session, ...args);
+  });
+}
+```
+
+## Páginas e layouts
+
+```typescript
+export default async function PedidosPage() {
+  const session = await getGuardedSession();
+  await requirePageAccess(session, "/pedidos");
+  // ...
+}
+```
+
+- O layout da área logada chama `getGuardedSession()`; páginas com permissão específica chamam também `requirePageAccess`/`requirePermission`.
+- O `proxy.ts` faz só a checagem **otimista** (existe cookie?). A validação real é sempre aqui.
+
+## Todas as portas usam o mesmo guard
+
+- **Server Actions** → `withGuards` / `withGuardsRedirect` / guard de área.
+- **Rotas `/api`** (app mobile, integrações autenticadas) → `requireApiSessionWithGuards(request)` chamando `runAccountGuards`.
+- **Jobs, filas e workers** → chamam `runAccountGuards(userId)` antes de agir (ex.: não enviar notificação de conta bloqueada).
+- **Páginas públicas por conta** (ex.: site público do cliente) → conta indisponível → `notFound()`.
+
+## Exceções (sem guard de conta)
+
+Liste no topo de `guards.ts` e mantenha atualizado:
+
+- Login, logout, cadastro, recuperação de senha.
+- Fluxo de pagamento/assinatura (o inadimplente precisa conseguir pagar).
+- Área admin (tem guard próprio de admin).
+- Webhooks (verificam assinatura do provedor, não sessão).
+
+## Proibido
+
+- Action/página/rota protegida sem guard.
+- `auth()`/`getSession()` + `if (!user.active)` dentro de action ou página — use o wrapper.
+- Duplicar regra de acesso fora de `runAccountGuards` ou do guard de área.
+- Confiar só no `proxy.ts` ou em esconder botão na UI.
+- Devolver ao cliente o motivo interno da falha; use mensagens amigáveis em pt-BR.

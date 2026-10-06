@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition } from "react";
+import { useState, useEffect, useCallback, useTransition, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { OrdemCompraListItem } from "@/lib/domain/ordem-compra.repository";
 import { removeOrdemCompraEmAbertoAction } from "@/app/actions/ordem-compra";
 import { toast } from "sonner";
-import { ChevronDown, Download, Eye, FileSignature, FileText, Trash2 } from "lucide-react";
+import { Download, Eye, FileSignature, FileText, MoreHorizontal, Trash2 } from "lucide-react";
 import { ComprovacaoPreviewModal } from "@/modals/sub/ComprovacaoPreviewModal";
 import { AssinarOrdemCompraModal } from "@/modals/AssinarOrdemCompraModal";
 import { useEscapeKey } from "@/lib/use-escape-key";
-import { useConfirm } from "@/lib/confirm-context";
-import type { OrdensCompraTab } from "./OrdensCompraPagination";
+import { cn } from "@/lib/cn";
+import { useConfirm } from "@/components/confirm-provider";
 import { UserAvatarThumb } from "@/components/UserAvatarThumb";
+import { Badge } from "@/components/ui/badge";
+import { IconButton } from "@/components/ui/icon-button";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
+import type { OrdensCompraTab } from "./hrefs";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 Bytes";
@@ -79,6 +83,7 @@ interface OrdensCompraTableProps {
   ordens: OrdemCompraListItem[];
   userRole: "admin" | "operator" | "agency";
   tab: OrdensCompraTab;
+  emptyMessage?: string;
 }
 
 type PreviewState = {
@@ -86,7 +91,43 @@ type PreviewState = {
   versao: "original" | "assinada";
 };
 
-export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTableProps) {
+function RowMenuItem({
+  icon,
+  danger = false,
+  disabled,
+  onClick,
+  children,
+}: {
+  icon: ReactNode;
+  danger?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-2 rounded-[calc(var(--radius-field)-2px)] px-2.5 py-2 text-left text-sm transition-colors disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+        danger
+          ? "text-red-600 hover:bg-red-50"
+          : "text-neutral-700 hover:bg-neutral-100 [&_svg]:text-neutral-400",
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+function RowMenuSeparator() {
+  return <div className="my-1 h-px bg-neutral-100" role="separator" />;
+}
+
+export function OrdensCompraTable({ ordens, userRole, tab, emptyMessage }: OrdensCompraTableProps) {
   const router = useRouter();
   const { confirm } = useConfirm();
   const [isPending, startTransition] = useTransition();
@@ -214,41 +255,39 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
       return { nome, tipo, versao };
     })();
 
-  if (ordens.length === 0) {
-    const empty =
-      tab === "abertas"
-        ? "Nenhum pedido em aberto."
-        : "Nenhuma OC assinada registrada ainda.";
-    return (
-      <p className="rounded-lg border border-slate-200 bg-slate-50 py-12 text-center text-sm text-slate-500">
-        {empty}
-      </p>
-    );
-  }
+  const defaultEmptyMessage =
+    tab === "abertas" ? "Nenhum pedido em aberto." : "Nenhuma OC assinada registrada ainda.";
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[880px] table-fixed text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 font-semibold text-slate-800">Documento</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Demanda</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">OC/PI</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Autor</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Status</th>
-              <th className="px-4 py-3 font-semibold text-slate-800">Data</th>
-              <th className="w-44 px-4 py-3 font-semibold text-slate-800">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ordens.map((oc) => {
+      <Table className="min-w-[880px]">
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>Documento</TableHeaderCell>
+            <TableHeaderCell>Demanda</TableHeaderCell>
+            <TableHeaderCell>OC/PI</TableHeaderCell>
+            <TableHeaderCell>Autor</TableHeaderCell>
+            <TableHeaderCell className="w-28">Status</TableHeaderCell>
+            <TableHeaderCell className="w-36">Data</TableHeaderCell>
+            <TableHeaderCell className="w-14">
+              <span className="sr-only">Ações</span>
+            </TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {ordens.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="py-12 text-neutral-500">
+                {emptyMessage ?? defaultEmptyMessage}
+              </TableCell>
+            </TableRow>
+          ) : (
+            ordens.map((oc) => {
               const temAssinada = ocTemPdfAssinado(oc);
               const isAssinada = oc.status === "assinada";
               const usarMenuSignedFull = tab === "assinadas" && temAssinada;
               const usarMenuSignedSimple = tab === "assinadas" && isAssinada && !temAssinada;
               const usarMenuOpen = tab === "abertas" && oc.status === "em_aberto";
-              const mostrarMenuAcoes = usarMenuSignedFull || usarMenuSignedSimple || usarMenuOpen;
 
               const menuKind: OcRowMenuKind | null = usarMenuSignedFull
                 ? "signed-full"
@@ -259,103 +298,75 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
                     : null;
 
               return (
-                <tr key={oc.id} className="border-b border-slate-100 transition-colors hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <div className="flex min-w-0 items-start gap-2.5">
-                      <span
-                        className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${
-                          isAssinada
-                            ? "bg-emerald-100 text-emerald-600"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                        aria-hidden
+                <TableRow key={oc.id} className="transition-colors hover:bg-sky-50/60">
+                  <TableCell className="max-w-72">
+                    <p className="truncate font-medium text-neutral-950" title={oc.nomeArquivo}>
+                      {oc.nomeArquivo}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-neutral-400 tabular-nums">
+                      {formatFileSize(oc.tamanho)}
+                    </p>
+                    {tab === "assinadas" && temAssinada && oc.nomeArquivoAssinado && (
+                      <p
+                        className="mt-0.5 truncate text-[11px] text-lime-700"
+                        title={oc.nomeArquivoAssinado}
                       >
-                        <FileText className="size-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-slate-800" title={oc.nomeArquivo}>
-                          {oc.nomeArquivo}
-                        </p>
-                        <p className="text-xs text-slate-500">{formatFileSize(oc.tamanho)}</p>
-                        {tab === "assinadas" && temAssinada && oc.nomeArquivoAssinado && (
-                          <p
-                            className="mt-1 truncate text-xs text-emerald-700"
-                            title={oc.nomeArquivoAssinado}
-                          >
-                            Assinada: {oc.nomeArquivoAssinado}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="block max-w-[200px] truncate text-slate-600"
-                      title={oc.demandaDescricao}
-                    >
+                        Assinada: {oc.nomeArquivoAssinado}
+                      </p>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-60">
+                    <p className="truncate text-link" title={oc.demandaDescricao}>
                       {oc.demandaDescricao || "—"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
+                    </p>
+                  </TableCell>
+                  <TableCell className="max-w-36">
                     {oc.demandaOcPi ? (
-                      <span
-                        className="inline-block max-w-[140px] truncate font-mono text-xs text-slate-700"
-                        title={oc.demandaOcPi}
-                      >
+                      <p className="truncate tabular-nums" title={oc.demandaOcPi}>
                         {oc.demandaOcPi}
-                      </span>
+                      </p>
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       <UserAvatarThumb userId={oc.cadastradoPorUserId} label={oc.autor} />
-                      <span>{oc.autor}</span>
+                      <span className="truncate">{oc.autor}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-left text-slate-600">
-                    {isAssinada ? (
-                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                        {STATUS_LABEL.assinada}
-                      </span>
-                    ) : (
-                      STATUS_LABEL[oc.status] ?? oc.status
+                  </TableCell>
+                  <TableCell>
+                    <Badge tone={isAssinada ? "success" : "neutral"}>
+                      {STATUS_LABEL[oc.status] ?? oc.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {formatDateTime(oc.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    {menuKind && (
+                      <IconButton
+                        aria-label="Ações"
+                        data-oc-row-trigger
+                        disabled={isPending}
+                        aria-expanded={rowMenu?.ocId === oc.id}
+                        aria-haspopup="menu"
+                        className={cn(rowMenu?.ocId === oc.id && "bg-neutral-100 text-neutral-800")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleRowMenu(oc.id, menuKind, e.currentTarget);
+                        }}
+                      >
+                        <MoreHorizontal />
+                      </IconButton>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{formatDateTime(oc.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {mostrarMenuAcoes && menuKind ? (
-                        <button
-                          type="button"
-                          data-oc-row-trigger
-                          disabled={isPending}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleRowMenu(oc.id, menuKind, e.currentTarget);
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
-                          aria-expanded={rowMenu?.ocId === oc.id}
-                          aria-haspopup="menu"
-                        >
-                          Ações
-                          <ChevronDown
-                            className={`size-3.5 shrink-0 text-slate-500 transition ${
-                              rowMenu?.ocId === oc.id ? "rotate-180" : ""
-                            }`}
-                            aria-hidden
-                          />
-                        </button>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
-            })}
-          </tbody>
-        </table>
-      </div>
+            })
+          )}
+        </TableBody>
+      </Table>
 
       {preview && previewModalProps && (
         <ComprovacaoPreviewModal
@@ -390,7 +401,7 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
             data-oc-row-menu
             role="menu"
             aria-orientation="vertical"
-            className="fixed z-100 rounded-xl border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-black/5"
+            className="fixed z-100 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg shadow-neutral-900/8"
             style={{
               top: rowMenu.top,
               left: rowMenu.left,
@@ -399,70 +410,56 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
           >
             {rowMenu.kind === "signed-full" && (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                <RowMenuItem
+                  icon={<Eye aria-hidden />}
                   onClick={() => {
                     setPreview({ item: menuOc, versao: "assinada" });
                     closeRowMenu();
                   }}
                 >
-                  <Eye className="size-4 shrink-0 text-blue-600" aria-hidden />
                   Ver documento assinado
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                </RowMenuItem>
+                <RowMenuItem
+                  icon={<FileText aria-hidden />}
                   onClick={() => {
                     setPreview({ item: menuOc, versao: "original" });
                     closeRowMenu();
                   }}
                 >
-                  <FileText className="size-4 shrink-0 text-slate-500" aria-hidden />
                   Ver documento enviado pela agência
-                </button>
-                <div className="my-1 border-t border-slate-100" role="separator" />
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                </RowMenuItem>
+                <RowMenuSeparator />
+                <RowMenuItem
+                  icon={<Download aria-hidden />}
                   onClick={() => {
                     void handleDownload(menuOc, "assinada");
                     closeRowMenu();
                   }}
                 >
-                  <Download className="size-4 shrink-0 text-emerald-600" aria-hidden />
                   Baixar documento assinado
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                </RowMenuItem>
+                <RowMenuItem
+                  icon={<Download aria-hidden />}
                   onClick={() => {
                     void handleDownload(menuOc, "original");
                     closeRowMenu();
                   }}
                 >
-                  <Download className="size-4 shrink-0 text-slate-500" aria-hidden />
                   Baixar documento enviado pela agência
-                </button>
+                </RowMenuItem>
                 {isAdmin && (
                   <>
-                    <div className="my-1 border-t border-slate-100" role="separator" />
-                    <button
-                      type="button"
-                      role="menuitem"
+                    <RowMenuSeparator />
+                    <RowMenuItem
+                      icon={<Trash2 aria-hidden />}
+                      danger
                       disabled={isPending}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50 disabled:opacity-50"
                       onClick={() => {
                         void handleRemovePedido(menuOc);
                       }}
                     >
-                      <Trash2 className="size-4 shrink-0" aria-hidden />
                       Remover pedido
-                    </button>
+                    </RowMenuItem>
                   </>
                 )}
               </>
@@ -470,45 +467,37 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
 
             {rowMenu.kind === "signed-simple" && (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                <RowMenuItem
+                  icon={<Eye aria-hidden />}
                   onClick={() => {
                     setPreview({ item: menuOc, versao: "original" });
                     closeRowMenu();
                   }}
                 >
-                  <Eye className="size-4 shrink-0 text-blue-600" aria-hidden />
                   Ver documento
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                </RowMenuItem>
+                <RowMenuItem
+                  icon={<Download aria-hidden />}
                   onClick={() => {
                     void handleDownload(menuOc, "original");
                     closeRowMenu();
                   }}
                 >
-                  <Download className="size-4 shrink-0 text-slate-600" aria-hidden />
                   Baixar documento
-                </button>
+                </RowMenuItem>
                 {isAdmin && (
                   <>
-                    <div className="my-1 border-t border-slate-100" role="separator" />
-                    <button
-                      type="button"
-                      role="menuitem"
+                    <RowMenuSeparator />
+                    <RowMenuItem
+                      icon={<Trash2 aria-hidden />}
+                      danger
                       disabled={isPending}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50 disabled:opacity-50"
                       onClick={() => {
                         void handleRemovePedido(menuOc);
                       }}
                     >
-                      <Trash2 className="size-4 shrink-0" aria-hidden />
                       Remover pedido
-                    </button>
+                    </RowMenuItem>
                   </>
                 )}
               </>
@@ -516,62 +505,51 @@ export function OrdensCompraTable({ ordens, userRole, tab }: OrdensCompraTablePr
 
             {rowMenu.kind === "open" && (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                <RowMenuItem
+                  icon={<Eye aria-hidden />}
                   onClick={() => {
                     setPreview({ item: menuOc, versao: "original" });
                     closeRowMenu();
                   }}
                 >
-                  <Eye className="size-4 shrink-0 text-blue-600" aria-hidden />
                   Ver documento
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                </RowMenuItem>
+                <RowMenuItem
+                  icon={<Download aria-hidden />}
                   onClick={() => {
                     void handleDownload(menuOc, "original");
                     closeRowMenu();
                   }}
                 >
-                  <Download className="size-4 shrink-0 text-slate-600" aria-hidden />
                   Baixar documento
-                </button>
+                </RowMenuItem>
                 {isAdmin && (
                   <>
-                    <div className="my-1 border-t border-slate-100" role="separator" />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-800 transition hover:bg-slate-50"
+                    <RowMenuSeparator />
+                    <RowMenuItem
+                      icon={<FileSignature aria-hidden />}
                       onClick={() => {
                         setAssinarItem(menuOc);
                         closeRowMenu();
                       }}
                     >
-                      <FileSignature className="size-4 shrink-0 text-emerald-600" aria-hidden />
                       Anexar PDF assinado
-                    </button>
+                    </RowMenuItem>
                   </>
                 )}
                 {(isAdmin || isAgency) && (
                   <>
-                    <div className="my-1 border-t border-slate-100" role="separator" />
-                    <button
-                      type="button"
-                      role="menuitem"
+                    <RowMenuSeparator />
+                    <RowMenuItem
+                      icon={<Trash2 aria-hidden />}
+                      danger
                       disabled={isPending}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50 disabled:opacity-50"
                       onClick={() => {
                         void handleRemovePedido(menuOc);
                       }}
                     >
-                      <Trash2 className="size-4 shrink-0" aria-hidden />
                       Remover pedido
-                    </button>
+                    </RowMenuItem>
                   </>
                 )}
               </>

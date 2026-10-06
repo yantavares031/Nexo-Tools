@@ -1,12 +1,21 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getCertidoesPaginatedAction } from "@/app/actions/certidao";
 import { getAgenciaRepository } from "@/lib/repositories";
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
+import { buttonBaseClassName, buttonSizes, buttonVariants } from "@/components/ui/button";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { Pagination } from "@/components/ui/pagination";
+import { SearchPill } from "@/components/ui/search-pill";
+import { cn } from "@/lib/cn";
+import { integerFormat } from "@/lib/format";
+import { formatMonthYearDisplay } from "@/lib/month-year";
 import { CertidoesTable } from "./sub/CertidoesTable";
-import { CertidoesPagination } from "./sub/CertidoesPagination";
 import { CertidoesFilters } from "./sub/CertidoesFilters";
-import { Plus } from "lucide-react";
+import { certidoesHref } from "./sub/hrefs";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -26,11 +35,13 @@ export default async function CertidoesPage({
 
   const showAgencyFilter = session.role === "admin";
 
-  const result = await getCertidoesPaginatedAction(page, DEFAULT_PAGE_SIZE, {
+  const filters = {
     q: qValue || undefined,
     mes: mesValue || undefined,
     agenciaId: showAgencyFilter ? agenciaIdValue || undefined : undefined,
-  });
+  };
+
+  const result = await getCertidoesPaginatedAction(page, DEFAULT_PAGE_SIZE, filters);
 
   const agencias =
     showAgencyFilter ?
@@ -39,43 +50,74 @@ export default async function CertidoesPage({
         .sort((a, b) => a.nomeFantasia.localeCompare(b.nomeFantasia, "pt-BR"))
     : [];
 
-  const filterParams = {
-    q: qValue || undefined,
-    mes: mesValue || undefined,
-    agenciaId: showAgencyFilter ? agenciaIdValue || undefined : undefined,
-  };
+  const agenciaSelecionada = agencias.find((a) => a.id === filters.agenciaId);
+  const hasFilters = Boolean(filters.q || filters.mes || filters.agenciaId);
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-800">Certidões</h1>
-          <Link
-            href="/certidoes/adicionar"
-            className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-          >
-            <Plus className="size-4" />
-            Adicionar
-          </Link>
+    <div className="w-full">
+      <div className="space-y-6">
+        <PageHeader
+          title="Certidões"
+          description="Certidões de regularidade e seus arquivos."
+          actions={
+            <Link href="/certidoes/adicionar" className={cn(buttonBaseClassName, buttonVariants.primary, buttonSizes.md)}>
+              <Plus className="size-4" strokeWidth={2.25} aria-hidden />
+              Nova certidão
+            </Link>
+          }
+        />
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <SearchPill
+            action="/certidoes"
+            q={filters.q}
+            placeholder="Buscar pela descrição (ex.: RFB, FGTS)"
+            label="Buscar certidões"
+            hiddenParams={{ mes: filters.mes, agenciaId: filters.agenciaId }}
+            clearHref={certidoesHref({ ...filters, q: undefined })}
+          />
+          <CertidoesFilters filters={filters} agencias={agencias} hideAgencyFilter={!showAgencyFilter} />
         </div>
 
-        <CertidoesFilters
-          defaultQ={qValue}
-          defaultMes={mesValue}
-          defaultAgenciaId={showAgencyFilter ? agenciaIdValue : ""}
-          agencias={agencias}
-          hideAgencyFilter={!showAgencyFilter}
-        />
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+            <Badge tone="dark" className="px-2.5 py-1">
+              <span className="tabular-nums">{integerFormat.format(result.total)}</span>
+              {result.total === 1 ? "certidão" : "certidões"}
+            </Badge>
+            {filters.q && (
+              <FilterChip label="busca" removeHref={certidoesHref({ ...filters, q: undefined })}>
+                “{filters.q}”
+              </FilterChip>
+            )}
+            {filters.mes && (
+              <FilterChip label="mês" removeHref={certidoesHref({ ...filters, mes: undefined })}>
+                Mês: {formatMonthYearDisplay(filters.mes)}
+              </FilterChip>
+            )}
+            {filters.agenciaId && (
+              <FilterChip label="agência" removeHref={certidoesHref({ ...filters, agenciaId: undefined })}>
+                Agência: {agenciaSelecionada?.nomeFantasia ?? "—"}
+              </FilterChip>
+            )}
+          </div>
 
-        <CertidoesTable certidoes={result.items} userRole={session.role} />
+          <CertidoesTable
+            certidoes={result.items}
+            userRole={session.role}
+            emptyMessage={hasFilters ? "Nenhuma certidão encontrada para os filtros aplicados." : undefined}
+          />
 
-        <CertidoesPagination
-          page={result.page}
-          totalPages={result.totalPages}
-          total={result.total}
-          limit={result.limit}
-          filters={filterParams}
-        />
+          {result.total > 0 && (
+            <Pagination
+              page={result.page}
+              totalPages={result.totalPages}
+              total={result.total}
+              pageSize={result.limit}
+              hrefForPage={(target) => certidoesHref({ ...filters, page: target })}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

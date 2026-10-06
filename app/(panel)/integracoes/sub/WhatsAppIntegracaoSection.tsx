@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, X } from "lucide-react";
+import { Activity, List, Plug, Smartphone, Timer, Unplug, UserCircle, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   connectWhatsAppIntegrationAction,
@@ -12,8 +12,17 @@ import {
   saveWhatsAppNotifyRecipientsAction,
   selectWhatsAppInstanceAction,
 } from "@/app/actions/whatsapp-integration";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
-import { useConfirm } from "@/lib/confirm-context";
+import { useConfirm } from "@/components/confirm-provider";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { FormSection } from "@/components/ui/form-section";
+import { Input } from "@/components/ui/input";
+import { MetaList } from "@/components/ui/meta-list";
+import { PanelHeader } from "@/components/ui/panel-header";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Select } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type {
   WhatsAppInstanceListItem,
@@ -37,13 +46,20 @@ const PLATFORM_LABEL: Record<WhatsAppPlatformChoice, string> = {
   evolution: "Evolution",
 };
 
-function WhatsAppStatusWord({ value }: { value: string | null | undefined }) {
+const codeClassName = "rounded bg-neutral-100 px-1 text-[11px]";
+
+function statusTone(status: string): BadgeTone {
+  const normalized = status.toLowerCase();
+  if (normalized === "connected" || normalized === "open") return "success";
+  if (normalized === "disconnected" || normalized === "close" || normalized === "closed") return "danger";
+  if (normalized === "connecting" || normalized === "pending" || normalized === "qrcode") return "warning";
+  return "neutral";
+}
+
+function WhatsAppStatusBadge({ value }: { value: string | null | undefined }) {
   const text = value?.trim();
-  if (!text) return <span className="text-slate-800">—</span>;
-  const isConnected = text.toLowerCase() === "connected";
-  return (
-    <span className={isConnected ? "font-medium text-emerald-600" : "text-slate-800"}>{text}</span>
-  );
+  if (!text) return <span className="text-neutral-500">—</span>;
+  return <Badge tone={statusTone(text)}>{text}</Badge>;
 }
 
 export function WhatsAppIntegracaoSection({ initialPanel }: WhatsAppIntegracaoSectionProps) {
@@ -211,440 +227,440 @@ export function WhatsAppIntegracaoSection({ initialPanel }: WhatsAppIntegracaoSe
     };
   }, [hasSavedInstance, panelIsUazapi]);
 
+  function handleRecipientKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const t = recipientInput.trim();
+    if (!t) return;
+    if (t.length > 80) {
+      toast.error("Cada contato pode ter no máximo 80 caracteres.");
+      return;
+    }
+    if (notifyRecipients.length >= 50) {
+      toast.error("No máximo 50 contatos.");
+      return;
+    }
+    if (notifyRecipients.includes(t)) {
+      setRecipientInput("");
+      return;
+    }
+    setNotifyRecipients((prev) => [...prev, t]);
+    setRecipientInput("");
+  }
+
   return (
-    <div className="space-y-6 rounded-lg border border-slate-200 bg-white p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-          <MessageSquare className="size-5 shrink-0" aria-hidden />
-          WhatsApp
-        </h2>
-        {hasSavedInstance ? (
-          <button
-            type="button"
-            onClick={() => void handleDisconnect()}
-            disabled={disconnectPending}
-            className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {disconnectPending ? "Desconectando…" : "Desconectar"}
-          </button>
-        ) : null}
-      </div>
+    <div className="max-w-3xl">
+      <PanelHeader
+        title="WhatsApp"
+        description="Instância usada para avisos de ordens de compra no WhatsApp."
+        actions={
+          hasSavedInstance ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void handleDisconnect()}
+              loading={disconnectPending}
+              className="text-red-600 hover:bg-red-50"
+            >
+              {!disconnectPending && <Unplug className="size-4" aria-hidden />}
+              {disconnectPending ? "Desconectando…" : "Desconectar"}
+            </Button>
+          ) : null
+        }
+      />
 
       {!hasSavedInstance ? (
-        <>
-      <form onSubmit={handleConnectSubmit} className="space-y-4">
         <div>
-          <label htmlFor="wa-platform" className="mb-1 block text-sm font-medium text-slate-600">
-            Plataforma
-          </label>
-          <select
-            id="wa-platform"
-            name="platform"
-            value={platform}
-            onChange={(e) => setPlatform(normalizeWhatsAppPlatformId(e.target.value))}
-            disabled={connectPending}
-            className="w-full max-w-md rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+          <FormSection
+            icon={<Plug aria-hidden />}
+            title="Conexão"
+            description="Plataforma e credenciais da API de WhatsApp."
           >
-            {WHATSAPP_PLATFORMS.map((p) => (
-              <option key={p} value={p}>
-                {PLATFORM_LABEL[p]}
-              </option>
-            ))}
-          </select>
-        </div>
+            <form onSubmit={handleConnectSubmit}>
+              <fieldset disabled={connectPending} className="space-y-4">
+                <FormField id="wa-platform" label="Plataforma">
+                  <Select
+                    id="wa-platform"
+                    name="platform"
+                    value={platform}
+                    onChange={(e) => setPlatform(normalizeWhatsAppPlatformId(e.target.value))}
+                    className="w-full sm:max-w-xs"
+                  >
+                    {WHATSAPP_PLATFORMS.map((p) => (
+                      <option key={p} value={p}>
+                        {PLATFORM_LABEL[p]}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
 
-        {platform === "uazapi" && (
-          <>
-            <div>
-              <label htmlFor="wa-base-url" className="mb-1 block text-sm font-medium text-slate-600">
-                URL base da API
-              </label>
-              <input
-                id="wa-base-url"
-                name="baseUrl"
-                type="url"
-                required
-                defaultValue={initialPanel.baseUrl}
-                placeholder="https://…"
-                disabled={connectPending}
-                autoComplete="off"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="wa-admin-token" className="mb-1 block text-sm font-medium text-slate-600">
-                Token administrador (admintoken)
-              </label>
-              <input
-                id="wa-admin-token"
-                name="adminToken"
-                type="password"
-                autoComplete="new-password"
-                placeholder={
-                  initialPanel.hasAdminToken ? "Em branco mantém o salvo" : "Obrigatório"
-                }
-                disabled={connectPending}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="wa-api-token" className="mb-1 block text-sm font-medium text-slate-600">
-                Token adicional (opcional)
-              </label>
-              <input
-                id="wa-api-token"
-                name="apiToken"
-                type="password"
-                autoComplete="new-password"
-                placeholder={initialPanel.hasApiToken ? "Em branco mantém" : "Opcional"}
-                disabled={connectPending}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-          </>
-        )}
-
-        {platform === "z-api" && (
-          <>
-            <div>
-              <label htmlFor="zapi-base-url" className="mb-1 block text-sm font-medium text-slate-600">
-                URL base
-              </label>
-              <input
-                id="zapi-base-url"
-                name="baseUrl"
-                type="url"
-                required
-                defaultValue={initialPanel.baseUrl || "https://api.z-api.io"}
-                placeholder="https://api.z-api.io"
-                disabled={connectPending}
-                autoComplete="off"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="zapi-instance-id" className="mb-1 block text-sm font-medium text-slate-600">
-                ID da instância
-              </label>
-              <input
-                id="zapi-instance-id"
-                name="zapiInstanceId"
-                type="text"
-                required
-                defaultValue={initialPanel.zapiInstanceId}
-                disabled={connectPending}
-                autoComplete="off"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="zapi-client-token" className="mb-1 block text-sm font-medium text-slate-600">
-                Client-Token
-              </label>
-              <input
-                id="zapi-client-token"
-                name="adminToken"
-                type="password"
-                autoComplete="new-password"
-                placeholder={initialPanel.hasAdminToken ? "Em branco mantém o salvo" : ""}
-                disabled={connectPending}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="zapi-instance-token" className="mb-1 block text-sm font-medium text-slate-600">
-                Token da instância
-              </label>
-              <input
-                id="zapi-instance-token"
-                name="apiToken"
-                type="password"
-                autoComplete="new-password"
-                placeholder={initialPanel.hasApiToken ? "Em branco mantém o salvo" : ""}
-                disabled={connectPending}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-          </>
-        )}
-
-        {platform === "evolution" && (
-          <>
-            <div>
-              <label htmlFor="evo-server" className="mb-1 block text-sm font-medium text-slate-600">
-                URL do servidor
-              </label>
-              <input
-                id="evo-server"
-                name="baseUrl"
-                type="url"
-                required
-                defaultValue={initialPanel.baseUrl}
-                placeholder="http://localhost:8080"
-                disabled={connectPending}
-                autoComplete="off"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="evo-api-key" className="mb-1 block text-sm font-medium text-slate-600">
-                API Key
-              </label>
-              <input
-                id="evo-api-key"
-                name="adminToken"
-                type="password"
-                autoComplete="new-password"
-                placeholder={initialPanel.hasAdminToken ? "Em branco mantém o salvo" : ""}
-                disabled={connectPending}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="evo-instance-name" className="mb-1 block text-sm font-medium text-slate-600">
-                Nome da instância
-              </label>
-              <input
-                id="evo-instance-name"
-                name="evolutionInstanceName"
-                type="text"
-                required
-                defaultValue={initialPanel.evolutionInstanceName}
-                disabled={connectPending}
-                autoComplete="off"
-                className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-              />
-            </div>
-          </>
-        )}
-
-        <div className="flex justify-end">
-          <FormActionSubmitButton pending={connectPending} pendingLabel="Salvando...">
-            Conectar
-          </FormActionSubmitButton>
-        </div>
-      </form>
-
-      {instances.length > 0 && panelIsUazapi && (
-        <div className="border-t border-slate-100 pt-6">
-          <h3 className="mb-3 text-sm font-semibold text-slate-800">Instâncias disponíveis</h3>
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="min-w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left font-semibold text-slate-700"> </th>
-                  <th className="text-left font-semibold text-slate-700">Nome</th>
-                  <th className="text-left font-semibold text-slate-700">Status</th>
-                  <th className="text-left font-semibold text-slate-700">Perfil</th>
-                </tr>
-              </thead>
-              <tbody>
-                {instances.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-100 last:border-0">
-                    <td className="text-left align-middle">
-                      <input
-                        type="radio"
-                        name="pickInstance"
-                        checked={selectedId === row.id}
-                        onChange={() => setSelectedId(row.id)}
-                        aria-label={`Selecionar ${row.name}`}
+                {platform === "uazapi" && (
+                  <>
+                    <FormField id="wa-base-url" label="URL base da API">
+                      <Input
+                        id="wa-base-url"
+                        name="baseUrl"
+                        type="url"
+                        required
+                        defaultValue={initialPanel.baseUrl}
+                        placeholder="https://…"
+                        autoComplete="off"
                       />
-                    </td>
-                    <td className="text-left align-middle text-slate-800">{row.name}</td>
-                    <td className="text-left align-middle text-slate-700">
-                      <WhatsAppStatusWord value={row.status} />
-                    </td>
-                    <td className="text-left align-middle text-slate-600">{row.profileName ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <form onSubmit={handleSelectSubmit} className="mt-4 flex justify-end">
-            <button
-              type="submit"
-              disabled={selectPending || !selectedId}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
+                    </FormField>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField id="wa-admin-token" label="Token administrador (admintoken)">
+                        <PasswordInput
+                          id="wa-admin-token"
+                          name="adminToken"
+                          autoComplete="new-password"
+                          placeholder={initialPanel.hasAdminToken ? "Em branco mantém o salvo" : "Obrigatório"}
+                        />
+                      </FormField>
+                      <FormField id="wa-api-token" label="Token adicional (opcional)">
+                        <PasswordInput
+                          id="wa-api-token"
+                          name="apiToken"
+                          autoComplete="new-password"
+                          placeholder={initialPanel.hasApiToken ? "Em branco mantém" : "Opcional"}
+                        />
+                      </FormField>
+                    </div>
+                  </>
+                )}
+
+                {platform === "z-api" && (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField id="zapi-base-url" label="URL base">
+                        <Input
+                          id="zapi-base-url"
+                          name="baseUrl"
+                          type="url"
+                          required
+                          defaultValue={initialPanel.baseUrl || "https://api.z-api.io"}
+                          placeholder="https://api.z-api.io"
+                          autoComplete="off"
+                        />
+                      </FormField>
+                      <FormField id="zapi-instance-id" label="ID da instância">
+                        <Input
+                          id="zapi-instance-id"
+                          name="zapiInstanceId"
+                          type="text"
+                          required
+                          defaultValue={initialPanel.zapiInstanceId}
+                          autoComplete="off"
+                        />
+                      </FormField>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField id="zapi-client-token" label="Client-Token">
+                        <PasswordInput
+                          id="zapi-client-token"
+                          name="adminToken"
+                          autoComplete="new-password"
+                          placeholder={initialPanel.hasAdminToken ? "Em branco mantém o salvo" : ""}
+                        />
+                      </FormField>
+                      <FormField id="zapi-instance-token" label="Token da instância">
+                        <PasswordInput
+                          id="zapi-instance-token"
+                          name="apiToken"
+                          autoComplete="new-password"
+                          placeholder={initialPanel.hasApiToken ? "Em branco mantém o salvo" : ""}
+                        />
+                      </FormField>
+                    </div>
+                  </>
+                )}
+
+                {platform === "evolution" && (
+                  <>
+                    <FormField id="evo-server" label="URL do servidor">
+                      <Input
+                        id="evo-server"
+                        name="baseUrl"
+                        type="url"
+                        required
+                        defaultValue={initialPanel.baseUrl}
+                        placeholder="http://localhost:8080"
+                        autoComplete="off"
+                      />
+                    </FormField>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField id="evo-api-key" label="API Key">
+                        <PasswordInput
+                          id="evo-api-key"
+                          name="adminToken"
+                          autoComplete="new-password"
+                          placeholder={initialPanel.hasAdminToken ? "Em branco mantém o salvo" : ""}
+                        />
+                      </FormField>
+                      <FormField id="evo-instance-name" label="Nome da instância">
+                        <Input
+                          id="evo-instance-name"
+                          name="evolutionInstanceName"
+                          type="text"
+                          required
+                          defaultValue={initialPanel.evolutionInstanceName}
+                          autoComplete="off"
+                        />
+                      </FormField>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  <Button type="submit" loading={connectPending}>
+                    {!connectPending && <Plug className="size-4" aria-hidden />}
+                    {connectPending ? "Salvando..." : "Conectar"}
+                  </Button>
+                </div>
+              </fieldset>
+            </form>
+          </FormSection>
+
+          {instances.length > 0 && panelIsUazapi && (
+            <FormSection
+              icon={<List aria-hidden />}
+              title="Instâncias disponíveis"
+              description="Selecione a instância que o sistema deve usar."
             >
-              {selectPending ? "Salvando..." : "Salvar instância selecionada"}
-            </button>
-          </form>
-        </div>
-      )}
-        </>
-      ) : null}
-
-      {hasSavedInstance ? (
-        <div>
-          <h3 className="mb-3 text-sm font-semibold text-slate-800">Instância configurada</h3>
-          <div className="flex flex-wrap gap-4">
-            {initialPanel.profilePicSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URL externa ou rota interna
-              <img
-                src={initialPanel.profilePicSrc}
-                alt=""
-                className="size-16 shrink-0 rounded-full border border-slate-200 bg-slate-50 object-cover"
-              />
-            ) : (
-              <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-400">
-                Sem foto
+              <div className="space-y-4">
+                <div className="overflow-hidden rounded-lg border border-neutral-200">
+                  <Table>
+                    <TableHead>
+                      <TableRow className="bg-neutral-50">
+                        <TableHeaderCell className="w-10">
+                          <span className="sr-only">Selecionar</span>
+                        </TableHeaderCell>
+                        <TableHeaderCell>Nome</TableHeaderCell>
+                        <TableHeaderCell>Status</TableHeaderCell>
+                        <TableHeaderCell>Perfil</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {instances.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          className={
+                            selectedId === row.id
+                              ? "bg-sky-50/60 last:border-b-0"
+                              : "transition-colors last:border-b-0 hover:bg-sky-50/60"
+                          }
+                        >
+                          <TableCell>
+                            <input
+                              type="radio"
+                              name="pickInstance"
+                              checked={selectedId === row.id}
+                              onChange={() => setSelectedId(row.id)}
+                              aria-label={`Selecionar ${row.name}`}
+                              className="size-4 accent-blue-600"
+                            />
+                          </TableCell>
+                          <TableCell className="max-w-60 truncate font-medium text-neutral-950" title={row.name}>
+                            {row.name}
+                          </TableCell>
+                          <TableCell>
+                            <WhatsAppStatusBadge value={row.status} />
+                          </TableCell>
+                          <TableCell className="max-w-60 truncate" title={row.profileName ?? undefined}>
+                            {row.profileName ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <form onSubmit={handleSelectSubmit} className="flex justify-end">
+                  <Button type="submit" loading={selectPending} disabled={!selectedId}>
+                    {selectPending ? "Salvando..." : "Salvar instância selecionada"}
+                  </Button>
+                </form>
               </div>
-            )}
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="text-sm text-slate-800">
-                <span className="font-medium">Nome:</span> {initialPanel.instanceName ?? "—"}
-              </p>
-              <p className="text-sm text-slate-800">
-                <span className="font-medium">Status (salvo):</span>{" "}
-                <WhatsAppStatusWord value={initialPanel.instanceStatus} />
-              </p>
-              <p className="text-sm text-slate-800">
-                <span className="font-medium">Perfil:</span> {initialPanel.profileName ?? "—"}
-              </p>
-              {initialPanel.businessProfileSummary ? (
-                <p className="text-xs text-slate-600">
-                  <span className="font-medium text-slate-700">Perfil comercial:</span>{" "}
-                  {initialPanel.businessProfileSummary}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {panelIsUazapi ? (
-            pollPayload ? (
-              <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50/80 p-4">
-                <p className="mb-2 text-sm font-semibold text-slate-800">Status</p>
-                <ul className="space-y-1 text-sm text-slate-700">
-                  <li className="text-left">
-                    <span className="font-medium text-slate-800">Estado na API:</span>{" "}
-                    <WhatsAppStatusWord value={pollPayload.status} />
-                  </li>
-                  <li className="text-left">
-                    <span className="font-medium text-slate-800">Conectado / logado:</span>{" "}
-                    {pollPayload.apiConnected ? "sim" : "não"} /{" "}
-                    {pollPayload.apiLoggedIn ? "sim" : "não"}
-                  </li>
-                  {pollPayload.lastDisconnectReason ? (
-                    <li className="text-left text-amber-800">
-                      Última desconexão: {pollPayload.lastDisconnectReason}
-                    </li>
-                  ) : null}
-                </ul>
-                {pollPayload.paircode ? (
-                  <p className="mt-3 text-left text-sm text-slate-700">
-                    Código de pareamento:{" "}
-                    <code className="rounded bg-white px-2 py-0.5 font-mono text-slate-800">
-                      {pollPayload.paircode}
-                    </code>
+            </FormSection>
+          )}
+        </div>
+      ) : (
+        <div>
+          <FormSection
+            icon={<Smartphone aria-hidden />}
+            title="Instância configurada"
+            description="Dados salvos da instância conectada."
+          >
+            <div className="flex flex-wrap items-start gap-5">
+              {initialPanel.profilePicSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element -- URL externa ou rota interna
+                <img
+                  src={initialPanel.profilePicSrc}
+                  alt=""
+                  className="size-16 shrink-0 rounded-full border border-neutral-200 bg-neutral-50 object-cover"
+                />
+              ) : (
+                <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+                  <UserCircle className="size-8" aria-hidden />
+                </div>
+              )}
+              <div className="min-w-0 flex-1 space-y-3">
+                <MetaList
+                  items={[
+                    { label: "Nome", value: initialPanel.instanceName ?? "—" },
+                    { label: "Status (salvo)", value: <WhatsAppStatusBadge value={initialPanel.instanceStatus} /> },
+                    { label: "Perfil", value: initialPanel.profileName ?? "—" },
+                  ]}
+                />
+                {initialPanel.businessProfileSummary ? (
+                  <p className="text-xs text-neutral-500">
+                    <span className="font-medium text-neutral-700">Perfil comercial:</span>{" "}
+                    {initialPanel.businessProfileSummary}
                   </p>
                 ) : null}
-                {pollPayload.qrcode ? (
-                  <div className="mt-3">
-                    <p className="mb-2 text-left text-xs font-medium text-slate-600">QR Code</p>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- data URL da API */}
-                    <img
-                      src={pollPayload.qrcode}
-                      alt="QR Code WhatsApp"
-                      className="max-w-[220px] rounded border border-slate-200 bg-white p-2"
-                    />
-                  </div>
-                ) : null}
               </div>
-            ) : (
-              <p className="mt-3 text-xs text-slate-500">Carregando status…</p>
-            )
+            </div>
+          </FormSection>
+
+          {panelIsUazapi ? (
+            <FormSection
+              icon={<Activity aria-hidden />}
+              title="Status na API"
+              description="Atualizado automaticamente a cada 12 segundos."
+            >
+              {pollPayload ? (
+                <div className="space-y-4">
+                  <MetaList
+                    items={[
+                      { label: "Estado na API", value: <WhatsAppStatusBadge value={pollPayload.status} /> },
+                      {
+                        label: "Conectado",
+                        value: (
+                          <Badge tone={pollPayload.apiConnected ? "success" : "danger"}>
+                            {pollPayload.apiConnected ? "Sim" : "Não"}
+                          </Badge>
+                        ),
+                      },
+                      {
+                        label: "Logado",
+                        value: (
+                          <Badge tone={pollPayload.apiLoggedIn ? "success" : "danger"}>
+                            {pollPayload.apiLoggedIn ? "Sim" : "Não"}
+                          </Badge>
+                        ),
+                      },
+                    ]}
+                  />
+                  {pollPayload.lastDisconnectReason ? (
+                    <p className="text-[13px] text-amber-700">
+                      Última desconexão: {pollPayload.lastDisconnectReason}
+                    </p>
+                  ) : null}
+                  {pollPayload.paircode ? (
+                    <p className="text-[13px] text-neutral-700">
+                      Código de pareamento:{" "}
+                      <code className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-neutral-800">
+                        {pollPayload.paircode}
+                      </code>
+                    </p>
+                  ) : null}
+                  {pollPayload.qrcode ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-neutral-500">QR Code</p>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data URL da API */}
+                      <img
+                        src={pollPayload.qrcode}
+                        alt="QR Code WhatsApp"
+                        className="max-w-[220px] rounded-lg border border-neutral-200 bg-white p-2"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-500">Carregando status…</p>
+              )}
+            </FormSection>
           ) : null}
 
-          <div className="mt-6 border-t border-slate-100 pt-6">
-            <h3 className="mb-1 text-sm font-semibold text-slate-800">Fila async — intervalo entre mensagens</h3>
-            <p className="mb-3 text-xs text-slate-500">
-              Intervalo em segundos entre envios na fila interna quando usar{" "}
-              <code className="rounded bg-slate-100 px-1 text-[11px]">POST /send/text</code> com{" "}
-              <code className="rounded bg-slate-100 px-1 text-[11px]">async: true</code>. Equivale a{" "}
-              <code className="rounded bg-slate-100 px-1 text-[11px]">/instance/updateDelaySettings</code> na
-              UAZAPI. Com instância conectada (UAZAPI), os valores são aplicados na API ao salvar.
-            </p>
-            <form action={saveDelayAction} className="space-y-3">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="wa-async-delay-min" className="mb-1 block text-sm font-medium text-slate-600">
-                    Delay mínimo (segundos)
-                  </label>
-                  <input
-                    id="wa-async-delay-min"
-                    name="msgDelayMin"
-                    type="number"
-                    min={0}
-                    step={1}
-                    required
-                    value={delayMinStr}
-                    onChange={(e) => setDelayMinStr(e.target.value)}
-                    disabled={saveDelayPending}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-                  />
+          <FormSection
+            icon={<Timer aria-hidden />}
+            title="Fila async — intervalo entre mensagens"
+            description="Intervalo em segundos entre envios na fila interna."
+          >
+            <form action={saveDelayAction}>
+              <fieldset disabled={saveDelayPending} className="space-y-4">
+                <p className="text-xs text-neutral-500">
+                  Vale quando usar <code className={codeClassName}>POST /send/text</code> com{" "}
+                  <code className={codeClassName}>async: true</code>. Equivale a{" "}
+                  <code className={codeClassName}>/instance/updateDelaySettings</code> na UAZAPI. Com instância
+                  conectada (UAZAPI), os valores são aplicados na API ao salvar.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField id="wa-async-delay-min" label="Delay mínimo (segundos)">
+                    <Input
+                      id="wa-async-delay-min"
+                      name="msgDelayMin"
+                      type="number"
+                      min={0}
+                      step={1}
+                      required
+                      value={delayMinStr}
+                      onChange={(e) => setDelayMinStr(e.target.value)}
+                      className="tabular-nums"
+                    />
+                  </FormField>
+                  <FormField id="wa-async-delay-max" label="Delay máximo (segundos)">
+                    <Input
+                      id="wa-async-delay-max"
+                      name="msgDelayMax"
+                      type="number"
+                      min={0}
+                      step={1}
+                      required
+                      value={delayMaxStr}
+                      onChange={(e) => setDelayMaxStr(e.target.value)}
+                      className="tabular-nums"
+                    />
+                  </FormField>
                 </div>
-                <div>
-                  <label htmlFor="wa-async-delay-max" className="mb-1 block text-sm font-medium text-slate-600">
-                    Delay máximo (segundos)
-                  </label>
-                  <input
-                    id="wa-async-delay-max"
-                    name="msgDelayMax"
-                    type="number"
-                    min={0}
-                    step={1}
-                    required
-                    value={delayMaxStr}
-                    onChange={(e) => setDelayMaxStr(e.target.value)}
-                    disabled={saveDelayPending}
-                    className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
-                  />
+                <p className="text-xs text-neutral-500">
+                  0 = sem espera extra no intervalo mínimo. Se máximo for menor que mínimo, a API pode igualar ao
+                  mínimo.
+                </p>
+                <div className="flex justify-end">
+                  <Button type="submit" loading={saveDelayPending}>
+                    {saveDelayPending ? "Salvando..." : "Salvar delay"}
+                  </Button>
                 </div>
-              </div>
-              <p className="text-xs text-slate-500">
-                0 = sem espera extra no intervalo mínimo. Se máximo for menor que mínimo, a API pode igualar ao
-                mínimo.
-              </p>
-              <div className="flex justify-end">
-                <FormActionSubmitButton pending={saveDelayPending} pendingLabel="Salvando...">
-                  Salvar delay
-                </FormActionSubmitButton>
-              </div>
+              </fieldset>
             </form>
-          </div>
+          </FormSection>
 
-          <div className="mt-6 border-t border-slate-100 pt-6">
-            <h3 className="mb-1 text-sm font-semibold text-slate-800">
-              Configuração de receptores
-            </h3>
-            <p className="mb-3 text-xs text-slate-500">
-              Números ou contatos que receberão avisos no WhatsApp quando houver ordem de compra enviada ou
-              assinada (em paralelo aos e-mails configurados no SMTP).
-            </p>
-            <form action={saveRecipientsAction} className="space-y-3">
+          <FormSection
+            icon={<Users aria-hidden />}
+            title="Receptores"
+            description="Números ou contatos avisados quando houver ordem de compra enviada ou assinada (em paralelo aos e-mails do SMTP)."
+          >
+            <form action={saveRecipientsAction} className="space-y-4">
               <input
                 type="hidden"
                 name="recipientsJson"
                 value={JSON.stringify(notifyRecipients)}
                 readOnly
               />
-              <div className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-2">
+              <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-field border border-neutral-300 bg-white px-2 py-1.5 transition-colors focus-within:border-neutral-700 focus-within:ring-2 focus-within:ring-neutral-900/5 hover:border-neutral-400">
                 {notifyRecipients.map((r, idx) => (
                   <span
                     key={`${r}-${idx}`}
-                    className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-sm text-slate-800"
+                    className="inline-flex max-w-full items-center gap-1 rounded-full bg-neutral-100 py-0.5 pr-1 pl-2.5 text-xs text-neutral-700"
                   >
                     <span className="truncate">{r}</span>
                     <button
                       type="button"
-                      onClick={() =>
-                        setNotifyRecipients((prev) => prev.filter((_, i) => i !== idx))
-                      }
+                      onClick={() => setNotifyRecipients((prev) => prev.filter((_, i) => i !== idx))}
                       disabled={saveRecipientsPending}
-                      className="shrink-0 rounded-full p-0.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:pointer-events-none disabled:opacity-50"
+                      className="shrink-0 rounded-full p-0.5 text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-800 disabled:pointer-events-none disabled:opacity-50"
                       aria-label={`Remover ${r}`}
                     >
-                      <X className="size-3.5" aria-hidden />
+                      <X className="size-3" aria-hidden />
                     </button>
                   </span>
                 ))}
@@ -652,44 +668,26 @@ export function WhatsAppIntegracaoSection({ initialPanel }: WhatsAppIntegracaoSe
                   type="text"
                   value={recipientInput}
                   onChange={(e) => setRecipientInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    e.preventDefault();
-                    const t = recipientInput.trim();
-                    if (!t) return;
-                    if (t.length > 80) {
-                      toast.error("Cada contato pode ter no máximo 80 caracteres.");
-                      return;
-                    }
-                    if (notifyRecipients.length >= 50) {
-                      toast.error("No máximo 50 contatos.");
-                      return;
-                    }
-                    if (notifyRecipients.includes(t)) {
-                      setRecipientInput("");
-                      return;
-                    }
-                    setNotifyRecipients((prev) => [...prev, t]);
-                    setRecipientInput("");
-                  }}
+                  onKeyDown={handleRecipientKeyDown}
                   placeholder={
                     notifyRecipients.length === 0
                       ? "Digite o número ou contato e pressione Enter"
                       : "Adicionar outro…"
                   }
+                  aria-label="Adicionar receptor"
                   disabled={saveRecipientsPending}
-                  className="min-h-[32px] min-w-48 flex-1 border-0 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 disabled:opacity-50"
+                  className="min-h-7 min-w-48 flex-1 border-0 bg-transparent px-1 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 disabled:opacity-50"
                 />
               </div>
               <div className="flex justify-end">
-                <FormActionSubmitButton pending={saveRecipientsPending} pendingLabel="Salvando...">
-                  Salvar receptores
-                </FormActionSubmitButton>
+                <Button type="submit" loading={saveRecipientsPending}>
+                  {saveRecipientsPending ? "Salvando..." : "Salvar receptores"}
+                </Button>
               </div>
             </form>
-          </div>
+          </FormSection>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

@@ -21,7 +21,7 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
   return (
     <div className="w-full">
       {/* Tab Headers */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-neutral-200">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -29,8 +29,8 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-slate-600 hover:text-slate-800"
+                ? "border-b-2 border-accent text-neutral-950"
+                : "text-neutral-600 hover:text-neutral-800"
             }`}
           >
             {tab.label}

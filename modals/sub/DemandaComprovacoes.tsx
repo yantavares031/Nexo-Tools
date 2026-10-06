@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { IconButton } from "@/components/ui/icon-button";
+import { Spinner } from "@/components/ui/spinner";
 import { getComprovacoesAction, removeComprovacaoFromDemandaAction } from "@/app/actions/demanda-comprovacao";
 import type { Comprovacao } from "@/types/globals";
 import { toast } from "sonner";
 import { Download, Trash2, Eye } from "lucide-react";
-import { useConfirm } from "@/lib/confirm-context";
+import { useConfirm } from "@/components/confirm-provider";
 import { ComprovacaoPreviewModal } from "./ComprovacaoPreviewModal";
 
 interface DemandaComprovacoesProps {
@@ -130,34 +132,34 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
   }
 
   return (
-    <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
-      <h3 className="text-sm font-semibold text-slate-800">Comprovações / Notas Fiscais</h3>
-      <p className="text-xs text-slate-500">
+    <div className="mt-6 space-y-3 border-t border-neutral-200 pt-6">
+      <h3 className="text-sm font-semibold text-neutral-950">Comprovações / notas fiscais</h3>
+      <p className="text-xs text-neutral-500">
         As comprovações são cadastradas na página Comprovações e vinculadas às demandas. Aqui são exibidas apenas as
         referências.
       </p>
 
-      <div className="max-h-64 overflow-x-hidden overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="max-h-64 overflow-x-hidden overflow-y-auto rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="size-6 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500" />
+            <Spinner className="size-6 text-neutral-400" />
           </div>
         ) : comprovacoes.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">Nenhuma comprovação vinculada a esta demanda.</p>
+          <p className="py-8 text-[13px] text-neutral-500">Nenhuma comprovação vinculada a esta demanda.</p>
         ) : (
           <div className="space-y-2">
             {comprovacoes.map((comp) => (
               <div
                 key={comp.id}
-                className="flex items-center justify-between gap-2 overflow-hidden rounded-lg bg-white p-3 shadow-sm"
+                className="flex items-center justify-between gap-2 overflow-hidden rounded-lg border border-neutral-200 bg-white p-3"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="shrink-0 text-2xl">{getFileIcon(comp.tipoArquivo)}</span>
                   <div className="min-w-0 flex-1 overflow-hidden">
-                    <p className="truncate text-sm font-medium text-slate-800" title={comp.nomeArquivo}>
+                    <p className="truncate text-[13px] font-medium text-neutral-950" title={comp.nomeArquivo}>
                       {comp.nomeArquivo}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 text-[11px] tabular-nums text-neutral-500">
                       <span>{formatFileSize(comp.tamanho)}</span>
                       <span>•</span>
                       <span>{comp.autor}</span>
@@ -165,41 +167,30 @@ export function DemandaComprovacoes({ demandaId, userRole, onPreviewOpenChange }
                       <span>{formatDateTime(comp.createdAt)}</span>
                     </div>
                     {comp.descricao && (
-                      <p className="mt-1 truncate text-xs text-slate-600" title={comp.descricao}>
+                      <p className="mt-1 truncate text-xs text-neutral-600" title={comp.descricao}>
                         {comp.descricao}
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1">
                   {canPreview(comp.tipoArquivo) && (
-                    <button
-                      type="button"
-                      onClick={() => handlePreview(comp)}
-                      className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
-                      title="Visualizar arquivo"
-                    >
-                      <Eye className="size-4" />
-                    </button>
+                    <IconButton aria-label="Visualizar arquivo" onClick={() => handlePreview(comp)}>
+                      <Eye />
+                    </IconButton>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleDownload(comp)}
-                    className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
-                    title="Baixar arquivo"
-                  >
-                    <Download className="size-4" />
-                  </button>
+                  <IconButton aria-label="Baixar arquivo" onClick={() => handleDownload(comp)}>
+                    <Download />
+                  </IconButton>
                   {canRemove && (
-                    <button
-                      type="button"
+                    <IconButton
+                      aria-label="Remover comprovação"
+                      variant="danger"
                       onClick={() => handleRemove(comp)}
                       disabled={isPending}
-                      className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                      title="Remover comprovação"
                     >
-                      <Trash2 className="size-4" />
-                    </button>
+                      <Trash2 />
+                    </IconButton>
                   )}
                 </div>
               </div>

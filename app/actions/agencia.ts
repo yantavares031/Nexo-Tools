@@ -11,6 +11,8 @@ import type { AgenciaInput } from "@/types/globals";
 import { agenciaFormSchema, formDataToAgenciaRaw } from "@/lib/validation/schemas/agencia-form";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
+import { makeCapacityAlertsDeps } from "@/lib/infra/capacity-alerts-deps";
+import { checkCapacityAlertsUseCase } from "@/lib/use-cases/check-capacity-alerts.use-case";
 import { parseUserRecordId } from "@/lib/validation/schemas/common";
 
 export async function createAgenciaAction(
@@ -72,6 +74,7 @@ export async function updateAgenciaAction(
     } as const;
   }
 
+  await checkCapacityAlertsUseCase(makeCapacityAlertsDeps());
   revalidatePath(`/agencias/${idCheck.id}`);
   revalidatePath("/agencias");
   revalidatePath("/dashboard");

@@ -216,6 +216,73 @@ export interface DemandaMensagem {
 /** Dados para criar uma mensagem (sem id e createdAt). */
 export type DemandaMensagemInput = Omit<DemandaMensagem, "id" | "createdAt">;
 
+export type DemandaHistoricoTipo =
+  | "criada"
+  | "alterada"
+  | "comprovacao_adicionada"
+  | "comprovacao_removida"
+  | "ordem_compra_enviada"
+  | "ordem_compra_assinada"
+  | "ordem_compra_removida"
+  | "centros_custo_alterados";
+
+export interface DemandaHistoricoAlteracao {
+  campo: string;
+  de: string;
+  para: string;
+}
+
+/** Evento da linha do tempo de uma demanda (status, valores, anexos, responsáveis). */
+export interface DemandaHistorico {
+  id: string;
+  demandaId: string;
+  tipo: DemandaHistoricoTipo;
+  descricao: string;
+  alteracoes: DemandaHistoricoAlteracao[];
+  autor: string;
+  autorUserId?: string | null;
+  createdAt: string;
+}
+
+export type DemandaHistoricoInput = Omit<DemandaHistorico, "id" | "createdAt">;
+
+/** Quem executou a ação registrada no histórico. */
+export interface HistoricoActor {
+  name: string;
+  userId?: string | null;
+}
+
+/** Configuração dos lembretes automáticos de pendências (uma única linha no sistema). */
+export interface PendingReminderConfig {
+  enabled: boolean;
+  /** Dias desde o envio da OC em aberto para começar a lembrar. */
+  ordemCompraDays: number;
+  /** Dias desde a última atualização da demanda sem comprovação para começar a lembrar. */
+  comprovacaoDays: number;
+  lastRunAt?: string | null;
+  lastRunSummary?: string | null;
+  updatedAt?: string | null;
+}
+
+/** Configuração dos alertas de capacidade anual das agências (uma única linha no sistema). */
+export interface CapacityAlertConfig {
+  enabled: boolean;
+  /** Percentuais da capacidade anual que disparam alerta, em ordem crescente (ex.: [80, 100]). */
+  thresholds: number[];
+  updatedAt?: string | null;
+}
+
+/** Alerta de capacidade já enviado: cada limite dispara uma vez por agência no ano. */
+export interface CapacityAlertSent {
+  id: string;
+  agenciaId: string;
+  agenciaNome: string | null;
+  year: number;
+  threshold: number;
+  percentual: number;
+  sentAt: string;
+}
+
 /** Códigos de eventos que podem disparar webhook. */
 export type WebhookEventCode = "demanda.criada" | "demanda.comprovada";
 
@@ -443,6 +510,7 @@ export interface DeskfyWorkflowSolicitacao {
   ajustes: number;
   formulario: string;
   companyId: number;
+  arquivado?: boolean;
   tags: string;
 }
 

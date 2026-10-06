@@ -1,3 +1,5 @@
+import { DeskfyBusinessError } from "@/lib/domain/deskfy-errors";
+
 function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err ?? "");
 }
@@ -20,6 +22,7 @@ export function normalizeDeskfyUserMessage(
 ): string {
   const message = getErrorMessage(err).trim();
   if (!message) return options.fallback;
+  if (err instanceof DeskfyBusinessError) return message;
 
   const lower = message.toLowerCase();
   const status = getDeskfyStatusCode(message);

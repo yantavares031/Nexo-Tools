@@ -24,6 +24,29 @@ export function formDataToChangePasswordRaw(formData: FormData) {
   };
 }
 
+export const forgotPasswordFormSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Informe seu e-mail.")
+    .max(254)
+    .check(z.email({ error: () => "Informe um e-mail válido." })),
+});
+
+export function formDataToResetPasswordRaw(formData: FormData) {
+  return {
+    token: String(formData.get("token") ?? ""),
+    newPassword: String(formData.get("newPassword") ?? ""),
+    confirmPassword: String(formData.get("confirmPassword") ?? ""),
+  };
+}
+
+export const resetPasswordFormSchema = z.object({
+  token: z.string().trim().min(10).max(2000),
+  newPassword: z.string().min(6, "A nova senha deve ter pelo menos 6 caracteres.").max(200),
+  confirmPassword: z.string().min(1, "Confirme a nova senha."),
+});
+
 export const changePasswordFormSchema = z.object({
   newPassword: z.string().min(6, "A nova senha deve ter pelo menos 6 caracteres."),
   confirmPassword: z.string().min(1, "Confirme a nova senha."),

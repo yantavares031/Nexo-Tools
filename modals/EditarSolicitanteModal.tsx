@@ -4,7 +4,9 @@ import { useActionState } from "react";
 import { UserPlus } from "lucide-react";
 import { updateSolicitanteAction } from "@/app/actions/solicitante";
 import { Modal } from "@/components/Modal";
-import { FormActionSubmitButton } from "@/components/FormActionSubmitButton";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { useToastOnActionError } from "@/lib/use-toast-on-action-error";
 import type { Solicitante } from "@/types/globals";
 
@@ -36,7 +38,7 @@ export function EditarSolicitanteModal({
       closeOnOverlayClick={!isPending}
     >
       <Modal.Header onClose={onClose} closeDisabled={isPending}>
-        <h2 id="modal-editar-solicitante-title" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <h2 id="modal-editar-solicitante-title" className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
           <UserPlus className="size-5 shrink-0" />
           Editar solicitante
         </h2>
@@ -44,33 +46,20 @@ export function EditarSolicitanteModal({
       <Modal.Body as="form" id="editar-solicitante-form" action={formAction}>
         <input type="hidden" name="id" value={solicitante.id} />
         <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="editar-nome"
-              className="mb-1 block text-sm font-medium text-slate-600"
-            >
-              Nome *
-            </label>
-            <input
+          <FormField id="editar-nome" label="Nome *">
+            <Input
               id="editar-nome"
               name="nome"
               type="text"
               required
               defaultValue={solicitante.nome}
               disabled={isPending}
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
               placeholder="Nome do solicitante"
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label
-              htmlFor="editar-unResponsavel"
-              className="mb-1 block text-sm font-medium text-slate-600"
-            >
-              Un. Responsável (opcional)
-            </label>
-            <input
+          <FormField id="editar-unResponsavel" label="Un. responsável (opcional)">
+            <Input
               id="editar-unResponsavel"
               name="unResponsavel"
               type="text"
@@ -78,7 +67,6 @@ export function EditarSolicitanteModal({
               autoComplete="off"
               defaultValue={solicitante.unResponsavel ?? ""}
               disabled={isPending}
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
               placeholder="Unidade"
             />
             <datalist id="unidades-editar-solicitante">
@@ -86,25 +74,16 @@ export function EditarSolicitanteModal({
                 <option key={u} value={u} />
               ))}
             </datalist>
-          </div>
+          </FormField>
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
-        >
+        <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
           Cancelar
-        </button>
-        <FormActionSubmitButton
-          form="editar-solicitante-form"
-          pending={isPending}
-          pendingLabel="Salvando..."
-        >
-          Salvar
-        </FormActionSubmitButton>
+        </Button>
+        <Button type="submit" form="editar-solicitante-form" loading={isPending}>
+          {isPending ? "Salvando..." : "Salvar"}
+        </Button>
       </Modal.Footer>
     </Modal>
   );

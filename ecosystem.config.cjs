@@ -3,8 +3,10 @@
  * Uso: pm2-runtime start ecosystem.config.cjs
  *
  * CRON_BACKUP: horário do backup (padrão: todo dia às 00:00).
+ * CRON_REMINDERS: horário dos lembretes de pendências (padrão: todo dia às 08:00).
  */
 const CRON_BACKUP = process.env.CRON_BACKUP || "0 0 * * *";
+const CRON_REMINDERS = process.env.CRON_REMINDERS || "0 8 * * *";
 
 module.exports = {
   apps: [
@@ -28,6 +30,14 @@ module.exports = {
       cwd: __dirname,
       autorestart: false,
       cron_restart: CRON_BACKUP,
+    },
+    {
+      name: "reminders",
+      script: "npx",
+      args: "tsx scripts/send-pending-reminders.ts",
+      cwd: __dirname,
+      autorestart: false,
+      cron_restart: CRON_REMINDERS,
     },
   ],
 };

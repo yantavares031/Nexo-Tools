@@ -1,0 +1,42 @@
+---
+description: Arquitetura em camadas Next.js da Ytech (Action → Use Case → Repository) e estrutura de pastas
+alwaysApply: true
+---
+
+# Arquitetura Next.js Ytech
+
+## Fluxo obrigatório
+
+```
+Página/Componente → Action → Use Case → Repository (interface) ← Implementação em infrastructure/
+```
+
+Nunca pule camadas: página não chama use case nem banco; action não acessa banco nem API externa.
+
+## Estrutura de pastas (na raiz do projeto)
+
+| Pasta | Responsabilidade |
+|-------|------------------|
+| `app/` | Rotas (`page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`) e a pasta `sub/` com componentes específicos de cada rota mãe. Sem regra de negócio. |
+| `actions/` | Server Actions — controllers finos. Ver `ytech-nextjs-actions.mdc`. |
+| `use-cases/` | Regras de negócio, um arquivo por operação. Ver `ytech-nextjs-use-cases.mdc`. |
+| `domain/` | Entidades, interfaces (contratos) e erros de domínio. Sem implementação. |
+| `infrastructure/` | Banco, repositórios, serviços externos e factories. Ver `ytech-nextjs-infrastructure.mdc`. |
+| `components/` | Componentes reutilizáveis. Ver `ytech-nextjs-ui.mdc`. |
+| `modals/` | Todos os modais. Ver `ytech-nextjs-ui.mdc`. |
+| `lib/` | Utilitários puros e sem regra de negócio (`cn.ts`, `format.ts`, `form-state.ts`). |
+| `config/` | Configuração estática da aplicação (`app.ts` com nome/empresa, `navigation.ts` com os itens do menu). |
+| `infrastructure/auth/guards.ts` | Guardrails: regras de acesso centralizadas e wrappers de action/página. Ver `ytech-nextjs-guards.mdc`. |
+| `proxy.ts` | Proxy do Next 16 (nunca `middleware.ts`). Ver `ytech-nextjs-proxy.mdc`. |
+
+## Regra de dependência
+
+- `domain/` não importa nada das outras camadas.
+- `use-cases/` importa só `domain/`.
+- `infrastructure/` implementa as interfaces de `domain/`.
+- `actions/` usa `infrastructure/factories/` para obter use cases prontos.
+
+## Nomes de arquivos
+
+- kebab-case com sufixo do papel: `create-order.action.ts`, `create-order.use-case.ts`, `order.repository.ts`, `prisma-order.repository.ts`, `ixc-erp.service.ts`.
+- Agrupar por domínio dentro de cada camada: `use-cases/orders/`, `actions/orders/`.

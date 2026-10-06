@@ -18,6 +18,8 @@ import { notifyComprovacaoEnviadaEmailsUseCase } from "@/lib/use-cases/notify-co
 import { notifyComprovacaoEnviadaWhatsAppUseCase } from "@/lib/use-cases/notify-comprovacao-enviada-whatsapp.use-case";
 import { removeComprovacaoFromDemandaUseCase } from "@/lib/use-cases/remove-comprovacao-from-demanda.use-case";
 import { getSession } from "@/lib/auth";
+import { historicoDepsFromSession } from "@/lib/infra/historico-deps";
+import { removeComprovacaoUseCase } from "@/lib/use-cases/remove-comprovacao.use-case";
 import {
   getAgencyDemandaScope,
   demandaMatchesAgenciaScope,
@@ -39,6 +41,8 @@ import {
 } from "@/lib/validation/schemas/common";
 import { zodErrorToActionMessage } from "@/lib/validation/zod-to-action-error";
 import { logServerActionError } from "@/lib/server-action-log";
+import { makeCapacityAlertsDeps } from "@/lib/infra/capacity-alerts-deps";
+import { checkCapacityAlertsUseCase } from "@/lib/use-cases/check-capacity-alerts.use-case";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "comprovacoes");
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -218,6 +222,7 @@ export async function createComprovacaoAction(
           demandaRepository,
           webhookConfigRepository,
           webhookSender,
+          historico: historicoDepsFromSession(session),
         }
       );
       comprovacoes.push(comprovacao);
@@ -252,6 +257,7 @@ export async function createComprovacaoAction(
       }
     }
 
+    await checkCapacityAlertsUseCase(makeCapacityAlertsDeps());
     revalidatePath("/");
     revalidatePath("/comprovacoes");
     revalidatePath("/comprovacoes/adicionar");
@@ -386,27 +392,11 @@ export async function removeComprovacaoAction(id: string): Promise<{ error?: str
   }
 
   try {
-    const comprovacaoRepository = getDemandaComprovacaoRepository();
-    const demandaRepository = getDemandaRepository();
-    const demandaIds = await comprovacaoRepository.findDemandaIdsByComprovacaoId(idCheck.data);
-
-    const demandasParaReverter: string[] = [];
-    for (const demandaId of demandaIds) {
-      const comprovacoesDaDemanda = await comprovacaoRepository.findByDemandaId(demandaId);
-      if (comprovacoesDaDemanda.length === 1 && comprovacoesDaDemanda[0].id === idCheck.data) {
-        demandasParaReverter.push(demandaId);
-      }
-    }
-
-    await comprovacaoRepository.remove(idCheck.data);
-
-    for (const demandaId of demandasParaReverter) {
-      const demanda = await demandaRepository.findById(demandaId);
-      if (demanda) {
-        const { id: _id, createdAt: _c, updatedAt: _u, ...input } = demanda;
-        await demandaRepository.update(demandaId, { ...input, status: "comprometido" });
-      }
-    }
+    await removeComprovacaoUseCase(idCheck.data, {
+      demandaComprovacaoRepository: getDemandaComprovacaoRepository(),
+      demandaRepository: getDemandaRepository(),
+      historico: historicoDepsFromSession(session),
+    });
     revalidatePath("/");
     revalidatePath("/comprovacoes");
     revalidatePath("/comprovacoes/adicionar");
@@ -446,7 +436,11 @@ export async function removeComprovacaoFromDemandaAction(
 
     const result = await removeComprovacaoFromDemandaUseCase(
       { demandaId: demandaIdCheck.id, comprovacaoId: comprovacaoIdCheck.data },
-      { demandaComprovacaoRepository, demandaRepository }
+      {
+        demandaComprovacaoRepository,
+        demandaRepository,
+        historico: historicoDepsFromSession(session),
+      }
     );
 
     revalidatePath("/");

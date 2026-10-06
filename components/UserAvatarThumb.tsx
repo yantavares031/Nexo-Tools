@@ -32,7 +32,7 @@ export function UserAvatarThumb({ userId, label, className }: UserAvatarThumbPro
   const showImage = Boolean(uid && !failed);
 
   const base =
-    "inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold uppercase text-slate-600";
+    "inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-[10px] font-semibold uppercase text-neutral-600";
 
   if (!showImage) {
     return (

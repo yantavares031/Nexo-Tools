@@ -1,91 +1,60 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { BarChart3 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import type { DashboardAgencia } from "@/types/globals";
+import { DashboardCard, DashboardEmpty } from "./DashboardCard";
+import { CHART_COLORS, chartLegendStyle, chartTick, chartTooltipStyle, compactCurrencyFormat } from "./chart-theme";
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-export function DashboardChartFaturadoVsCapacidade({
-  data,
-}: {
-  data: DashboardAgencia[];
-}) {
+export function DashboardChartFaturadoVsCapacidade({ data }: { data: DashboardAgencia[] }) {
   const chartData = data.map((item) => ({
     name: item.agencia.nomeFantasia,
     faturado: item.faturado,
     capacidade: item.agencia.orcamentoAnual,
   }));
 
-  if (chartData.length === 0) {
-    return (
-      <div className="flex h-80 items-center justify-center rounded-xl border border-slate-200 bg-white p-4">
-        <p className="text-xs text-slate-500">Sem dados para exibir</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-xs font-semibold text-slate-800">
-        Faturado vs Capacidade anual (R$)
-      </h3>
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis
-              dataKey="name"
-              tick={{ fontSize: 10, fill: "#64748b" }}
-              tickLine={false}
-              axisLine={{ stroke: "#e2e8f0" }}
-            />
-            <YAxis
-              tick={{ fontSize: 10, fill: "#64748b" }}
-              tickLine={false}
-              axisLine={{ stroke: "#e2e8f0" }}
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-            />
-            <Tooltip
-              formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
-              contentStyle={{
-                borderRadius: "8px",
-                border: "1px solid #e2e8f0",
-              }}
-            />
-            <Legend />
-            <Bar
-              dataKey="faturado"
-              name="Faturado"
-              fill="#059669"
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar
-              dataKey="capacidade"
-              name="Capacidade anual"
-              fill="#3b82f6"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <DashboardCard
+      icon={<BarChart3 aria-hidden />}
+      title="Faturado vs capacidade anual"
+      description="Valores em R$ por agência."
+    >
+      {chartData.length === 0 ? (
+        <DashboardEmpty className="h-72">Sem dados para exibir.</DashboardEmpty>
+      ) : (
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
+              <XAxis
+                dataKey="name"
+                tick={chartTick}
+                tickLine={false}
+                axisLine={{ stroke: CHART_COLORS.grid }}
+              />
+              <YAxis
+                tick={chartTick}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              />
+              <Tooltip
+                formatter={(value: number | undefined) => compactCurrencyFormat.format(value ?? 0)}
+                contentStyle={chartTooltipStyle}
+                cursor={{ fill: "#f5f5f5" }}
+              />
+              <Legend wrapperStyle={chartLegendStyle} />
+              <Bar dataKey="faturado" name="Faturado" fill={CHART_COLORS.blue} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="capacidade"
+                name="Capacidade anual"
+                fill={CHART_COLORS.neutralLight}
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </DashboardCard>
   );
 }

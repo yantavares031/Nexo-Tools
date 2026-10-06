@@ -1,0 +1,11 @@
+---
+description: Sempre responder ao usuário em português do Brasil
+alwaysApply: true
+---
+
+# Idioma — sempre português
+
+- **Todas** as mensagens para o usuário devem ser em **português do Brasil**: respostas, resumos, atualizações de progresso, perguntas e explicações.
+- **Nunca** responder em inglês, mesmo que o código, os logs, a documentação ou a pergunta tenham trechos em inglês.
+- Arquivos `.md` de documentação, release notes e textos de interface também em português.
+- Exceções: nomes de código (variáveis, funções, arquivos, comandos), mensagens de erro copiadas literalmente e termos técnicos sem tradução usual (ex.: `commit`, `deploy`, `webhook`).

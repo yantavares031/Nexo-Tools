@@ -1,0 +1,57 @@
+---
+description: Server Actions como controllers finos e proibição de rotas /api na Ytech
+globs: actions/**/*.ts,app/api/**/*.ts
+alwaysApply: false
+---
+
+# Server Actions Ytech
+
+Toda Server Action é uma API pública: qualquer cliente pode chamá-la. Não confie na UI.
+
+## A action faz apenas 4 coisas, nesta ordem
+
+1. **Lê e valida os dados** de entrada com Zod (`safeParse`). Nunca repasse `FormData` ou `unknown` direto ao use case.
+2. **Checa permissão** — sempre pelo wrapper de guard (`withGuards`, guard de área), que injeta `session`. Nunca busque sessão nem cheque conta dentro da action. Ver `ytech-nextjs-guards.mdc`.
+3. **Chama um use case** obtido da factory em `infrastructure/factories/`.
+4. **Trata o erro** e devolve um resultado tipado; chama `revalidatePath`/`redirect` quando necessário.
+
+## Proibido na action
+
+- Regra de negócio: validações de domínio, checagem de duplicidade, cálculos, "se X então erro Y".
+- Acessar banco, repositório, ORM ou `fetch` para serviços externos.
+- Devolver ao cliente stack trace, SQL ou detalhes internos.
+
+## Exemplo
+
+```typescript
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createOrderSchema } from "./create-order.schema";
+import { makeCreateOrderUseCase } from "@/infrastructure/factories/orders";
+import { withGuards } from "@/infrastructure/auth/guards";
+import { DomainError } from "@/domain/errors";
+import type { ActionResult } from "@/actions/action-result";
+
+export const createOrderAction = withGuards(async (session, input: unknown): Promise<ActionResult<{ id: string }>> => {
+  const parsed = createOrderSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "Dados inválidos." };
+
+  try {
+    const order = await makeCreateOrderUseCase().execute({ ...parsed.data, userId: session.userId });
+    revalidatePath("/orders");
+    return { success: true, data: { id: order.id } };
+  } catch (error) {
+    if (error instanceof DomainError) return { success: false, error: error.message };
+    console.error("createOrderAction", error);
+    return { success: false, error: "Não foi possível concluir a operação." };
+  }
+});
+```
+
+`ActionResult<T>` = `{ success: true; data: T } | { success: false; error: string }`, definido em `actions/action-result.ts`.
+
+## Rotas `/api`
+
+- **Não crie** `app/api/` por padrão. Leitura e mutação passam por Server Actions ou Server Components.
+- Exceção: webhooks ou integrações externas que exigem endpoint HTTP. Nesse caso a rota segue a mesma regra da action: valida (e verifica assinatura; rotas autenticadas usam o guard central), chama um use case e responde. Sem regra de negócio.

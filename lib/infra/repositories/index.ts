@@ -20,6 +20,9 @@ import type { ISmtpConfigRepository } from "@/lib/domain/smtp-config.repository"
 import type { IDeskfyConfigRepository } from "@/lib/domain/deskfy-config.repository";
 import type { IOrdemCompraRepository } from "@/lib/domain/ordem-compra.repository";
 import type { IWhatsAppIntegrationRepository } from "@/lib/domain/whatsapp-integration.repository";
+import type { IDemandaHistoricoRepository } from "@/lib/domain/demanda-historico.repository";
+import type { IPendingReminderConfigRepository } from "@/lib/domain/pending-reminder-config.repository";
+import type { ICapacityAlertRepository } from "@/lib/domain/capacity-alert.repository";
 
 import { UserSqliteRepository } from "./sqlite/user-sqlite.repository";
 import { DemandaSqliteRepository } from "./sqlite/demanda-sqlite.repository";
@@ -36,6 +39,9 @@ import { SmtpConfigSqliteRepository } from "./sqlite/smtp-config-sqlite.reposito
 import { DeskfyConfigSqliteRepository } from "./sqlite/deskfy-config-sqlite.repository";
 import { OrdemCompraSqliteRepository } from "./sqlite/ordem-compra-sqlite.repository";
 import { WhatsAppIntegrationSqliteRepository } from "./sqlite/whatsapp-integration-sqlite.repository";
+import { DemandaHistoricoSqliteRepository } from "./sqlite/demanda-historico-sqlite.repository";
+import { PendingReminderConfigSqliteRepository } from "./sqlite/pending-reminder-config-sqlite.repository";
+import { CapacityAlertSqliteRepository } from "./sqlite/capacity-alert-sqlite.repository";
 
 import { UserPostgresRepository } from "./postgres/user-postgres.repository";
 import { DemandaPostgresRepository } from "./postgres/demanda-postgres.repository";
@@ -52,6 +58,9 @@ import { SmtpConfigPostgresRepository } from "./postgres/smtp-config-postgres.re
 import { DeskfyConfigPostgresRepository } from "./postgres/deskfy-config-postgres.repository";
 import { OrdemCompraPostgresRepository } from "./postgres/ordem-compra-postgres.repository";
 import { WhatsAppIntegrationPostgresRepository } from "./postgres/whatsapp-integration-postgres.repository";
+import { DemandaHistoricoPostgresRepository } from "./postgres/demanda-historico-postgres.repository";
+import { PendingReminderConfigPostgresRepository } from "./postgres/pending-reminder-config-postgres.repository";
+import { CapacityAlertPostgresRepository } from "./postgres/capacity-alert-postgres.repository";
 
 export { PrepareRepository } from "./prepare.repository";
 
@@ -127,4 +136,18 @@ export function getWhatsAppIntegrationRepository(): IWhatsAppIntegrationReposito
   return pg
     ? new WhatsAppIntegrationPostgresRepository()
     : new WhatsAppIntegrationSqliteRepository();
+}
+
+export function getDemandaHistoricoRepository(): IDemandaHistoricoRepository {
+  return pg ? new DemandaHistoricoPostgresRepository() : new DemandaHistoricoSqliteRepository();
+}
+
+export function getPendingReminderConfigRepository(): IPendingReminderConfigRepository {
+  return pg
+    ? new PendingReminderConfigPostgresRepository()
+    : new PendingReminderConfigSqliteRepository();
+}
+
+export function getCapacityAlertRepository(): ICapacityAlertRepository {
+  return pg ? new CapacityAlertPostgresRepository() : new CapacityAlertSqliteRepository();
 }

@@ -511,4 +511,49 @@ export function initDb(database: Database.Database): void {
   } catch {
     // ignora
   }
+
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS demanda_historico (
+        id TEXT PRIMARY KEY,
+        demandaId TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        descricao TEXT NOT NULL,
+        alteracoes TEXT NOT NULL DEFAULT '[]',
+        autor TEXT NOT NULL,
+        autorUserId TEXT,
+        createdAt TEXT NOT NULL,
+        FOREIGN KEY (demandaId) REFERENCES demandas(id) ON DELETE CASCADE,
+        FOREIGN KEY (autorUserId) REFERENCES users(id) ON DELETE SET NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_demanda_historico_demandaId ON demanda_historico (demandaId);
+      CREATE TABLE IF NOT EXISTS pending_reminder_config (
+        id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 0,
+        ordem_compra_days INTEGER NOT NULL DEFAULT 3,
+        comprovacao_days INTEGER NOT NULL DEFAULT 7,
+        last_run_at TEXT,
+        last_run_summary TEXT,
+        updated_at TEXT
+      );
+      CREATE TABLE IF NOT EXISTS capacity_alert_config (
+        id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 0,
+        thresholds TEXT NOT NULL DEFAULT '[80,100]',
+        updated_at TEXT
+      );
+      CREATE TABLE IF NOT EXISTS capacity_alert_sent (
+        id TEXT PRIMARY KEY,
+        agencia_id TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        threshold INTEGER NOT NULL,
+        percentual REAL NOT NULL,
+        sent_at TEXT NOT NULL,
+        UNIQUE (agencia_id, year, threshold),
+        FOREIGN KEY (agencia_id) REFERENCES agencias(id) ON DELETE CASCADE
+      );
+    `);
+  } catch {
+    // ignora
+  }
 }

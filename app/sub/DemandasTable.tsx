@@ -1,51 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { formatMonthYearDisplay } from "@/lib/month-year";
-import type { Demanda } from "@/types/globals";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import type { DemandaFilterOptions } from "@/lib/domain/demanda.repository";
+import { currencyFormat } from "@/lib/format";
+import { formatMonthYearDisplay } from "@/lib/month-year";
 import { VerDetalhesDemandaModal } from "@/modals/VerDetalhesDemandaModal";
-
-const STATUS_LABELS: Record<string, string> = {
-  faturado: "Faturado",
-  comprometido: "Comprometido",
-  entregue: "Entregue",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  faturado: "bg-emerald-100 text-emerald-800",
-  comprometido: "bg-blue-100 text-blue-800",
-  entregue: "bg-slate-100 text-slate-800",
-};
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
-
-function formatDateTime(dateString: string | undefined): string {
-  if (!dateString) return "—";
-  try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  } catch {
-    return "—";
-  }
-}
+import type { Demanda } from "@/types/globals";
+import { DEMANDA_STATUS_LABELS, DEMANDA_STATUS_TONES } from "./demandas-hrefs";
 
 interface DemandasTableProps {
   demandas: Demanda[];
   options: DemandaFilterOptions;
   readOnly?: boolean;
   userRole?: "admin" | "operator" | "agency";
+  emptyMessage?: string;
 }
 
 export function DemandasTable({
@@ -53,6 +23,7 @@ export function DemandasTable({
   options,
   readOnly = false,
   userRole = "operator",
+  emptyMessage,
 }: DemandasTableProps) {
   const [selectedDemanda, setSelectedDemanda] = useState<Demanda | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -62,69 +33,105 @@ export function DemandasTable({
     setModalOpen(true);
   }
 
-  if (demandas.length === 0) {
-    return (
-      <p className="py-12 text-center text-slate-500">
-        Nenhuma demanda encontrada.
-      </p>
-    );
-  }
-
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[1200px] table-fixed text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="w-[280px] px-4 py-3 font-semibold text-slate-600">Demanda</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">OC/PI</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">Solicitante</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">Un. Responsável</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">Status</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">Agência</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">Valor</th>
-              <th className="px-4 py-3 font-semibold text-slate-600">Mês</th>
-            </tr>
-          </thead>
-          <tbody>
-            {demandas.map((d) => (
-              <tr
-                key={d.id}
+      <ul className="divide-y divide-neutral-200/70 border-y border-neutral-200/70 md:hidden">
+        {demandas.length === 0 ? (
+          <li className="py-12 text-[13px] text-neutral-500">{emptyMessage ?? "Nenhuma demanda cadastrada."}</li>
+        ) : (
+          demandas.map((d) => (
+            <li key={d.id}>
+              <button
+                type="button"
                 onClick={() => handleRowClick(d)}
-                className="cursor-pointer border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleRowClick(d);
-                  }
-                }}
+                aria-label={`Ver detalhes da demanda ${d.demanda}`}
+                className="flex w-full flex-col gap-1.5 py-3.5 text-left transition-colors active:bg-sky-50/60"
               >
-                <td className="px-4 py-3 text-slate-800">
-                  <span className="block truncate" title={d.demanda}>
+                <span className="flex items-start justify-between gap-3">
+                  <span className="line-clamp-2 text-[13px] font-medium text-neutral-950">{d.demanda}</span>
+                  <Badge tone={DEMANDA_STATUS_TONES[d.status] ?? "neutral"}>
+                    {DEMANDA_STATUS_LABELS[d.status] ?? d.status}
+                  </Badge>
+                </span>
+                <span className="truncate text-xs text-neutral-500">
+                  {[d.solicitante, d.agencia].filter(Boolean).join(" · ")}
+                </span>
+                <span className="flex items-center justify-between gap-3 text-xs text-neutral-500">
+                  <span className="font-medium tabular-nums text-neutral-800">{currencyFormat.format(d.valor)}</span>
+                  <span className="truncate tabular-nums">
+                    {[d.ocPi, formatMonthYearDisplay(d.mes)].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
+
+      <div className="max-md:hidden">
+        <Table className="min-w-[1100px]">
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell className="w-[28%]">Demanda</TableHeaderCell>
+              <TableHeaderCell>OC/PI</TableHeaderCell>
+              <TableHeaderCell>Solicitante</TableHeaderCell>
+              <TableHeaderCell>Un. responsável</TableHeaderCell>
+              <TableHeaderCell>Agência</TableHeaderCell>
+              <TableHeaderCell>Valor</TableHeaderCell>
+              <TableHeaderCell>Mês</TableHeaderCell>
+              <TableHeaderCell className="w-32">Status</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {demandas.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-12 text-neutral-500">
+                  {emptyMessage ?? "Nenhuma demanda cadastrada."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              demandas.map((d) => (
+                <TableRow
+                  key={d.id}
+                  onClick={() => handleRowClick(d)}
+                  className="cursor-pointer transition-colors hover:bg-sky-50/60 focus-visible:bg-sky-50/60 focus-visible:outline-none"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Ver detalhes da demanda ${d.demanda}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleRowClick(d);
+                    }
+                  }}
+                >
+                  <TableCell className="max-w-80 truncate font-medium text-neutral-950" title={d.demanda}>
                     {d.demanda}
-                  </span>
-                </td>
-                <td className="px-4 py-3 font-mono text-slate-600">{d.ocPi || "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{d.solicitante}</td>
-                <td className="px-4 py-3 text-slate-600">{d.unResponsavel}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[d.status] ?? "bg-slate-100 text-slate-600"}`}
-                  >
-                    {STATUS_LABELS[d.status] ?? d.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">{d.agencia ?? "—"}</td>
-                <td className="px-4 py-3 font-medium tabular-nums text-slate-800">
-                  {formatCurrency(d.valor)}
-                </td>
-                <td className="px-4 py-3 text-slate-600">{formatMonthYearDisplay(d.mes)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">{d.ocPi || "—"}</TableCell>
+                  <TableCell className="max-w-48 truncate" title={d.solicitante}>
+                    <span className="text-link">{d.solicitante}</span>
+                  </TableCell>
+                  <TableCell className="max-w-48 truncate" title={d.unResponsavel}>
+                    {d.unResponsavel}
+                  </TableCell>
+                  <TableCell className="max-w-48 truncate" title={d.agencia ?? undefined}>
+                    {d.agencia ? <span className="text-link">{d.agencia}</span> : "—"}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap font-medium tabular-nums text-neutral-800">
+                    {currencyFormat.format(d.valor)}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">{formatMonthYearDisplay(d.mes)}</TableCell>
+                  <TableCell>
+                    <Badge tone={DEMANDA_STATUS_TONES[d.status] ?? "neutral"}>
+                      {DEMANDA_STATUS_LABELS[d.status] ?? d.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <VerDetalhesDemandaModal

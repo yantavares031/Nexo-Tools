@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { FileText } from "lucide-react";
 import { Modal } from "@/components/Modal";
+import { Button, buttonBaseClassName, buttonSizes, buttonVariants } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/cn";
 import { isDocxAttachment } from "@/lib/deskfy/is-docx-attachment";
 
 type DeskfyAnexoPreviewModalProps = {
@@ -89,7 +92,7 @@ export function DeskfyAnexoPreviewModal({
       <Modal.Header onClose={onClose}>
         <h2
           id="deskfy-anexo-preview-title"
-          className="flex min-w-0 items-center gap-2 text-lg font-semibold text-slate-800"
+          className="flex min-w-0 items-center gap-2 text-lg font-semibold text-neutral-950"
         >
           <FileText className="size-5 shrink-0" aria-hidden />
           <span className="truncate" title={title}>
@@ -98,16 +101,13 @@ export function DeskfyAnexoPreviewModal({
         </h2>
       </Modal.Header>
       <Modal.Body className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
-        <div className="min-h-[min(72vh,640px)] w-full flex-1 bg-slate-100">
+        <div className="min-h-[min(72vh,640px)] w-full flex-1 bg-neutral-100">
           {useMammoth ? (
             <>
               {docx.status === "loading" && (
                 <div className="flex h-full min-h-[min(72vh,640px)] flex-col items-center justify-center gap-3 bg-white">
-                  <div
-                    className="size-9 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500"
-                    aria-hidden
-                  />
-                  <p className="text-sm text-slate-500">Convertendo documento…</p>
+                  <Spinner className="size-8 text-neutral-400" />
+                  <p className="text-sm text-neutral-500">Convertendo documento…</p>
                 </div>
               )}
               {docx.status === "error" && (
@@ -118,7 +118,7 @@ export function DeskfyAnexoPreviewModal({
               {docx.status === "ready" && (
                 <div className="h-full min-h-[min(72vh,640px)] overflow-y-auto bg-white">
                   <div
-                    className="docx-preview max-w-none p-6 text-left text-sm leading-relaxed text-slate-800 [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-200 [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6"
+                    className="docx-preview max-w-none p-6 text-left text-sm leading-relaxed text-neutral-800 [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-neutral-200 [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:border-neutral-200 [&_th]:bg-neutral-50 [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6"
                     dangerouslySetInnerHTML={{ __html: docx.html }}
                   />
                 </div>
@@ -135,7 +135,7 @@ export function DeskfyAnexoPreviewModal({
             />
           )}
         </div>
-        <p className="border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs leading-relaxed text-slate-500">
+        <p className="border-t border-neutral-200 bg-neutral-50 px-4 py-2.5 text-left text-xs leading-relaxed text-neutral-500">
           {footerHint}
         </p>
       </Modal.Body>
@@ -144,17 +144,13 @@ export function DeskfyAnexoPreviewModal({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className={cn(buttonBaseClassName, buttonVariants.outline, buttonSizes.md)}
         >
           Abrir em nova aba
         </a>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-        >
+        <Button type="button" onClick={onClose}>
           Fechar
-        </button>
+        </Button>
       </Modal.Footer>
     </Modal>
   );
